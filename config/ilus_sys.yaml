@@ -1,0 +1,46 @@
+# Configuration file specifying system details for running an analysis pipeline
+# location programs for pipeline.
+aligner:
+  bwa: /Users/huangshujia/Biosoftware/local/bin/bwa
+  bwamem_options: [-Y -M -t 8]
+
+samtools: 
+    samtools: /Users/huangshujia/Biosoftware/local/bin/samtools
+    sort_options: [-@ 8]
+    merge_options: [-@ 8 -f]
+
+bcftools:
+    bcftools: /Users/huangshujia/Biosoftware/local/bin/bcftools
+    options: []
+
+bedtools:
+    bedtools: /Users/huangshujia/Biosoftware/local/bin/bedtools
+    genomecov_options: [genomecov -bga -split]
+
+sambamba:
+  sambamba: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/4helixminer/tools/sambamba/sambamba_v0.6.6
+  sort_options: [-t 8]
+  merge_options: [-t 8]
+  markdup_options: []
+
+bgzip: /Users/huangshujia/BioSoftware/local/bin/bgzip
+tabix: /Users/huangshujia/BioSoftware/local/bin/tabix
+
+variantcaller:
+  gatk: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/4helixminer/tools/gatk/4.0.3.0/gatk
+  #interval: ["/path_to/exom_interval.list"]
+  interval: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
+  
+
+# Define resources to be used for individual programs on multicore machines.
+# These can be defined specifically for memory and processor availability.
+resources:
+  reference: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/ref/human_g1k_b37_20.fasta
+  gatk_bundle:
+    hapmap: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/resources/dbsnp.vcf.gz
+    omni: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/resources/dbsnp.vcf.gz
+    1000G: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/resources/dbsnp.vcf.gz
+    mills: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/resources/dbsnp.vcf.gz
+    1000G_phase1_indel: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/resources/dbsnp.vcf.gz
+    dbsnp: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/resources/dbsnp.vcf.gz
+

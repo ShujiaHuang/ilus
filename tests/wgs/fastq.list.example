@@ -1,0 +1,10 @@
+
+[FASTQ_List_File](https://genome.sph.umich.edu/wiki/GotCloud:_Alignment_Pipeline#FASTQ_List_File)
+
+```bash
+#SAMPLE	RGID	FASTQ1	FASTQ2	LIBRARY	PLATFORM	CENTER
+Sample1	rgID1   fastq/S1/F1_R1.fastq.gz	fastq/S1/F1_R2.fastq.gz	Lib1	ILLUMINA    BIGCS
+Sample1	rgID2   fastq/S1/F2_R1.fastq.gz fastq/S1/F2_R2.fastq.gz	Lib1	ILLUMINA    BIGCS
+Sample2	rgID3   fastq/S2/F1_R1.fastq.gz	fastq/S2/F1_R2.fastq.gz	Lib2	ILLUMINA    BIGCS
+Sample2	rgID4   fastq/S2/single_end.fastq.gz	.	Lib2	ILLUMINA    BIGCS
+```
