@@ -30,6 +30,7 @@ def bwamem(kwargs, out_folder_name, aione):
     samples = []
     with gzip.open(kwargs["args"].fastqlist) if kwargs["args"].fastqlist.endswith(".gz") else \
             open(kwargs["args"].fastqlist) as I:
+
         # SAMPLE_ID RGID  FASTQ1  FASTQ2  LANE  LIBRARY PLATFORM        CENTER
         for line in I:
             if line[0] == "#":  # ignore header
@@ -50,9 +51,8 @@ def bwamem(kwargs, out_folder_name, aione):
                                              out_prefix, rgID, fq1, fq2)
             sample_bamfiles_by_lane[sample_id].append([lane_bam_file, cmd])
 
-    bwa_shell_files = []
+    bwa_shell_files_dict = {}
     for sample, sample_outdir in samples:
-        echo_mark_done = "echo \"[bwa] %s done\"" % sample
         sample_final_bamfile = os.path.join(sample_outdir, sample+".sorted.bam")
 
         lane_bam_files = []
@@ -71,21 +71,25 @@ def bwamem(kwargs, out_folder_name, aione):
 
             lane_bam_files = " ".join([f for f, _ in sample_bamfiles_by_lane[sample]])
             cmd = [c for _, c in sample_bamfiles_by_lane[sample]]
-            cmd.append("{samtools} merge {samtools_merge_options} {sample_final_bamfile} "
-                       "{lane_bam_files}".format(**locals()))
 
+            # merge lane_bam_files into one and rm lane_bam_files
+            cmd.append("{samtools} merge {samtools_merge_options} {sample_final_bamfile} "
+                       "{lane_bam_files} && rm -rf {lane_bam_files}".format(**locals()))
+
+        echo_mark_done = "echo \"[bwa] %s done\"" % sample
         cmd.append(echo_mark_done)
         # aione[sample] = sample_final_bamfile
 
         sample_bwa_shell_file = os.path.join(shell_dirtory, sample+".bwa.sh")
-        bwa_shell_files.append(sample_bwa_shell_file)
+        bwa_shell_files_dict[sample] = sample_bwa_shell_file
         with open(sample_bwa_shell_file, "w") as OUT:
             OUT.write("#!/bin/bash\n")
             OUT.write("%s\n" % " && ".join(cmd))
 
         os.chmod(sample_bwa_shell_file, stat.S_IRWXU)  # 0700
 
-    return bwa_shell_files
+    # return sample id and a dict
+    return [s for s, _ in samples], bwa_shell_files_dict
 
 
 def mergebam(kwargs, aione):

@@ -60,16 +60,23 @@ if __name__ == "__main__":
 
     kwargs["args"].outdir = safe_makedir(os.path.abspath(kwargs["args"].outdir))
     shell_dirtory = os.path.join(kwargs["args"].outdir, "00.shell")
+    shell_log_dirtory = os.path.join(kwargs["args"].outdir, "00.shell", "loginfo")
     safe_makedir(shell_dirtory)
+    safe_makedir(shell_log_dirtory)
 
     if "bwamem" in sys.argv[1:] and kwargs["args"]:
-        bwa_shell_files = runfunction.bwamem(kwargs, "01.Alignment", aione)
+        samples, bwa_shell_files_dict = runfunction.bwamem(kwargs, "01.alignment", aione)
+        bwa_shell_log_dirtory = os.path.join(shell_log_dirtory, "01.alignment")
+        safe_makedir(bwa_shell_log_dirtory)
+
         all_bwa_shell_file = os.path.join(shell_dirtory, "samples_bwa.sh")
         with open(all_bwa_shell_file, "w") as OUT:
             OUT.write("#!/bin/bash\n")
-            for sh in bwa_shell_files:
-                OUT.write("%s\n" % sh)
+            for sample in samples:
+                sample_bwa_shell = bwa_shell_files_dict[sample]
+                OUT.write("{sample_bwa_shell} 2> {bwa_shell_log_dirtory}/{sample}.e.log > "
+                          "{bwa_shell_log_dirtory}/{sample}.o.log\n".format(**locals()))
 
     elapsed_time = datetime.now() - START_TIME
-    print "\n** %s done, %d seconds elapsed **\n" % (sys.argv[1], elapsed_time.seconds)
+    print ("\n** %s done, %d seconds elapsed **\n" % (sys.argv[1], elapsed_time.seconds))
 
