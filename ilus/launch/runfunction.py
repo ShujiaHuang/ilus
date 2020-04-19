@@ -51,12 +51,14 @@ def bwamem(kwargs, out_folder_name, aione):
                                              out_prefix, rgID, fq1, fq2)
             sample_bamfiles_by_lane[sample_id].append([lane_bam_file, cmd])
 
-    bwa_shell_files_dict = {}
+    # bwa_shell_files_dict = {}
+    bwa_shell_files_list = []
+    aione["sample_final_sorted_bam"] = []
     for sample, sample_outdir in samples:
         sample_final_bamfile = os.path.join(sample_outdir, sample+".sorted.bam")
+        aione["sample_final_sorted_bam"].append([sample, sample_final_bamfile])
 
         lane_bam_files = []
-        # cmd = []
         if len(sample_bamfiles_by_lane[sample]) == 1:
             lane_bam_files.append(sample_bamfiles_by_lane[sample][0])
             cmd = [sample_bamfiles_by_lane[sample][1]]
@@ -78,18 +80,16 @@ def bwamem(kwargs, out_folder_name, aione):
 
         echo_mark_done = "echo \"[bwa] %s done\"" % sample
         cmd.append(echo_mark_done)
-        # aione[sample] = sample_final_bamfile
 
         sample_bwa_shell_file = os.path.join(shell_dirtory, sample+".bwa.sh")
-        bwa_shell_files_dict[sample] = sample_bwa_shell_file
         with open(sample_bwa_shell_file, "w") as OUT:
             OUT.write("#!/bin/bash\n")
             OUT.write("%s\n" % " && ".join(cmd))
 
         os.chmod(sample_bwa_shell_file, stat.S_IRWXU)  # 0700
+        bwa_shell_files_list.append([sample, sample_bwa_shell_file])
 
-    # return sample id and a dict
-    return [s for s, _ in samples], bwa_shell_files_dict
+    return bwa_shell_files_list  # [[sample, bwa_shell_file], ...]
 
 
 def mergebam(kwargs, aione):

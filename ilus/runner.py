@@ -6,7 +6,9 @@ configured parameters.
 """
 import argparse
 import os
+import stat
 import sys
+
 import yaml
 from datetime import datetime
 
@@ -43,6 +45,20 @@ def checkconfig(config):
     return
 
 
+def create_a_total_shell_file(sample_shell_files, out_shell_filename, sub_shell_log_dirtory):
+    """Creat all the executable shell into a big single shell files.
+    ``sample_shell_files`` is a 2-D array: [[sample, sample_shell_file], ...].
+    """
+    with open(out_shell_filename, "w") as OUT:
+        OUT.write("#!/bin/bash\n")
+        for sample, sub_shell in sample_shell_files:
+            OUT.write("{sub_shell} 2> {sub_shell_log_dirtory}/{sample}.e.log > "
+                      "{sub_shell_log_dirtory}/{sample}.o.log\n".format(**locals()))
+
+    os.chmod(out_shell_filename, stat.S_IRWXU)  # 0700
+    return
+
+
 if __name__ == "__main__":
     START_TIME = datetime.now()
     kwargs = parse_commandline_args(sys.argv[1:])
@@ -58,25 +74,28 @@ if __name__ == "__main__":
     # check bundle data is been index or not
     # checkconfig(aione["config"])
 
+    # Create project diretory
     kwargs["args"].outdir = safe_makedir(os.path.abspath(kwargs["args"].outdir))
     shell_dirtory = os.path.join(kwargs["args"].outdir, "00.shell")
     shell_log_dirtory = os.path.join(kwargs["args"].outdir, "00.shell", "loginfo")
     safe_makedir(shell_dirtory)
     safe_makedir(shell_log_dirtory)
 
-    if "bwamem" in sys.argv[1:] and kwargs["args"]:
-        samples, bwa_shell_files_dict = runfunction.bwamem(kwargs, "01.alignment", aione)
-        bwa_shell_log_dirtory = os.path.join(shell_log_dirtory, "01.alignment")
-        safe_makedir(bwa_shell_log_dirtory)
+    # bwa/sort/merge process
+    bwa_shell_log_dirtory = os.path.join(shell_log_dirtory, "01.alignment")
+    safe_makedir(bwa_shell_log_dirtory)
+    bwa_shell_files_list = runfunction.bwamem(kwargs, "01.alignment", aione)
+    create_a_total_shell_file(bwa_shell_files_list,
+                              os.path.join(shell_dirtory, "all_samples_bwa.sh"),
+                              bwa_shell_log_dirtory)
 
-        all_bwa_shell_file = os.path.join(shell_dirtory, "samples_bwa.sh")
-        with open(all_bwa_shell_file, "w") as OUT:
-            OUT.write("#!/bin/bash\n")
-            for sample in samples:
-                sample_bwa_shell = bwa_shell_files_dict[sample]
-                OUT.write("{sample_bwa_shell} 2> {bwa_shell_log_dirtory}/{sample}.e.log > "
-                          "{bwa_shell_log_dirtory}/{sample}.o.log\n".format(**locals()))
+    # Markdupkicates
+    markdup_shell_log_dirtory = os.path.join(shell_log_dirtory, "02.markdup")
+    safe_makedir(markdup_shell_log_dirtory)
+
+    # BQSR+ApplyBQSR
+
+    # gvcf
 
     elapsed_time = datetime.now() - START_TIME
     print ("\n** %s done, %d seconds elapsed **\n" % (sys.argv[1], elapsed_time.seconds))
-
