@@ -1,12 +1,8 @@
 """NGS alignments with BWA
 """
-import os
-
-from ilus.pipeline import config_utils
-from ilus.launch import do
 
 
-def bwa_mem(config, ref_index, out_prefix, rgID, fastq1, fastq2=""):
+def bwa_mem(config, out_prefix, rgID, fastq1, fastq2=""):
     """Perform piped alignment of fastq input files, generating sorted output BAM
 
     Parameters:
@@ -16,6 +12,7 @@ def bwa_mem(config, ref_index, out_prefix, rgID, fastq1, fastq2=""):
     if fastq2 == ".":
         fastq2 = ""
 
+    ref_index = config["resources"]["reference"]
     return _get_bwa_mem_cmd(fastq1, fastq2, ref_index, rgID, out_prefix, config)
 
 
@@ -33,10 +30,3 @@ def _get_bwa_mem_cmd(fastq1, fastq2, ref_index, rg_info, outfile_prefix, config)
                "&& rm -rf {outfile_prefix}.bam").format(**locals())
 
     return "{outfile_prefix}.sorted.bam".format(**locals()), bwa_cmd
-
-
-def build_bwa_index(fasta_file):
-    cmd = "bwa index {fasta_file}".format(**locals())
-    message = "Creating WGS index of %s with bwa." % (fasta_file)
-    do.run(cmd, message)
-    return fasta_file

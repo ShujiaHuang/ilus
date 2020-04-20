@@ -95,15 +95,15 @@ class GATKRunner(object):
         """"""
         self.resources = _set_training_data(gatk_resource)
         self.reference = config["resources"]["reference"]
-        self.gatk = config["variantcaller"]["gatk"]
+        self.gatk = config["gatk"]["gatk"]
         self.process_num = 1
         self.runable = ""
 
-        if "process_num" in config["variantcaller"]:
-            self.process_num = config["variantcaller"]["process_num"]
+        if "process_num" in config["gatk"]:
+            self.process_num = config["gatk"]["process_num"]
 
-        if "runable_region" in config["variantcaller"]:
-            self.runable = config["variantcaller"]["runable_region"]
+        if "runable_region" in config["gatk"]:
+            self.runable = config["gatk"]["runable_region"]
 
         if self.process_num < 1:
             self.process_num = multiprocessing.cpu_count() / 4  # default detected

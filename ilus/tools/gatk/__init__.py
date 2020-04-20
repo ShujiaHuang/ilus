@@ -1,8 +1,5 @@
 """
 """
-import os
-import sys
-
 from _gatk4 import *
 
 

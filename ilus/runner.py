@@ -24,13 +24,13 @@ def parse_commandline_args(args):
     cmdparser = argparse.ArgumentParser(description=desc)
 
     command = cmdparser.add_subparsers(help="Ilus supplemental commands")
-    bwamem_cmd = command.add_parser("bwamem", help="Run bwamem aligning fastq to reference")
-    bwamem_cmd.add_argument("-C", "--conf", dest="sysconf", required=True,
-                            help="YAML configuration file specifying details about system.")
-    bwamem_cmd.add_argument("-L", "--fastqlist", dest="fastqlist", type=str, required=True,
-                            help="Alignment FASTQ Index File.")
-    bwamem_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
-                            help="A directory for output results.")
+    pipeline_cmd = command.add_parser("pipeline", help="Creating pipeline for WGS(from fastq to VCF)")
+    pipeline_cmd.add_argument("-C", "--conf", dest="sysconf", required=True,
+                              help="YAML configuration file specifying details about system.")
+    pipeline_cmd.add_argument("-L", "--fastqlist", dest="fastqlist", type=str, required=True,
+                              help="Alignment FASTQ Index File.")
+    pipeline_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
+                              help="A directory for output results.")
 
     kwargs = {"args": cmdparser.parse_args(args)}
 
@@ -45,15 +45,15 @@ def checkconfig(config):
     return
 
 
-def create_a_total_shell_file(sample_shell_files, out_shell_filename, sub_shell_log_dirtory):
+def create_a_total_shell_file(sample_shell_files, out_shell_filename, sub_shell_log_dir):
     """Creat all the executable shell into a big single shell files.
     ``sample_shell_files`` is a 2-D array: [[sample, sample_shell_file], ...].
     """
     with open(out_shell_filename, "w") as OUT:
         OUT.write("#!/bin/bash\n")
         for sample, sub_shell in sample_shell_files:
-            OUT.write("{sub_shell} 2> {sub_shell_log_dirtory}/{sample}.e.log > "
-                      "{sub_shell_log_dirtory}/{sample}.o.log\n".format(**locals()))
+            OUT.write("{sub_shell} 2> {sub_shell_log_dir}/{sample}.e.log > "
+                      "{sub_shell_log_dir}/{sample}.o.log\n".format(**locals()))
 
     os.chmod(out_shell_filename, stat.S_IRWXU)  # 0700
     return
@@ -84,18 +84,40 @@ if __name__ == "__main__":
     # bwa/sort/merge process
     bwa_shell_log_dirtory = os.path.join(shell_log_dirtory, "01.alignment")
     safe_makedir(bwa_shell_log_dirtory)
+
     bwa_shell_files_list = runfunction.bwamem(kwargs, "01.alignment", aione)
     create_a_total_shell_file(bwa_shell_files_list,
-                              os.path.join(shell_dirtory, "all_samples_bwa.sh"),
+                              os.path.join(shell_dirtory, "step1.bwa.sh"),
                               bwa_shell_log_dirtory)
 
-    # Markdupkicates
+    # Create Markdupkicates running shells.
     markdup_shell_log_dirtory = os.path.join(shell_log_dirtory, "02.markdup")
     safe_makedir(markdup_shell_log_dirtory)
+    markdup_shell_file_list = runfunction.gatk_markduplicates(kwargs, "01.alignment", aione)
+    create_a_total_shell_file(markdup_shell_file_list,
+                              os.path.join(shell_dirtory, "step2.markdup.sh"),
+                              markdup_shell_log_dirtory)
 
-    # BQSR+ApplyBQSR
+    # Create BQSR+ApplyBQSR running shells.
+    bqsr_shell_log_dirtory = os.path.join(shell_log_dirtory, "03.BQSR")
+    safe_makedir(bqsr_shell_log_dirtory)
 
-    # gvcf
+    bqsr_shell_file_list = runfunction.gatk_baserecalibrator(kwargs, "01.alignment", aione)
+    create_a_total_shell_file(bqsr_shell_file_list,
+                              os.path.join(shell_dirtory, "step3.bqsr.sh"),
+                              bqsr_shell_log_dirtory)
+
+    # Create GVCF running shells
+    gvcf_shell_log_dirtory = os.path.join(shell_log_dirtory, "04.gvcf")
+    safe_makedir(gvcf_shell_log_dirtory)
+    gvcf_shell_file_list = runfunction.gatk_haplotypecaller_gvcf(kwargs, "02.gvcf", aione)
+    create_a_total_shell_file(gvcf_shell_file_list,
+                              os.path.join(shell_dirtory, "step4.gvcf.sh"),
+                              gvcf_shell_log_dirtory)
+
+    # GenotypeGVCF
+
+    # Summary and status statistic
 
     elapsed_time = datetime.now() - START_TIME
     print ("\n** %s done, %d seconds elapsed **\n" % (sys.argv[1], elapsed_time.seconds))
