@@ -9,11 +9,6 @@ from ilus import utils
 from ilus.modules.ngsaligner import bwa
 from ilus.modules.variants import gatk
 
-from ilus.tools.sambamba import SambambaRunner, sambamba_mark_duplicates
-
-from ilus.tools.gatk import GATKRunner, gatk4_mark_duplicates, gatk4_baserecalibrator, \
-    gatk4_haplotypecaller, gatk4_GenotypeGVCFs, gatk4_VariantRecalibrator, gatk4_MergeVCFs
-
 IS_RM_SUBBAM = True
 
 
@@ -183,65 +178,68 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione):
 
     gvcf_shell_files_list = []
     aione["gvcf"] = {}
+
+    if "interval" not in aione["config"]["gatk"]:
+        aione["config"]["gatk"]["interval"] = ["all"]
+
+    aione["intervals"] = []
+    flag = True
     for sample, sample_bqsr_bam in aione["sample_final_bqsr_bam"]:
         sample_shell_dir = os.path.join(shell_dirtory, sample)
         sample_output_dir = os.path.join(output_dirtory, sample)
         utils.safe_makedir(sample_shell_dir)
         utils.safe_makedir(sample_output_dir)
 
-        if "interval" in aione["config"]["gatk"]:
-            for interval in aione["config"]["gatk"]["interval"]:
+        for interval in aione["config"]["gatk"]["interval"]:
 
+            if interval == "all":
+                # The whole genome
+                sample_shell_fname, out_gvcf_fname = _create_sub_shell(sample, sample_shell_dir, sample_output_dir)
+            else:
                 sample_shell_fname, out_gvcf_fname = _create_sub_shell(
                     sample, sample_shell_dir, sample_output_dir, raw_interval=interval)
 
-                interval, _ = os.path.splitext(os.path.split(interval)[-1])
-                gvcf_shell_files_list.append([sample + ".%s" % interval, sample_shell_fname])
-                if interval not in aione["gvcf"]:
-                    aione["gvcf"][interval] = []
+            interval, _ = os.path.splitext(os.path.split(interval)[-1])
+            if flag:
+                # ``interval`` and ``aione["config"]["gatk"]["interval"]`` could be different.
+                # The raw interval could be a file path.
+                aione["intervals"].append(interval)
 
-                aione["gvcf"][interval].append(out_gvcf_fname)
-
-        else:
-
-            # The whole genome
-            interval = "all"
-            sample_shell_fname, out_gvcf_fname = _create_sub_shell(sample, sample_shell_dir, sample_output_dir)
             if interval not in aione["gvcf"]:
                 aione["gvcf"][interval] = []
 
+            gvcf_shell_files_list.append([sample + ".%s" % interval, sample_shell_fname])
             aione["gvcf"][interval].append(out_gvcf_fname)
+
+        flag = False
 
     return gvcf_shell_files_list
 
 
-def GenotypeGVCFs(kwargs, aione):
-    if not kwargs["args"].outfile:
-        sys.stderr.write("Error: missing the output VCF files when running "
-                         "GenotypeGVCFs.\n")
-        sys.exit(1)
+def gatk_genotypeGVCFs(kwargs, out_folder_name, aione):
+    shell_dirtory = os.path.join(kwargs["args"].outdir, out_folder_name, "shell")
+    output_dirtory = os.path.join(kwargs["args"].outdir, out_folder_name, "output")
+    utils.safe_makedir(output_dirtory)
+    utils.safe_makedir(shell_dirtory)
 
-    gatk = GATKRunner(aione["config"])
-    aione["genotype_vcf"] = gatk4_GenotypeGVCFs(gatk,
-                                                kwargs["args"].variants,
-                                                kwargs["args"].interval,
-                                                kwargs["args"].outfile)
-    return aione
+    genotype_vcf_shell_files_list = []
+    aione["genotype"] = {}
+    for interval in aione["intervals"]:
+        genotype_vcf_fname = os.path.join(output_dirtory, "%s.%s.vcf.gz" % (kwargs["args"].project_name, interval))
+        sub_shell_fname = os.path.join(shell_dirtory, "%s.%s.genotype.sh" % (kwargs["args"].project_name, interval))
+        sample_gvcf_list = aione["gvcf"][interval]
+        cmd = [gatk.gatk_genotypegvcfs(aione["config"], sample_gvcf_list, genotype_vcf_fname)]
+
+        echo_mark_done = "echo \"[Genotype] %s done\"" % interval
+        cmd.append(echo_mark_done)
+        _create_cmd_file(sub_shell_fname, cmd)
+        genotype_vcf_shell_files_list.append(["%s.%s" % (kwargs["args"].project_name, interval), sub_shell_fname])
+
+        aione["genotype"][interval] = genotype_vcf_fname
+
+    return genotype_vcf_shell_files_list
 
 
 def variantrecalibrator(kwargs, aione):
     """Run VQSR"""
-    if not kwargs["args"].outfile:
-        sys.stderr.write("Error: missing the output VCF files when running "
-                         "GenotypeGVCFs.\n")
-        sys.exit(1)
-
-    gatk = GATKRunner(aione["config"], aione["config"]["resources"]["gatk_bundle"])
-    aione["qc_vcf"] = gatk4_VariantRecalibrator(gatk,
-                                                kwargs["args"].variants,
-                                                kwargs["args"].outfile,
-                                                kwargs["args"].snp_max_gaussion,
-                                                kwargs["args"].indel_max_gaussion,
-                                                kwargs["args"].snp_ts_filter_level,
-                                                kwargs["args"].indel_ts_filter_level)
     return aione

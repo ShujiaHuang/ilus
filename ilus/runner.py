@@ -29,6 +29,8 @@ def parse_commandline_args(args):
                               help="YAML configuration file specifying details about system.")
     pipeline_cmd.add_argument("-L", "--fastqlist", dest="fastqlist", type=str, required=True,
                               help="Alignment FASTQ Index File.")
+    pipeline_cmd.add_argument("-n", "--name", dest="project_name", type=str, default="test",
+                              help="Name of the project. [test]")
     pipeline_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
                               help="A directory for output results.")
 
@@ -45,17 +47,29 @@ def checkconfig(config):
     return
 
 
-def create_a_total_shell_file(sample_shell_files, out_shell_filename, sub_shell_log_dir):
+def create_a_total_shell_file(shell_list, out_shell_filename, sub_shell_log_dir, o_log_file, e_log_file):
     """Creat all the executable shell into a big single shell files.
-    ``sample_shell_files`` is a 2-D array: [[sample, sample_shell_file], ...].
+    ``shell_list`` is a 2-D array: [[mark, shell_file], ...].
     """
-    with open(out_shell_filename, "w") as OUT:
+    with open(out_shell_filename, "w") as OUT, open(o_log_file, "w") as O_LOG, open(e_log_file, "w") as E_LOG:
         OUT.write("#!/bin/bash\n")
-        for sample, sub_shell in sample_shell_files:
-            OUT.write("{sub_shell} 2> {sub_shell_log_dir}/{sample}.e.log > "
-                      "{sub_shell_log_dir}/{sample}.o.log\n".format(**locals()))
+        for marker, sub_shell in shell_list:
+            OUT.write("{sub_shell} 2> {sub_shell_log_dir}/{marker}.e.log > "
+                      "{sub_shell_log_dir}/{marker}.o.log\n".format(**locals()))
+
+            # record all the path of log files into a single file
+            O_LOG.write("{sub_shell_log_dir}/{marker}.o.log\n".format(**locals()))
+            E_LOG.write("{sub_shell_log_dir}/{marker}.e.log\n".format(**locals()))
 
     os.chmod(out_shell_filename, stat.S_IRWXU)  # 0700
+    return
+
+
+def make_process_shell(output_shell_fname, shell_log_directory, process_shells=None):
+    safe_makedir(shell_log_directory)
+    o_log_file = shell_log_directory + ".o.log.list"
+    e_log_file = shell_log_directory + ".e.log.list"
+    create_a_total_shell_file(process_shells, output_shell_fname, shell_log_directory, o_log_file, e_log_file)
     return
 
 
@@ -74,50 +88,39 @@ if __name__ == "__main__":
     # check bundle data is been index or not
     # checkconfig(aione["config"])
 
-    # Create project diretory
-    kwargs["args"].outdir = safe_makedir(os.path.abspath(kwargs["args"].outdir))
+    # Create project directory
+    kwargs["args"].outdir = safe_makedir(os.path.abspath(kwargs["args"].outdir))  # return abspath
+
     shell_dirtory = os.path.join(kwargs["args"].outdir, "00.shell")
-    shell_log_dirtory = os.path.join(kwargs["args"].outdir, "00.shell", "loginfo")
+    shell_log_dirtory = os.path.join(shell_dirtory, "loginfo")
     safe_makedir(shell_dirtory)
     safe_makedir(shell_log_dirtory)
 
     # bwa/sort/merge process
-    bwa_shell_log_dirtory = os.path.join(shell_log_dirtory, "01.alignment")
-    safe_makedir(bwa_shell_log_dirtory)
-
-    bwa_shell_files_list = runfunction.bwamem(kwargs, "01.alignment", aione)
-    create_a_total_shell_file(bwa_shell_files_list,
-                              os.path.join(shell_dirtory, "step1.bwa.sh"),
-                              bwa_shell_log_dirtory)
+    make_process_shell(output_shell_fname=os.path.join(shell_dirtory, "step1.bwa.sh"),
+                       shell_log_directory=os.path.join(shell_log_dirtory, "01.alignment"),
+                       process_shells=runfunction.bwamem(kwargs, "01.alignment", aione))
 
     # Create Markdupkicates running shells.
-    markdup_shell_log_dirtory = os.path.join(shell_log_dirtory, "02.markdup")
-    safe_makedir(markdup_shell_log_dirtory)
-    markdup_shell_file_list = runfunction.gatk_markduplicates(kwargs, "01.alignment", aione)
-    create_a_total_shell_file(markdup_shell_file_list,
-                              os.path.join(shell_dirtory, "step2.markdup.sh"),
-                              markdup_shell_log_dirtory)
+    make_process_shell(output_shell_fname=os.path.join(shell_dirtory, "step2.markdup.sh"),
+                       shell_log_directory=os.path.join(shell_log_dirtory, "02.markdup"),
+                       process_shells=runfunction.gatk_markduplicates(kwargs, "01.alignment", aione))
 
     # Create BQSR+ApplyBQSR running shells.
-    bqsr_shell_log_dirtory = os.path.join(shell_log_dirtory, "03.BQSR")
-    safe_makedir(bqsr_shell_log_dirtory)
-
-    bqsr_shell_file_list = runfunction.gatk_baserecalibrator(kwargs, "01.alignment", aione)
-    create_a_total_shell_file(bqsr_shell_file_list,
-                              os.path.join(shell_dirtory, "step3.bqsr.sh"),
-                              bqsr_shell_log_dirtory)
+    make_process_shell(output_shell_fname=os.path.join(shell_dirtory, "step3.bqsr.sh"),
+                       shell_log_directory=os.path.join(shell_log_dirtory, "03.BQSR"),
+                       process_shells=runfunction.gatk_baserecalibrator(kwargs, "01.alignment", aione))
 
     # Create GVCF running shells
-    gvcf_shell_log_dirtory = os.path.join(shell_log_dirtory, "04.gvcf")
-    safe_makedir(gvcf_shell_log_dirtory)
-    gvcf_shell_file_list = runfunction.gatk_haplotypecaller_gvcf(kwargs, "02.gvcf", aione)
-    create_a_total_shell_file(gvcf_shell_file_list,
-                              os.path.join(shell_dirtory, "step4.gvcf.sh"),
-                              gvcf_shell_log_dirtory)
+    make_process_shell(output_shell_fname=os.path.join(shell_dirtory, "step4.gvcf.sh"),
+                       shell_log_directory=os.path.join(shell_log_dirtory, "04.gvcf"),
+                       process_shells=runfunction.gatk_haplotypecaller_gvcf(kwargs, "02.gvcf", aione))
 
     # GenotypeGVCF
+    make_process_shell(output_shell_fname=os.path.join(shell_dirtory, "step5.genotype.sh"),
+                       shell_log_directory=os.path.join(shell_log_dirtory, "05.genotype"),
+                       process_shells=runfunction.gatk_genotypeGVCFs(kwargs, "03.genotype", aione))
 
     # Summary and status statistic
-
     elapsed_time = datetime.now() - START_TIME
     print ("\n** %s done, %d seconds elapsed **\n" % (sys.argv[1], elapsed_time.seconds))

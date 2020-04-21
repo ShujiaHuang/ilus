@@ -3,6 +3,7 @@
 Author: Shujia Huang
 Date: 2020-04-19 15:19:56
 """
+import os
 
 
 def markduplicates(config, input_bam, output_markdup_bam, out_metrics_fname):
@@ -67,3 +68,27 @@ def haplotypecaller_gvcf(config, input_bam, output_gvcf_fname, interval=None):
         cmd += " -L %s" % interval
 
     return cmd
+
+
+def gatk_genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname):
+    gatk = config["gatk"]["gatk"]
+    java_options = "--java-options \"%s\"" % config["gatk"]["genotype_java_options"] \
+        if "genotype_java_options" in config["gatk"] \
+           and len(config["gatk"]["genotype_java_options"]) else ""
+
+    reference = config["resources"]["reference"]  # reference fasta
+
+    # create a combine gvcf
+    directory, fname = os.path.split(output_vcf_fname)
+    combine_gvcf_fname = os.path.join(directory, fname.replace(".vcf", ".g.vcf"))
+    gvcfs = " ".join(["-V %s" % s for s in input_sample_gvcfs])
+    combine_gvcf_cmd = ("time {gatk} {java_options} CombineGVCFs "
+                        "-R {reference} {gvcfs} "
+                        "-O {combine_gvcf_fname}").format(**locals())
+
+    genotype_cmd = ("time {gatk} {java_options} GenotypeGVCFs "
+                    "-R {reference} "
+                    "-V {combine_gvcf_fname} "
+                    "-O {output_vcf_fname}").format(**locals())
+
+    return combine_gvcf_cmd + " && " + genotype_cmd
