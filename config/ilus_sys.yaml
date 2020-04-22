@@ -1,51 +1,54 @@
+# Define resources to be used for individual programs on multicore machines.
+# These can be defined specifically for memory and processor availability.
+resources:
+  reference: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/ref/human_g1k_b37_20.fasta
+
 # Configuration file specifying system details for running an analysis pipeline
 # location programs for pipeline.
 aligner:
-  bwa: /Users/huangshujia/Biosoftware/local/bin/bwa
+  bwa: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bwa
   bwamem_options: [-Y -M -t 8]
 
-samtools: 
-    samtools: /Users/huangshujia/Biosoftware/local/bin/samtools
+samtools:
+    samtools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/samtools
     sort_options: [-@ 8]
     merge_options: [-@ 8 -f]
 
 bcftools:
-    bcftools: /Users/huangshujia/Biosoftware/local/bin/bcftools
+    bcftools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bcftools
     options: []
 
 bedtools:
-    bedtools: /Users/huangshujia/Biosoftware/local/bin/bedtools
+    bedtools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bedtools
     genomecov_options: [genomecov -bga -split]
 
 sambamba:
-  sambamba: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/4helixminer/tools/sambamba/sambamba_v0.6.6
+  sambamba: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/sambamba
   sort_options: [-t 8]
   merge_options: [-t 8]
   markdup_options: []
 
-bgzip: /Users/huangshujia/BioSoftware/local/bin/bgzip
-tabix: /Users/huangshujia/BioSoftware/local/bin/tabix
+bgzip: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bgzip
+tabix: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/tabix
 
 gatk:
-  gatk: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/4helixminer/tools/gatk/4.0.3.0/gatk
+  gatk: /WORK/gzfezx_shhli_3/BioSoftware/gatk/4.1.4.1/gatk
   markdup_java_options: "-Xmx8G"
   bqsr_java_options: "-Xmx8G"
   hc_gvcf_java_options: "-Xmx4G"
   genotype_java_options: "-Xmx8G"
 
   interval: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
-  #interval: ["/path_to/exom_interval.list"]
   bundle:
-    hapmap: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/resources/dbsnp.vcf.gz
-    omni: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/resources/dbsnp.vcf.gz
-    1000G: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/resources/dbsnp.vcf.gz
-    mills: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/resources/dbsnp.vcf.gz
-    1000G_known_indel: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/resources/dbsnp.vcf.gz
-    dbsnp: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/resources/dbsnp.vcf.gz
+    hapmap: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/hapmap_3.3.hg38.vcf.gz
+    omni: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/1000G_omni2.5.hg38.vcf.gz
+    1000G: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/1000G_phase1.snps.high_confidence.hg38.vcf.gz
+    mills: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+    1000G_known_indel: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.known_indels.vcf.gz
+    dbsnp: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
 
-  
 
 # Define resources to be used for individual programs on multicore machines.
 # These can be defined specifically for memory and processor availability.
 resources:
-  reference: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/ref/human_g1k_b37_20.fasta
+  reference: /WORK/gzfezx_shhli_3/BioDatahub/human_reference/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa

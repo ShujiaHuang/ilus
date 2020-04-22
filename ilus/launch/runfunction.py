@@ -84,9 +84,11 @@ def bwamem(kwargs, out_folder_name, aione):
         echo_mark_done = "echo \"[bwa] %s done\"" % sample
         cmd.append(echo_mark_done)
 
-        sample_shell_file = os.path.join(shell_dirtory, sample + ".bwa.sh")
-        _create_cmd_file(sample_shell_file, cmd)
-        bwa_shell_files_list.append([sample, sample_shell_file])
+        sample_shell_fname = os.path.join(shell_dirtory, sample + ".bwa.sh")
+        if not os.path.exists(sample_shell_fname) or kwargs["args"].overwrite:
+            _create_cmd_file(sample_shell_fname, cmd)
+
+        bwa_shell_files_list.append([sample, sample_shell_fname])
 
     return bwa_shell_files_list  # [[sample, bwa_shell_file], ...]
 
@@ -114,12 +116,14 @@ def gatk_markduplicates(kwargs, out_folder_name, aione):
         echo_mark_done = "echo \"[MarkDuplicates] %s done\"" % sample
         cmd.append(echo_mark_done)
 
-        sample_shell_file = os.path.join(shell_dirtory, sample + ".markdup.sh")
-        _create_cmd_file(sample_shell_file, cmd)
-        markdup_shell_files_list.append([sample, sample_shell_file])
+        sample_shell_fname = os.path.join(shell_dirtory, sample + ".markdup.sh")
+        if not os.path.exists(sample_shell_fname) or kwargs["args"].overwrite:
+            _create_cmd_file(sample_shell_fname, cmd)
+
+        markdup_shell_files_list.append([sample, sample_shell_fname])
         aione["sample_final_markdup_bam"].append([sample, out_markdup_bam_fname])
 
-    return markdup_shell_files_list  # [[sample, sample_shell_file], ...]
+    return markdup_shell_files_list  # [[sample, sample_shell_fname], ...]
 
 
 def gatk_baserecalibrator(kwargs, out_folder_name, aione):
@@ -140,9 +144,11 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione):
 
         echo_mark_done = "echo \"[BQSR] %s done\"" % sample
         cmd.append(echo_mark_done)
-        sample_shell_file = os.path.join(shell_dirtory, sample + ".bqsr.sh")
-        _create_cmd_file(sample_shell_file, cmd)
-        bqsr_shell_files_list.append([sample, sample_shell_file])
+        sample_shell_fname = os.path.join(shell_dirtory, sample + ".bqsr.sh")
+        if not os.path.exists(sample_shell_fname) or kwargs["args"].overwrite:
+            _create_cmd_file(sample_shell_fname, cmd)
+
+        bqsr_shell_files_list.append([sample, sample_shell_fname])
         aione["sample_final_bqsr_bam"].append([sample, out_bqsr_bam_fname])
 
     return bqsr_shell_files_list
@@ -167,7 +173,8 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione):
 
         echo_mark_done = "echo \"[GVCF] %s %s done\"" % (sample, interval)
         cmd.append(echo_mark_done)
-        _create_cmd_file(sample_shell_fname, cmd)
+        if not os.path.exists(sample_shell_fname) or kwargs["args"].overwrite:
+            _create_cmd_file(sample_shell_fname, cmd)
 
         return sample_shell_fname, out_gvcf_fname
 
