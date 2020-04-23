@@ -17,7 +17,6 @@ def bwa_mem(config, out_prefix, rgID, fastq1, fastq2=""):
 
 
 def _get_bwa_mem_cmd(fastq1, fastq2, ref_index, rg_info, outfile_prefix, config):
-
     bwa = config["aligner"]["bwa"]
     bwa_options = " ".join([str(x) for x in config["aligner"].get("bwamem_options", [])])
     samtools = config["samtools"]["samtools"]

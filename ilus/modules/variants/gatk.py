@@ -45,10 +45,7 @@ def baserecalibrator(config, input_bam, output_bqsr_bam, out_bqsr_recal_table):
                       "-I {input_bam} "
                       "-O {output_bqsr_bam}").format(**locals())
 
-    samtools = config["samtools"]["samtools"]
-    bam_index_cmd = "time {samtools} index {output_bqsr_bam}".format(**locals())
-
-    return recal_data_cmd + " && " + apply_bqsr_cmd + " && " + bam_index_cmd
+    return recal_data_cmd + " && " + apply_bqsr_cmd
 
 
 def haplotypecaller_gvcf(config, input_bam, output_gvcf_fname, interval=None):
@@ -91,4 +88,4 @@ def gatk_genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname):
                     "-V {combine_gvcf_fname} "
                     "-O {output_vcf_fname}").format(**locals())
 
-    return combine_gvcf_cmd + " && " + genotype_cmd
+    return combine_gvcf_cmd + " && " + genotype_cmd + " && rm -rf %s" % combine_gvcf_fname
