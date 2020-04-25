@@ -9,3 +9,6 @@ python ../ilus/runner.py genotype -C ../config/ilus_sys.yaml -L gvcf.list -O 03.
 ```bash
 python ../ilus/runner.py genotype -C ../config/ilus_sys.yaml -L gvcf.list -O 03.genotype --as_pipe_shell_order -f
 ```
+```bash
+python ../../scripts/yhbatch_slurm_jobs.py -I step1.bwa.sh -n 10 -t 3
+```
