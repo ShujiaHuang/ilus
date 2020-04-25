@@ -45,11 +45,17 @@ if __name__ == "__main__":
         sub_shell_fname = os.path.join(sub_shell_dir, "work.%d_%d.sh" % (i+1, args.number))
         with open(sub_shell_fname, "w") as OUT:
             OUT.write("#!/bin/bash\n")
+
+            n = 0
             for j, cmd in enumerate(commands[k:k+inter_step_size]):
                 OUT.write("%s &\n" % cmd)
                 if (j + 1) % args.t == 0:
+                    n += 1
                     OUT.write("wait\n")
+                    OUT.write("echo \"----------- %d ----------\"\n" %n)
+
             OUT.write("wait\n")
+            OUT.write("echo \"----------- %d ----------\"\n" % n)
 
         os.chmod(sub_shell_fname, stat.S_IRWXU)  # 0700
 
