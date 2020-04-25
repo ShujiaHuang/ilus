@@ -19,8 +19,8 @@ def _create_a_total_shell_file(shell_list, out_shell_filename, sub_shell_log_dir
                       "{sub_shell_log_dir}/{marker}.o.log\n".format(**locals()))
 
             # record all the path of log files into a single file
-            O_LOG.write("{sub_shell_log_dir}/{marker}.o.log\n".format(**locals()))
-            E_LOG.write("{sub_shell_log_dir}/{marker}.e.log\n".format(**locals()))
+            O_LOG.write("{marker}\t{sub_shell_log_dir}/{marker}.o.log\t{sub_shell}\n".format(**locals()))
+            E_LOG.write("{marker}\t{sub_shell_log_dir}/{marker}.e.log\t{sub_shell}\n".format(**locals()))
 
     os.chmod(out_shell_filename, stat.S_IRWXU)  # 0700
     return
