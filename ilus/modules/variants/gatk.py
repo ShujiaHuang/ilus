@@ -78,14 +78,32 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname):
     # create a combine gvcf
     directory, fname = os.path.split(output_vcf_fname)
     combine_gvcf_fname = os.path.join(directory, fname.replace(".vcf", ".g.vcf"))
-    gvcfs = " ".join(["-V %s" % s for s in input_sample_gvcfs])
-    combine_gvcf_cmd = ("time {gatk} {java_options} CombineGVCFs "
-                        "-R {reference} {gvcfs} "
-                        "-O {combine_gvcf_fname}").format(**locals())
 
-    genotype_cmd = ("time {gatk} {java_options} GenotypeGVCFs "
-                    "-R {reference} "
-                    "-V {combine_gvcf_fname} "
-                    "-O {output_vcf_fname}").format(**locals())
+    genotype_cmd = []
+    if len(input_sample_gvcfs) > 1:
+        gvcfs = " ".join(["-V %s" % s for s in input_sample_gvcfs])
+        combine_gvcf_cmd = ("time {gatk} {java_options} CombineGVCFs "
+                            "-R {reference} {gvcfs} "
+                            "-O {combine_gvcf_fname}").format(**locals())
+        genotype_cmd = [combine_gvcf_cmd]
+    else:
+        combine_gvcf_fname = input_sample_gvcfs[0]
 
-    return combine_gvcf_cmd + " && " + genotype_cmd + " && rm -rf %s" % combine_gvcf_fname
+    genotype_cmd.append(("time {gatk} {java_options} GenotypeGVCFs "
+                         "-R {reference} "
+                         "-V {combine_gvcf_fname} "
+                         "-O {output_vcf_fname}").format(**locals()))
+
+    genotype_cmd.append("rm -rf %s" % combine_gvcf_fname)
+    return " && ".join(genotype_cmd)
+
+
+def variantrecalibrator(config, input_vcf, output_vcf_fname):
+    gatk = config["gatk"]["gatk"]
+    java_options = "--java-options \"%s\"" % config["gatk"]["vqsr_java_options"] \
+        if "vqsr_java_options" in config["gatk"] \
+           and len(config["gatk"]["vqsr_java_options"]) else ""
+
+    vqsr_cmd = ""
+
+    return
