@@ -55,7 +55,7 @@ if __name__ == "__main__":
                     OUT.write("echo \"----------- %d ----------\"\n" %n)
 
             OUT.write("wait\n")
-            OUT.write("echo \"----------- %d ----------\"\n" % n)
+            OUT.write("echo \"----------- %d ----------\"\n" % (n+1))
 
         os.chmod(sub_shell_fname, stat.S_IRWXU)  # 0700
 
