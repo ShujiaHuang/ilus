@@ -32,7 +32,7 @@ def _make_process_shell(output_shell_fname, shell_log_directory, process_shells=
     e_log_file = shell_log_directory + ".e.log.list"
 
     if not is_overwrite and os.path.exists(output_shell_fname):
-        print("%s is already existed. Please set -f parameter if you want to overwrite." % output_shell_fname)
+        print("%s is already exist. Please set -f parameter if you want to overwrite." % output_shell_fname)
         return
 
     _create_a_total_shell_file(process_shells, output_shell_fname, shell_log_directory, o_log_file, e_log_file)
