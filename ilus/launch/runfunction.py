@@ -8,6 +8,7 @@ import gzip
 from ilus import utils
 from ilus.modules.ngsaligner import bwa
 from ilus.modules.variants import gatk
+from ilus.modules.vcf import bedtools
 
 IS_RM_SUBBAM = True
 
@@ -243,6 +244,34 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione):
     return genotype_vcf_shell_files_list
 
 
-def variantrecalibrator(kwargs, aione):
+def gatk_variantrecalibrator(kwargs, out_folder_name, aione):
     """Run VQSR"""
-    return aione
+    output_dirtory = os.path.join(kwargs.outdir, out_folder_name, "output")
+    shell_dirtory = os.path.join(kwargs.outdir, out_folder_name, "shell")
+    utils.safe_makedir(output_dirtory)
+    utils.safe_makedir(shell_dirtory)
+
+    genotype_vqsr_fname = os.path.join(output_dirtory, "%s.VQSR.vcf.gz" % kwargs.project_name)
+    combine_vcf_fname = os.path.join(output_dirtory, "%s.raw.vcf.gz" % kwargs.project_name)
+    shell_fname = os.path.join(shell_dirtory, "%s.VQSR.sh" % kwargs.project_name)
+
+    cmd = []
+    if len(aione["intervals"]) > 1:
+        # concat-vcf
+        concat_vcf_cmd = bedtools.concat(aione["config"],
+                                         [aione["genotype"][interval] for interval in aione["intervals"]],
+                                         combine_vcf_fname)
+        cmd.append(concat_vcf_cmd)
+    else:
+        combine_vcf_fname = aione["genotype"][aione["interval"][0]]
+
+    # VQSR
+    echo_mark_done = "echo \"[VQSR] %s done\"" % genotype_vqsr_fname
+    cmd.append(echo_mark_done)
+    cmd.append(gatk.variantrecalibrator(aione["config"], combine_vcf_fname, genotype_vqsr_fname))
+
+    if not os.path.exists(shell_fname) or kwargs.overwrite:
+        _create_cmd_file(shell_fname, cmd)
+
+    # Only one VQSR result
+    return [["%s.VQSR" % kwargs.project_name, shell_fname]]

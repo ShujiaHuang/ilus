@@ -104,6 +104,60 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
         if "vqsr_java_options" in config["gatk"] \
            and len(config["gatk"]["vqsr_java_options"]) else ""
 
-    vqsr_cmd = ""
+    vqsr_options = " ".join(config["gatk"]["vqsr_options"]) if "vqsr_options" in config["gatk"] else ""
 
-    return
+    reference = config["resources"]["reference"]  # reference fasta
+
+    # Set name
+    out_prefix = output_vcf_fname.replace(".gz", "").replace(".vcf", "")  # delete .vcf.gz
+    out_snp_vqsr_fname = out_prefix + ".SNPs.vcf.gz"
+
+    resource_hapmap = config["gatk"]["bundle"]["hapmap"]
+    resource_omni = config["gatk"]["bundle"]["mills"]
+    resource_1000G = config["gatk"]["bundle"]["1000G"]
+    resource_dbsnp = config["gatk"]["bundle"]["dbsnp"]
+    resource_mills_gold_indels = config["gatk"]["bundle"]["mills"]
+
+    # SNP VQSR
+    snp_vqsr_cmd = ("time {gatk} {java_options} VariantRecalibrator "
+                    "-R {reference} "
+                    "-V {input_vcf} "
+                    "--resource:hapmap,known=false,training=true,truth=true,prior=15.0 {resource_hapmap} "
+                    "--resource:omini,known=false,training=true,truth=false,prior=12.0 {resource_omni} "
+                    "--resource:1000G,known=false,training=true,truth=false,prior=10.0 {resource_1000G} "
+                    "--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 {resource_dbsnp} "
+                    "{vqsr_options} "
+                    "-mode SNP "
+                    "--tranches-file {out_prefix}.SNPs.tranches "
+                    "--rscript-file {out_prefix}.SNPs.plots.R "
+                    "-O {out_prefix}.SNPs.recal").format(**locals())
+
+    apply_snp_vqsr_cmd = ("time {gatk} {java_options} ApplyVQSR "
+                          "-R {reference} "
+                          "-V {input_vcf} "
+                          "--tranches-file {out_prefix}.SNPs.tranches "
+                          "--recal-file {out_prefix}.SNPs.recal "
+                          "--truth-sensitivity-filter-level 99.0 "
+                          "-mode SNP "
+                          "-O {out_snp_vqsr_fname}").format(**locals())
+
+    # Indel VQSR after SNP
+    indel_vqsr_cmd = ("time {gatk} {java_options} VariantRecalibrator "
+                      "-R {reference} "
+                      "-V {out_snp_vqsr_fname} "
+                      "--resource:mills,known=true,training=true,truth=true,prior=12.0 {resource_mills_gold_indels} "
+                      "{vqsr_options} "
+                      "--tranches-file {out_prefix}.INDELs.tranches "
+                      "--rscript-file {out_prefix}.INDELs.plots.R "
+                      "-mode INDEL "
+                      "-O {out_prefix}.INDELs.recal").format(**locals())
+    apply_indel_vqsr_cmd = ("time {gatk} {java_options} ApplyVQSR "
+                            "-R {reference} "
+                            "-V {out_snp_vqsr_fname} "
+                            "--truth-sensitivity-filter-level 99.0 "
+                            "--tranches-file {out_prefix}.INDELs.tranches "
+                            "--recal-file {out_prefix}.INDELs.recal "
+                            "-mode INDEL "
+                            "-O {output_vcf_fname} && rm -f {out_snp_vqsr_fname}").format(**locals())
+
+    return " && ".join([snp_vqsr_cmd, apply_snp_vqsr_cmd, indel_vqsr_cmd, apply_indel_vqsr_cmd])

@@ -4,7 +4,7 @@ import stat
 
 from ilus.utils import safe_makedir
 from ilus.launch.runfunction import bwamem, gatk_markduplicates, gatk_baserecalibrator, \
-    gatk_haplotypecaller_gvcf, gatk_genotypeGVCFs
+    gatk_haplotypecaller_gvcf, gatk_genotypeGVCFs, gatk_variantrecalibrator
 
 
 def _create_a_total_shell_file(shell_list, out_shell_filename, sub_shell_log_dir, o_log_file, e_log_file):
@@ -41,7 +41,7 @@ def _make_process_shell(output_shell_fname, shell_log_directory, process_shells=
 
 def wgs(kwargs, aione):
     # This are the WGS processes.
-    wgs_process = ["align", "markdup", "BQSR", "gvcf", "genotype"]
+    wgs_process = ["align", "markdup", "BQSR", "gvcf", "genotype", "VQSR"]
     runner_module = {
         # [func, shell_file, shell_log_folder, output_folder]
 
@@ -61,7 +61,7 @@ def wgs(kwargs, aione):
         "genotype": [gatk_genotypeGVCFs, "step5.genotype.sh", "05.genotype", "03.genotype"],
 
         # Variant recalibrator
-        "VQSR": [],
+        "VQSR": [gatk_variantrecalibrator, "step6.VQSR.sh", "06.VQSR", "03.genotype"],
 
         # Summary and status statistic
         "summary": []
