@@ -230,7 +230,7 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione):
         genotype_vcf_fname = os.path.join(output_dirtory, "%s.%s.vcf.gz" % (kwargs.project_name, interval))
         sub_shell_fname = os.path.join(shell_dirtory, "%s.%s.genotype.sh" % (kwargs.project_name, interval))
         sample_gvcf_list = aione["gvcf"][interval]
-        cmd = [gatk.gatk_genotypegvcfs(aione["config"], sample_gvcf_list, genotype_vcf_fname)]
+        cmd = [gatk.genotypegvcfs(aione["config"], sample_gvcf_list, genotype_vcf_fname)]
 
         echo_mark_done = "echo \"[Genotype] %s done\"" % interval
         cmd.append(echo_mark_done)

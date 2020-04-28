@@ -67,7 +67,7 @@ def haplotypecaller_gvcf(config, input_bam, output_gvcf_fname, interval=None):
     return cmd
 
 
-def gatk_genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname):
+def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname):
     gatk = config["gatk"]["gatk"]
     java_options = "--java-options \"%s\"" % config["gatk"]["genotype_java_options"] \
         if "genotype_java_options" in config["gatk"] \
