@@ -267,8 +267,7 @@ def gatk_variantrecalibrator(kwargs, out_folder_name, aione):
 
     # VQSR
     cmd.append(gatk.variantrecalibrator(aione["config"], combine_vcf_fname, genotype_vqsr_fname))
-    echo_mark_done = "echo \"[VQSR] %s done\"" % genotype_vqsr_fname
-    cmd.append(echo_mark_done)
+    cmd.append("echo \"[VQSR] %s done\"" % genotype_vqsr_fname)
 
     if not os.path.exists(shell_fname) or kwargs.overwrite:
         _create_cmd_file(shell_fname, cmd)
