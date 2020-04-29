@@ -20,7 +20,7 @@ bcftools:
 
 bedtools:
     bedtools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bedtools
-    concat_options: [""]
+    concat_options: []
     genomecov_options: ["genomecov -bga -split"]
 
 sambamba:
@@ -34,11 +34,11 @@ tabix: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/tabix
 
 gatk:
   gatk: /WORK/gzfezx_shhli_3/BioSoftware/gatk/4.1.4.1/gatk
-  markdup_java_options: "-Xmx8G"
-  bqsr_java_options: "-Xmx8G"
-  hc_gvcf_java_options: "-Xmx4G"
-  genotype_java_options: "-Xmx8G"
-  vqsr_java_options: "-Xmx10G"
+  markdup_java_options: ["-Xmx8G", "-Djava.io.tmpdir=/cache"]
+  bqsr_java_options: ["-Xmx8G", "-Djava.io.tmpdir=/cache"]
+  hc_gvcf_java_options: ["-Xmx4G"]
+  genotype_java_options: ["-Xmx8G"]
+  vqsr_java_options: ["-Xmx10G"]
   vqsr_options: [
     "-an DP -an QD -an FS -an SOR -an ReadPosRankSum -an MQRankSum",
     "-tranche 100.0 -tranche 99.9 -tranche 99.5 -tranche 99.0 -tranche 95.0 -tranche 90.0",

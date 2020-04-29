@@ -8,7 +8,7 @@ import os
 
 def markduplicates(config, input_bam, output_markdup_bam, out_metrics_fname):
     gatk = config["gatk"]["gatk"]
-    java_options = "--java-options \"%s\"" % config["gatk"]["markdup_java_options"] \
+    java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["markdup_java_options"]) \
         if "markdup_java_options" in config["gatk"] \
            and len(config["gatk"]["markdup_java_options"]) else ""
 
@@ -20,7 +20,7 @@ def markduplicates(config, input_bam, output_markdup_bam, out_metrics_fname):
 
 def baserecalibrator(config, input_bam, output_bqsr_bam, out_bqsr_recal_table):
     gatk = config["gatk"]["gatk"]
-    java_options = "--java-options \"%s\"" % config["gatk"]["bqsr_java_options"] \
+    java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["bqsr_java_options"]) \
         if "bqsr_java_options" in config["gatk"] \
            and len(config["gatk"]["bqsr_java_options"]) else ""
 
@@ -50,7 +50,7 @@ def baserecalibrator(config, input_bam, output_bqsr_bam, out_bqsr_recal_table):
 
 def haplotypecaller_gvcf(config, input_bam, output_gvcf_fname, interval=None):
     gatk = config["gatk"]["gatk"]
-    java_options = "--java-options \"%s\"" % config["gatk"]["hc_gvcf_java_options"] \
+    java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["hc_gvcf_java_options"]) \
         if "hc_gvcf_java_options" in config["gatk"] \
            and len(config["gatk"]["hc_gvcf_java_options"]) else ""
 
@@ -69,7 +69,7 @@ def haplotypecaller_gvcf(config, input_bam, output_gvcf_fname, interval=None):
 
 def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname):
     gatk = config["gatk"]["gatk"]
-    java_options = "--java-options \"%s\"" % config["gatk"]["genotype_java_options"] \
+    java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["genotype_java_options"]) \
         if "genotype_java_options" in config["gatk"] \
            and len(config["gatk"]["genotype_java_options"]) else ""
 
@@ -100,7 +100,7 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname):
 
 def variantrecalibrator(config, input_vcf, output_vcf_fname):
     gatk = config["gatk"]["gatk"]
-    java_options = "--java-options \"%s\"" % config["gatk"]["vqsr_java_options"] \
+    java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["vqsr_java_options"]) \
         if "vqsr_java_options" in config["gatk"] \
            and len(config["gatk"]["vqsr_java_options"]) else ""
 
