@@ -1,13 +1,13 @@
 ```bash
-python ../ilus/runner.py pipeline -C ../config/ilus_sys.yaml -L fastq.list -O ./
+python ../ilus/runner.py WGS -C ../config/ilus_sys.yaml -L fastq.list -O ./
 ```
 
 ```bash
-python ../ilus/runner.py genotype -C ../config/ilus_sys.yaml -L gvcf.list -O 03.genotype 
+python ../ilus/runner.py genotype-joint-calling -C ../config/ilus_sys.yaml -L gvcf.list -O 03.genotype 
 ```
 
 ```bash
-python ../ilus/runner.py genotype -C ../config/ilus_sys.yaml -L gvcf.list -O 03.genotype --as_pipe_shell_order -f
+python ../ilus/runner.py genotype-joint-calling -C ../config/ilus_sys.yaml -L gvcf.list -O 03.genotype --as_pipe_shell_order -f
 ```
 ```bash
 python ../../scripts/yhbatch_slurm_jobs.py -I step1.bwa.sh -n 10 -t 3

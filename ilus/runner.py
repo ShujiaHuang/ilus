@@ -31,7 +31,7 @@ def parse_commandline_args():
     commands = cmdparser.add_subparsers(dest="command", title="ilus commands")
 
     # The standard pipeline for WGS.
-    pipeline_cmd = commands.add_parser("pipeline", help="Creating pipeline for WGS(from fastq to genotype VCF)")
+    pipeline_cmd = commands.add_parser("WGS", help="Creating pipeline for WGS(from fastq to genotype VCF)")
     pipeline_cmd.add_argument("-C", "--conf", dest="sysconf", required=True,
                               help="YAML configuration file specifying details about system.")
     pipeline_cmd.add_argument("-L", "--fastqlist", dest="fastqlist", type=str, required=True,
@@ -44,7 +44,7 @@ def parse_commandline_args():
                               help="A directory for output results.")
 
     # Genotype from GVCFs
-    genotype_cmd = commands.add_parser("genotype", help="Genotype from GVCFs.")
+    genotype_cmd = commands.add_parser("genotype-joint-calling", help="Genotype from GVCFs.")
     genotype_cmd.add_argument("-C", "--conf", dest="sysconf", required=True,
                               help="YAML configuration file specifying details about system.")
     genotype_cmd.add_argument("-L", "--gvcflist", dest="gvcflist", type=str, required=True,
@@ -66,8 +66,8 @@ def parse_commandline_args():
 if __name__ == "__main__":
     START_TIME = datetime.now()
     runner = {
-        "pipeline": wgs,
-        "genotype": genotypeGVCFs
+        "WGS": wgs,
+        "genotype-joint-calling": genotypeGVCFs
     }
 
     kwargs = parse_commandline_args()

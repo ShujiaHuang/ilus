@@ -9,10 +9,15 @@ def concat(config, input_vcfs, output_vcf):
 
     tabix = config["tabix"]
     bedtools = config["bedtools"]["bedtools"]
+
     concat_options = config["bedtools"]["concat_options"] \
         if "concat_options" in config["bedtools"] else []
 
-    concat_options = " ".join(concat_options)
+    concat_options = " ".join(concat_options).replace("-O z", "")
+
+    # Always output gz compress
+    if not output_vcf.endswith(".gz"):
+        output_vcf += ".gz"
 
     cmd = [("time {bedtools} concat {concat_options} "
             "-O z "

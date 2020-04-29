@@ -40,8 +40,7 @@ def _make_process_shell(output_shell_fname, shell_log_directory, process_shells=
 
 
 def wgs(kwargs, aione):
-    # This are the WGS processes.
-    wgs_process = ["align", "markdup", "BQSR", "gvcf", "genotype", "VQSR"]
+    # All the WGS processes.
     runner_module = {
         # [func, shell_file, shell_log_folder, output_folder]
 
@@ -63,7 +62,7 @@ def wgs(kwargs, aione):
         # Variant recalibrator
         "VQSR": [gatk_variantrecalibrator, "step6.VQSR.sh", "06.VQSR", "03.genotype"],
 
-        # Summary and status statistic
+        # Todo: Integrate summary and status statistic information into ilus pipeline.
         "summary": []
     }
 
@@ -74,7 +73,7 @@ def wgs(kwargs, aione):
     safe_makedir(shell_dirtory)
     safe_makedir(shell_log_dirtory)
 
-    for p in wgs_process:
+    for p in ["align", "markdup", "BQSR", "gvcf", "genotype", "VQSR"]:
         func, shell_fname, shell_log_folder, output_result_folder = runner_module[p]
         _make_process_shell(output_shell_fname=os.path.join(shell_dirtory, shell_fname),
                             shell_log_directory=os.path.join(shell_log_dirtory, shell_log_folder),
