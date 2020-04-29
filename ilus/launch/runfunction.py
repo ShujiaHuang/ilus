@@ -9,6 +9,7 @@ from ilus import utils
 from ilus.modules.ngsaligner import bwa
 from ilus.modules.variants import gatk
 from ilus.modules.vcf import bedtools
+from ilus.modules.summary import bam
 
 IS_RM_SUBBAM = True
 
@@ -127,7 +128,7 @@ def gatk_markduplicates(kwargs, out_folder_name, aione):
     return markdup_shell_files_list  # [[sample, sample_shell_fname], ...]
 
 
-def gatk_baserecalibrator(kwargs, out_folder_name, aione):
+def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=True):
     shell_dirtory = os.path.join(kwargs.outdir, out_folder_name, "shell", "bqsr")
     utils.safe_makedir(shell_dirtory)
 
@@ -139,9 +140,16 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione):
         out_bqsr_bam_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.bam")
         out_bqsr_recal_table = os.path.join(dirname, os.path.splitext(f_name)[0] + ".recal.table")
 
+        out_bamstats_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.stats")
+        genome_cvg_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.depth.bed.gz")
+
         cmd = [gatk.baserecalibrator(aione["config"], sample_markdup_bam, out_bqsr_bam_fname, out_bqsr_recal_table)]
         if IS_RM_SUBBAM:
             cmd.append("rm -rf %s" % sample_markdup_bam)
+
+        if is_calculate_summary:
+            cmd.append(bam.stats(aione["config"], out_bqsr_bam_fname, out_bamstats_fname))
+            cmd.append(bam.genomecoverage(aione["config"], out_bqsr_bam_fname, genome_cvg_fname))
 
         echo_mark_done = "echo \"[BQSR] %s done\"" % sample
         cmd.append(echo_mark_done)
@@ -274,3 +282,4 @@ def gatk_variantrecalibrator(kwargs, out_folder_name, aione):
 
     # Only one VQSR result
     return [["%s.VQSR" % kwargs.project_name, shell_fname]]
+

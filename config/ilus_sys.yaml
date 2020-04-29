@@ -1,8 +1,3 @@
-# Define resources to be used for individual programs on multicore machines.
-# These can be defined specifically for memory and processor availability.
-resources:
-  reference: /Volumes/Macintosh_HD/Users/huangshujia/PycharmProjects/Olympus/tests/data/germline/ref/human_g1k_b37_20.fasta
-
 # Configuration file specifying system details for running an analysis pipeline
 # location programs for pipeline.
 aligner:
@@ -11,8 +6,9 @@ aligner:
 
 samtools:
     samtools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/samtools
-    sort_options: [-@ 8]
-    merge_options: [-@ 8 -f]
+    sort_options: ["-@ 8"]
+    merge_options: ["-@ 8 -f"]
+    stats_options: ["-@ 8"]
 
 bcftools:
     bcftools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bcftools
@@ -21,12 +17,12 @@ bcftools:
 bedtools:
     bedtools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bedtools
     concat_options: []
-    genomecov_options: ["genomecov -bga -split"]
+    genomecov_options: ["-bga -split"]
 
 sambamba:
   sambamba: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/sambamba
-  sort_options: [-t 8]
-  merge_options: [-t 8]
+  sort_options: ["-t 8"]
+  merge_options: ["-t 8"]
   markdup_options: []
 
 bgzip: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bgzip
