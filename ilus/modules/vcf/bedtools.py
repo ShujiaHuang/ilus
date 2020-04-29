@@ -9,7 +9,6 @@ def concat(config, input_vcfs, output_vcf):
 
     tabix = config["tabix"]
     bedtools = config["bedtools"]["bedtools"]
-
     concat_options = "%s" % " ".join(config["bedtools"]["concat_options"]).replace("-O z", "") \
         if "concat_options" in config["bedtools"] and \
            len(config["bedtools"]["concat_options"]) else ""
