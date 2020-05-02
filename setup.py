@@ -30,7 +30,7 @@ if __name__ == "__main__":
           maintainer=MAINTAINER,
           maintainer_email=MAINTAINER_EMAIL,
           description=DESCRIPTION,
-          long_description=(open(ROOT_DIR + "/README.rst").read()),
+          long_description=(open(ROOT_DIR + "/README.md").read()),
           license=LICENSE,
           url=URL,
           download_url=DOWNLOAD_URL,

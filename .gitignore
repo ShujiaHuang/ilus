@@ -1,14 +1,11 @@
 gittests/data/
 
 venv/
+venv3/
 *.egg-info/
 dist/
 build/
 .ipynb_checkpoints/
-
-
-human_g1k_b37_20.fasta.*
-
 
 *.sh
 *.py[cod]
