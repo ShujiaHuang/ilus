@@ -83,6 +83,26 @@ def wgs(kwargs, aione):
     return aione
 
 
+def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
+
+    kwargs.outdir = safe_makedir(os.path.abspath(kwargs.outdir))  # return abspath
+    root_path, output_result_folder = os.path.split(kwargs.outdir)
+
+    shell_dirtory = os.path.join(root_path, "00.shell" if kwargs.as_pipe_shell_order else "shell")
+    if not os.path.exists(shell_dirtory):
+        safe_makedir(shell_dirtory)
+
+    shell_log_dirtory = os.path.join(shell_dirtory, "loginfo")
+    safe_makedir(shell_log_dirtory)
+
+    _make_process_shell(output_shell_fname=os.path.join(shell_dirtory, shell_fname),
+                        shell_log_directory=os.path.join(shell_log_dirtory, shell_log_folder),
+                        process_shells=function_name(kwargs, output_result_folder, aione),
+                        is_overwrite=kwargs.overwrite)
+
+    return
+
+
 def genotypeGVCFs(kwargs, aione):
     """GenotypeGVCFs by GATK"""
 
@@ -101,26 +121,33 @@ def genotypeGVCFs(kwargs, aione):
 
             aione["gvcf"][interval].append(gvcf)
 
-    kwargs.outdir = safe_makedir(os.path.abspath(kwargs.outdir))  # return abspath
-    root_path, output_result_folder = os.path.split(kwargs.outdir)
-
-    shell_dirtory = os.path.join(root_path, "00.shell" if kwargs.as_pipe_shell_order else "shell")
-    if not os.path.exists(shell_dirtory):
-        safe_makedir(shell_dirtory)
-
-    shell_log_dirtory = os.path.join(shell_dirtory, "loginfo")
-    safe_makedir(shell_log_dirtory)
-
     shell_fname, shell_log_folder = ["step5.genotype.sh", "05.genotype"] if kwargs.as_pipe_shell_order \
         else ["genotype.sh", "genotype"]
 
-    _make_process_shell(output_shell_fname=os.path.join(shell_dirtory, shell_fname),
-                        shell_log_directory=os.path.join(shell_log_dirtory, shell_log_folder),
-                        process_shells=gatk_genotypeGVCFs(kwargs, output_result_folder, aione),
-                        is_overwrite=kwargs.overwrite)
+    _f(kwargs, aione, shell_fname, shell_log_folder, gatk_genotypeGVCFs)
 
     return aione
 
 
 def variantrecalibrator(kwargs, aione):
-    pass
+
+    aione["intervals"] = []
+    aione["genotype"] = {}  # will be called in ``gatk_variantrecalibrator``
+    with open(kwargs.vcflist) as I:
+        # Format in vcfilist: [Interval  vcf_file_path]
+        for line in I:
+            if line.startswith("#"):
+                continue
+
+            interval, vcf = line.strip().split()
+            if interval not in aione["genotype"]:
+                aione["intervals"].append(interval)
+
+            aione["genotype"][interval] = vcf
+
+    shell_fname, shell_log_folder = ["step6.VQSR.sh", "06.VQSR"] if kwargs.as_pipe_shell_order \
+        else ["vqsr.sh", "genotype"]
+
+    _f(kwargs, aione, shell_fname, shell_log_folder, gatk_variantrecalibrator)
+
+    return aione
