@@ -13,15 +13,6 @@ from datetime import datetime
 from ilus.pipeline import wgs, genotypeGVCFs, variantrecalibrator
 
 
-# from ilus.tools.gatk import check_bundlefile_index
-# def checkconfig(config):
-#     """check GATK bundle is been indexed or not"""
-#     if config["resources"]["gatk_bundle"]:
-#         check_bundlefile_index(config["variantcaller"]["gatk"], config["resources"]["gatk_bundle"])
-#
-#     return
-
-
 def parse_commandline_args():
     """Parse input commandline arguments, handling multiple cases.
     """
