@@ -3,6 +3,8 @@
 Version 0.1.0 (April 23, 2020)
 Copyright (c) 2020 Shujia Huang
 """
+import os
+
 try:
     from setuptools import setup, find_packages
     _has_setuptools = True
@@ -14,11 +16,12 @@ DESCRIPTION = "ilus: A python package for NGS data analysis."
 DISTNAME = 'ilus'
 MAINTAINER = 'Shujia Huang'
 MAINTAINER_EMAIL = 'hshujia@qq.com'
-URL = 'https://git.bgionline.cn/bioinformatics/ilus'
+URL = 'https://github.com/ShujiaHuang/ilus'
 LICENSE = 'BSD (3-clause)'
-DOWNLOAD_URL = 'https://git.bgionline.cn/bioinformatics/ilus'
+DOWNLOAD_URL = 'https://github.com/ShujiaHuang/ilus'
 VERSION = "0.1.0"
 
+ROOT_DIR = os.path.split(os.path.realpath(__file__))[0]
 
 if __name__ == "__main__":
     setup(name=DISTNAME,
@@ -27,7 +30,7 @@ if __name__ == "__main__":
           maintainer=MAINTAINER,
           maintainer_email=MAINTAINER_EMAIL,
           description=DESCRIPTION,
-          long_description=(open("README.md").read()),
+          long_description=(open(ROOT_DIR + "/README.rst").read()),
           license=LICENSE,
           url=URL,
           download_url=DOWNLOAD_URL,
@@ -38,6 +41,10 @@ if __name__ == "__main__":
           ],
           version=VERSION,
           include_package_data=True,
+          # scripts = [],
+          # entry_points={
+          #     "console_scripts": []
+          # },
           classifiers=[
              'Intended Audience :: Science/Research',
              'Programming Language :: Python :: 2.7',
