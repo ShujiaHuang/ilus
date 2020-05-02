@@ -4,6 +4,7 @@ Author: Shujia Huang
 Date: 2020-04-29 14:50:25
 """
 
+
 def stats(config, input_bamfile, output_bamstats_fname):
     samtools = config["samtools"]["samtools"]
     stats_options = "%s" % " ".join(config["samtools"]["stats_options"]) \
@@ -12,6 +13,7 @@ def stats(config, input_bamfile, output_bamstats_fname):
 
     cmd = "time {samtools} stats {stats_options} {input_bamfile} > {output_bamstats_fname}".format(**locals())
     return cmd
+
 
 def genomecoverage(config, input_bamfile, output_cvg_fname):
     tabix = config["tabix"]
