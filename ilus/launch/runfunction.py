@@ -154,6 +154,7 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=T
         if kwargs.cram:
             out_cram_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.cram")
             cmd.append(bwa.bam_to_cram(aione["config"], out_bqsr_bam_fname, out_cram_fname))
+            cmd.append("rm -rf %s" % out_bqsr_bam_fname)
             out_bqsr_bam_fname = out_cram_fname
 
         echo_mark_done = "echo \"[BQSR] %s done\"" % sample
