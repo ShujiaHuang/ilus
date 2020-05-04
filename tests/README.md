@@ -1,5 +1,5 @@
 ```bash
-python ../ilus/runner.py WGS -C ilus_sys.yaml -L fastq.list -O ./
+python ../ilus/runner.py WGS -c -C ilus_sys.yaml -L fastq.list -O ./
 ```
 
 ```bash
