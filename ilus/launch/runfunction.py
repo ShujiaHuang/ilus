@@ -151,6 +151,11 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=T
             cmd.append(bam.stats(aione["config"], out_bqsr_bam_fname, out_bamstats_fname))
             cmd.append(bam.genomecoverage(aione["config"], out_bqsr_bam_fname, genome_cvg_fname))
 
+        if kwargs.cram:
+            out_cram_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.cram")
+            cmd.append(bwa.bam_to_cram(aione["config"], out_bqsr_bam_fname, out_cram_fname))
+            out_bqsr_bam_fname = out_cram_fname
+
         echo_mark_done = "echo \"[BQSR] %s done\"" % sample
         cmd.append(echo_mark_done)
         sample_shell_fname = os.path.join(shell_dirtory, sample + ".bqsr.sh")

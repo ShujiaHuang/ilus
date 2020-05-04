@@ -13,10 +13,11 @@ def check(input_fname):
     is_finish = False
     if os.path.exists(input_fname):
         with open(input_fname) as I:
-            lines = I.readlines()
-            last_line = lines[-1].strip()
-            match = pattern.match(last_line)
+            last_line = ""
+            for line in I:
+                last_line = line.strip()
 
+            match = pattern.match(last_line)
             if match:
                 is_finish = True
 
@@ -39,7 +40,7 @@ if __name__ == "__main__":
 
             if not is_finish:
                 is_all_finish = False
-                print ("[unfinish]%s\t%s" % (sample, task_shell))
+                print ("[unfinish]\t%s\t%s" % (sample, task_shell))
 
     if is_all_finish:
         print ("** All Jobs done **")

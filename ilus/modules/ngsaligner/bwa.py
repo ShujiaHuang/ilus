@@ -29,3 +29,11 @@ def _get_bwa_mem_cmd(fastq1, fastq2, ref_index, rg_info, outfile_prefix, config)
                "&& rm -rf {outfile_prefix}.bam").format(**locals())
 
     return "{outfile_prefix}.sorted.bam".format(**locals()), bwa_cmd
+
+
+def bam_to_cram(config, input_bam_fname, output_cram_fname):
+    samtools = config["samtools"]["samtools"]
+    reference = config["resources"]["reference"]  # reference fasta
+
+    return ("time {samtools} view -CS -T {reference} {input_bam_fname} > {output_cram_fname} && "
+            "{samtools} index {output_cram_fname}").format(**locals())

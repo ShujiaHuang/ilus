@@ -30,6 +30,8 @@ def parse_commandline_args():
                               help="Name of the project. [test]")
     pipeline_cmd.add_argument("-f", "--force", dest="overwrite", action="store_true",
                               help="Force overwrite existing shell scripts and folders.")
+    pipeline_cmd.add_argument("-c", "--cram", dest="cram", action="store_true",
+                              help="Covert BAM to CRAM after BQSR.")
     pipeline_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
                               help="A directory for output results.")
 
