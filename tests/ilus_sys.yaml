@@ -30,8 +30,8 @@ tabix: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/tabix
 
 gatk:
   gatk: /WORK/gzfezx_shhli_3/BioSoftware/gatk/4.1.4.1/gatk
-  markdup_java_options: ["-Xmx8G", "-Djava.io.tmpdir=/cache"]
-  bqsr_java_options: ["-Xmx8G", "-Djava.io.tmpdir=/cache"]
+  markdup_java_options: ["-Xmx10G", "-Djava.io.tmpdir=/your_path/cache"]
+  bqsr_java_options: ["-Xmx8G", "-Djava.io.tmpdir=/your_path/cache"]
   hc_gvcf_java_options: ["-Xmx4G"]
   genotype_java_options: ["-Xmx8G"]
   vqsr_java_options: ["-Xmx10G"]

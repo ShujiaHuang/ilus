@@ -42,7 +42,7 @@ if __name__ == "__main__":
         os.makedirs(sub_shell_dir)
 
     for i, k in enumerate(range(0, total_cmd, inter_step_size)):
-        sub_shell_fname = os.path.join(sub_shell_dir, "work.%d_%d.sh" % (i+1, args.number))
+        sub_shell_fname = os.path.join(sub_shell_dir, "work.%d.sh" % (i+1))
         with open(sub_shell_fname, "w") as OUT:
             OUT.write("#!/bin/bash\n")
 
