@@ -6,7 +6,8 @@ import re
 import os
 import sys
 
-pattern = re.compile(r'^\[\S+\]\s+(\S+)\s+done')
+# Match anything looks like: "[xx] xxx done" or "[xx] xx xxx ... done"
+pattern = re.compile(r'^\[\S+\]\s+\S+.*?\s+done$')
 
 
 def check(input_fname):
