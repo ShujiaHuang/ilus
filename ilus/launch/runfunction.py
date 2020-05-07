@@ -56,7 +56,6 @@ def bwamem(kwargs, out_folder_name, aione):
             lane_bam_file, cmd = bwa.bwa_mem(aione["config"], out_prefix, rgID, fq1, fq2)
             sample_bamfiles_by_lane[sample_id].append([lane_bam_file, cmd])
 
-    # bwa_shell_files_dict = {}
     bwa_shell_files_list = []
     aione["sample_final_sorted_bam"] = []
     for sample, sample_outdir in samples:
@@ -152,9 +151,12 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=T
             cmd.append(bam.genomecoverage(aione["config"], out_bqsr_bam_fname, genome_cvg_fname))
 
         if kwargs.cram:
+            out_bqsr_bai_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.bai")
+
             out_cram_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.cram")
             cmd.append(bwa.bam_to_cram(aione["config"], out_bqsr_bam_fname, out_cram_fname))
             cmd.append("rm -rf %s" % out_bqsr_bam_fname)
+            cmd.append("rm -rf %s" % out_bqsr_bai_fname)
             out_bqsr_bam_fname = out_cram_fname
 
         echo_mark_done = "echo \"[BQSR] %s done\"" % sample
