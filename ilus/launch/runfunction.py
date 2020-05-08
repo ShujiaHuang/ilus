@@ -62,14 +62,12 @@ def bwamem(kwargs, out_folder_name, aione):
         sample_final_bamfile = os.path.join(sample_outdir, sample + ".sorted.bam")
         aione["sample_final_sorted_bam"].append([sample, sample_final_bamfile])
 
-        lane_bam_files = []
         if len(sample_bamfiles_by_lane[sample]) == 1:
-            lane_bam_files.append(sample_bamfiles_by_lane[sample][0])
-            cmd = [sample_bamfiles_by_lane[sample][1]]
+            lane_bam_file, cmd = sample_bamfiles_by_lane[sample][0][0], [sample_bamfiles_by_lane[sample][0][1]]
 
-            if sample_final_bamfile != sample_bamfiles_by_lane[sample][0]:
+            if sample_final_bamfile != lane_bam_file:
                 # single lane does not need to merge bamfiles
-                cmd.append("mv -f %s %s" % (sample_bamfiles_by_lane[sample][0], sample_final_bamfile))
+                cmd.append("mv -f %s %s" % (lane_bam_file, sample_final_bamfile))
 
         else:
             samtools = aione["config"]["samtools"]["samtools"]
