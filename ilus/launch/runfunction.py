@@ -8,7 +8,7 @@ import gzip
 from ilus import utils
 from ilus.modules.ngsaligner import bwa
 from ilus.modules.variants import gatk
-from ilus.modules.vcf import bedtools
+from ilus.modules.vcf import bcftools
 from ilus.modules.summary import bam
 
 IS_RM_SUBBAM = True
@@ -272,7 +272,7 @@ def gatk_variantrecalibrator(kwargs, out_folder_name, aione):
     cmd = []
     if len(aione["intervals"]) > 1:
         # concat-vcf
-        concat_vcf_cmd = bedtools.concat(aione["config"],
+        concat_vcf_cmd = bcftools.concat(aione["config"],
                                          [aione["genotype"][interval] for interval in aione["intervals"]],
                                          combine_vcf_fname)
         cmd.append(concat_vcf_cmd)
