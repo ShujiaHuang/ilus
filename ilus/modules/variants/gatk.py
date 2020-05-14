@@ -94,7 +94,7 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname):
                          "-V {combine_gvcf_fname} "
                          "-O {output_vcf_fname}").format(**locals()))
 
-    genotype_cmd.append("rm -rf %s" % combine_gvcf_fname)
+    genotype_cmd.append("rm -f %s %s.tbi" % (combine_gvcf_fname, combine_gvcf_fname))
     return " && ".join(genotype_cmd)
 
 
