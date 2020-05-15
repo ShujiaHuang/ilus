@@ -77,6 +77,8 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname):
 
     # create a combine gvcf
     directory, fname = os.path.split(output_vcf_fname)
+
+    # The prefix of file name of combine gvcf set to be the same with input ``fname``
     combine_gvcf_fname = os.path.join(directory, fname.replace(".vcf", ".g.vcf"))
 
     genotype_cmd = []
@@ -94,7 +96,7 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname):
                          "-V {combine_gvcf_fname} "
                          "-O {output_vcf_fname}").format(**locals()))
 
-    genotype_cmd.append("rm -rf %s" % combine_gvcf_fname)
+    genotype_cmd.append("rm -f %s %s.tbi" % (combine_gvcf_fname, combine_gvcf_fname))
     return " && ".join(genotype_cmd)
 
 
