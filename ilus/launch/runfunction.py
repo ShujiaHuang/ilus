@@ -61,30 +61,30 @@ def bwamem(kwargs, out_folder_name, aione):
     for sample, sample_outdir in samples:
         sample_final_bamfile = os.path.join(sample_outdir, sample + ".sorted.bam")
         aione["sample_final_sorted_bam"].append([sample, sample_final_bamfile])
-
-        if len(sample_bamfiles_by_lane[sample]) == 1:
-            lane_bam_file, cmd = sample_bamfiles_by_lane[sample][0][0], [sample_bamfiles_by_lane[sample][0][1]]
-
-            if sample_final_bamfile != lane_bam_file:
-                # single lane does not need to merge bamfiles
-                cmd.append("mv -f %s %s" % (lane_bam_file, sample_final_bamfile))
-
-        else:
-            samtools = aione["config"]["samtools"]["samtools"]
-            samtools_merge_options = " ".join([str(x) for x in aione["config"]["samtools"].get("merge_options", [])])
-
-            lane_bam_files = " ".join([f for f, _ in sample_bamfiles_by_lane[sample]])
-            cmd = [c for _, c in sample_bamfiles_by_lane[sample]]
-
-            # merge lane_bam_files into one and rm lane_bam_files
-            cmd.append("{samtools} merge {samtools_merge_options} {sample_final_bamfile} "
-                       "{lane_bam_files} && rm -rf {lane_bam_files}".format(**locals()))
-
-        echo_mark_done = "echo \"[bwa] %s done\"" % sample
-        cmd.append(echo_mark_done)
-
         sample_shell_fname = os.path.join(shell_dirtory, sample + ".bwa.sh")
+
         if not os.path.exists(sample_shell_fname) or kwargs.overwrite:
+            if len(sample_bamfiles_by_lane[sample]) == 1:
+
+                lane_bam_file, cmd = sample_bamfiles_by_lane[sample][0][0], [sample_bamfiles_by_lane[sample][0][1]]
+                if sample_final_bamfile != lane_bam_file:
+                    # single lane does not need to merge bamfiles
+                    cmd.append("mv -f %s %s" % (lane_bam_file, sample_final_bamfile))
+
+            else:
+                samtools = aione["config"]["samtools"]["samtools"]
+                samtools_merge_options = " ".join(
+                    [str(x) for x in aione["config"]["samtools"].get("merge_options", [])])
+
+                lane_bam_files = " ".join([f for f, _ in sample_bamfiles_by_lane[sample]])
+                cmd = [c for _, c in sample_bamfiles_by_lane[sample]]
+
+                # merge lane_bam_files into one and rm lane_bam_files
+                cmd.append("{samtools} merge {samtools_merge_options} {sample_final_bamfile} "
+                           "{lane_bam_files} && rm -rf {lane_bam_files}".format(**locals()))
+
+            echo_mark_done = "echo \"[bwa] %s done\"" % sample
+            cmd.append(echo_mark_done)
             _create_cmd_file(sample_shell_fname, cmd)
 
         bwa_shell_files_list.append([sample, sample_shell_fname])
@@ -106,17 +106,17 @@ def gatk_markduplicates(kwargs, out_folder_name, aione):
         # Setting Output path of markduplicate BAM file as the same as ``sample_sorted_bam``
         out_markdup_bam_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".markdup.bam")
         out_markdup_metrics_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".metrics.txt")
-        cmd = [
-            gatk.markduplicates(aione["config"], sample_sorted_bam, out_markdup_bam_fname, out_markdup_metrics_fname)]
-
-        if IS_RM_SUBBAM:
-            cmd.append("rm -rf %s" % sample_sorted_bam)  # save disk space
-
-        echo_mark_done = "echo \"[MarkDuplicates] %s done\"" % sample
-        cmd.append(echo_mark_done)
-
         sample_shell_fname = os.path.join(shell_dirtory, sample + ".markdup.sh")
+
         if not os.path.exists(sample_shell_fname) or kwargs.overwrite:
+            cmd = [gatk.markduplicates(aione["config"], sample_sorted_bam, out_markdup_bam_fname,
+                                       out_markdup_metrics_fname)]
+
+            if IS_RM_SUBBAM:
+                cmd.append("rm -rf %s" % sample_sorted_bam)  # save disk space
+
+            echo_mark_done = "echo \"[MarkDuplicates] %s done\"" % sample
+            cmd.append(echo_mark_done)
             _create_cmd_file(sample_shell_fname, cmd)
 
         markdup_shell_files_list.append([sample, sample_shell_fname])
@@ -140,27 +140,30 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=T
         out_bamstats_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.stats")
         genome_cvg_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.depth.bed.gz")
 
-        cmd = [gatk.baserecalibrator(aione["config"], sample_markdup_bam, out_bqsr_bam_fname, out_bqsr_recal_table)]
-        if IS_RM_SUBBAM:
-            cmd.append("rm -rf %s" % sample_markdup_bam)
-
-        if is_calculate_summary:
-            cmd.append(bam.stats(aione["config"], out_bqsr_bam_fname, out_bamstats_fname))
-            cmd.append(bam.genomecoverage(aione["config"], out_bqsr_bam_fname, genome_cvg_fname))
-
-        if kwargs.cram:
-            out_bqsr_bai_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.bai")
-
-            out_cram_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.cram")
-            cmd.append(bwa.bam_to_cram(aione["config"], out_bqsr_bam_fname, out_cram_fname))
-            cmd.append("rm -rf %s" % out_bqsr_bam_fname)
-            cmd.append("rm -rf %s" % out_bqsr_bai_fname)
-            out_bqsr_bam_fname = out_cram_fname
-
-        echo_mark_done = "echo \"[BQSR] %s done\"" % sample
-        cmd.append(echo_mark_done)
         sample_shell_fname = os.path.join(shell_dirtory, sample + ".bqsr.sh")
         if not os.path.exists(sample_shell_fname) or kwargs.overwrite:
+            cmd = [gatk.baserecalibrator(aione["config"],
+                                         sample_markdup_bam,
+                                         out_bqsr_bam_fname,
+                                         out_bqsr_recal_table)]
+            if IS_RM_SUBBAM:
+                cmd.append("rm -rf %s" % sample_markdup_bam)
+
+            if is_calculate_summary:
+                cmd.append(bam.stats(aione["config"], out_bqsr_bam_fname, out_bamstats_fname))
+                cmd.append(bam.genomecoverage(aione["config"], out_bqsr_bam_fname, genome_cvg_fname))
+
+            if kwargs.cram:
+                out_bqsr_bai_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.bai")
+
+                out_cram_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.cram")
+                cmd.append(bwa.bam_to_cram(aione["config"], out_bqsr_bam_fname, out_cram_fname))
+                cmd.append("rm -rf %s" % out_bqsr_bam_fname)
+                cmd.append("rm -rf %s" % out_bqsr_bai_fname)
+                out_bqsr_bam_fname = out_cram_fname
+
+            echo_mark_done = "echo \"[BQSR] %s done\"" % sample
+            cmd.append(echo_mark_done)
             _create_cmd_file(sample_shell_fname, cmd)
 
         bqsr_shell_files_list.append([sample, sample_shell_fname])
@@ -181,14 +184,15 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione):
         sample_shell_fname = os.path.join(sample_shell_dir, sample + ".%s.gvcf.sh" % interval)
         out_gvcf_fname = os.path.join(sample_output_dir, sample + ".%s.g.vcf.gz" % interval)
 
-        if raw_interval:
-            cmd = [gatk.haplotypecaller_gvcf(aione["config"], sample_bqsr_bam, out_gvcf_fname, interval=raw_interval)]
-        else:
-            cmd = [gatk.haplotypecaller_gvcf(aione["config"], sample_bqsr_bam, out_gvcf_fname)]
-
-        echo_mark_done = "echo \"[GVCF] %s %s done\"" % (sample, interval)
-        cmd.append(echo_mark_done)
         if not os.path.exists(sample_shell_fname) or kwargs.overwrite:
+            if raw_interval:
+                cmd = [
+                    gatk.haplotypecaller_gvcf(aione["config"], sample_bqsr_bam, out_gvcf_fname, interval=raw_interval)]
+            else:
+                cmd = [gatk.haplotypecaller_gvcf(aione["config"], sample_bqsr_bam, out_gvcf_fname)]
+
+            echo_mark_done = "echo \"[GVCF] %s %s done\"" % (sample, interval)
+            cmd.append(echo_mark_done)
             _create_cmd_file(sample_shell_fname, cmd)
 
         return sample_shell_fname, out_gvcf_fname
@@ -245,11 +249,11 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione):
         genotype_vcf_fname = os.path.join(output_dirtory, "%s.%s.vcf.gz" % (kwargs.project_name, interval))
         sub_shell_fname = os.path.join(shell_dirtory, "%s.%s.genotype.sh" % (kwargs.project_name, interval))
         sample_gvcf_list = aione["gvcf"][interval]
-        cmd = [gatk.genotypegvcfs(aione["config"], sample_gvcf_list, genotype_vcf_fname)]
 
-        echo_mark_done = "echo \"[Genotype] %s done\"" % interval
-        cmd.append(echo_mark_done)
         if not os.path.exists(sub_shell_fname) or kwargs.overwrite:
+            cmd = [gatk.genotypegvcfs(aione["config"], sample_gvcf_list, genotype_vcf_fname)]
+            echo_mark_done = "echo \"[Genotype] %s done\"" % interval
+            cmd.append(echo_mark_done)
             _create_cmd_file(sub_shell_fname, cmd)
 
         genotype_vcf_shell_files_list.append([interval, sub_shell_fname])
@@ -269,23 +273,21 @@ def gatk_variantrecalibrator(kwargs, out_folder_name, aione):
     combine_vcf_fname = os.path.join(output_dirtory, "%s.raw.vcf.gz" % kwargs.project_name)
     shell_fname = os.path.join(shell_dirtory, "%s.VQSR.sh" % kwargs.project_name)
 
-    cmd = []
-    if len(aione["intervals"]) > 1:
-        # concat-vcf
-        concat_vcf_cmd = bcftools.concat(aione["config"],
-                                         [aione["genotype"][interval] for interval in aione["intervals"]],
-                                         combine_vcf_fname)
-        cmd.append(concat_vcf_cmd)
-    else:
-        combine_vcf_fname = aione["genotype"][aione["interval"][0]]
-
-    # VQSR
-    cmd.append(gatk.variantrecalibrator(aione["config"], combine_vcf_fname, genotype_vqsr_fname))
-    cmd.append("echo \"[VQSR] %s done\"" % genotype_vqsr_fname)
-
     if not os.path.exists(shell_fname) or kwargs.overwrite:
+        cmd = []
+        if len(aione["intervals"]) > 1:
+            # concat-vcf
+            concat_vcf_cmd = bcftools.concat(aione["config"],
+                                             [aione["genotype"][interval] for interval in aione["intervals"]],
+                                             combine_vcf_fname)
+            cmd.append(concat_vcf_cmd)
+        else:
+            combine_vcf_fname = aione["genotype"][aione["interval"][0]]
+
+        # VQSR
+        cmd.append(gatk.variantrecalibrator(aione["config"], combine_vcf_fname, genotype_vqsr_fname))
+        cmd.append("echo \"[VQSR] %s done\"" % genotype_vqsr_fname)
         _create_cmd_file(shell_fname, cmd)
 
     # Only one VQSR result
     return [["%s.VQSR" % kwargs.project_name, shell_fname]]
-
