@@ -131,7 +131,6 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
                     "{vqsr_options} "
                     "-mode SNP "
                     "--tranches-file {out_prefix}.SNPs.tranches "
-                    "--rscript-file {out_prefix}.SNPs.plots.R "
                     "-O {out_prefix}.SNPs.recal").format(**locals())
 
     apply_snp_vqsr_cmd = ("time {gatk} {java_options} ApplyVQSR "
@@ -150,7 +149,6 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
                       "--resource:mills,known=true,training=true,truth=true,prior=12.0 {resource_mills_gold_indels} "
                       "{vqsr_options} "
                       "--tranches-file {out_prefix}.INDELs.tranches "
-                      "--rscript-file {out_prefix}.INDELs.plots.R "
                       "-mode INDEL "
                       "-O {out_prefix}.INDELs.recal").format(**locals())
     apply_indel_vqsr_cmd = ("time {gatk} {java_options} ApplyVQSR "
