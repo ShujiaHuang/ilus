@@ -72,7 +72,7 @@ def parse_commandline_args():
     return cmdparser.parse_args()
 
 
-if __name__ == "__main__":
+def main():
     START_TIME = datetime.now()
     runner = {
         "WGS": wgs,
@@ -92,3 +92,7 @@ if __name__ == "__main__":
     runner[kwargs.command](kwargs, aione)
     elapsed_time = datetime.now() - START_TIME
     print ("\n** %s done, %d seconds elapsed **\n" % (sys.argv[1], elapsed_time.seconds))
+
+
+if __name__ == "__main__":
+    main()

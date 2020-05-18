@@ -42,9 +42,11 @@ if __name__ == "__main__":
           version=VERSION,
           include_package_data=True,
           # scripts = [],
-          # entry_points={
-          #     "console_scripts": []
-          # },
+          entry_points={
+              "console_scripts": [
+                  'ilus = ilus.runner:main'
+              ]
+          },
           classifiers=[
              'Intended Audience :: Science/Research',
              'Programming Language :: Python :: 2.7',
