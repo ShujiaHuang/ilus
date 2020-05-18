@@ -87,6 +87,7 @@ def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
 
     kwargs.outdir = safe_makedir(os.path.abspath(kwargs.outdir))  # return abspath
     root_path, output_result_folder = os.path.split(kwargs.outdir)
+    kwargs.outdir = root_path
 
     shell_dirtory = os.path.join(root_path, "00.shell" if kwargs.as_pipe_shell_order else "shell")
     if not os.path.exists(shell_dirtory):
