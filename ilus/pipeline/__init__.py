@@ -45,22 +45,22 @@ def wgs(kwargs, aione):
         # [func, shell_file, shell_log_folder, output_folder]
 
         # bwa/sort/merge process
-        "align": [bwamem, "step1.bwa.sh", "01.alignment", "01.alignment"],
+        "align": [bwamem, kwargs.project_name + ".step1.bwa.sh", "01.alignment", "01.alignment"],
 
         # Create Markduplicates running shells.
-        "markdup": [gatk_markduplicates, "step2.markdup.sh", "02.markdup", "01.alignment"],
+        "markdup": [gatk_markduplicates, kwargs.project_name + ".step2.markdup.sh", "02.markdup", "01.alignment"],
 
         # Create BQSR+ApplyBQSR running shells.
-        "BQSR": [gatk_baserecalibrator, "step3.bqsr.sh", "03.BQSR", "01.alignment"],
+        "BQSR": [gatk_baserecalibrator, kwargs.project_name + ".step3.bqsr.sh", "03.BQSR", "01.alignment"],
 
         # Create GVCF running shells
-        "gvcf": [gatk_haplotypecaller_gvcf, "step4.gvcf.sh", "04.gvcf", "02.gvcf"],
+        "gvcf": [gatk_haplotypecaller_gvcf, kwargs.project_name + ".step4.gvcf.sh", "04.gvcf", "02.gvcf"],
 
         # GenotypeGVCF
-        "genotype": [gatk_genotypeGVCFs, "step5.genotype.sh", "05.genotype", "03.genotype"],
+        "genotype": [gatk_genotypeGVCFs, kwargs.project_name + ".step5.genotype.sh", "05.genotype", "03.genotype"],
 
         # Variant recalibrator
-        "VQSR": [gatk_variantrecalibrator, "step6.VQSR.sh", "06.VQSR", "03.genotype"],
+        "VQSR": [gatk_variantrecalibrator, kwargs.project_name + ".step6.VQSR.sh", "06.VQSR", "03.genotype"],
 
         # Todo: Integrate summary and status statistic information into ilus pipeline.
         "summary": []
@@ -122,8 +122,8 @@ def genotypeGVCFs(kwargs, aione):
 
             aione["gvcf"][interval].append(gvcf)
 
-    shell_fname, shell_log_folder = ["step5.genotype.sh", "05.genotype"] if kwargs.as_pipe_shell_order \
-        else ["genotype.sh", "genotype"]
+    shell_fname, shell_log_folder = [kwargs.project_name + ".step5.genotype.sh", "05.genotype"] \
+        if kwargs.as_pipe_shell_order else [kwargs.project_name + ".genotype.sh", "genotype"]
 
     _f(kwargs, aione, shell_fname, shell_log_folder, gatk_genotypeGVCFs)
 
@@ -146,9 +146,8 @@ def variantrecalibrator(kwargs, aione):
 
             aione["genotype"][interval] = vcf
 
-    shell_fname, shell_log_folder = ["step6.VQSR.sh", "06.VQSR"] if kwargs.as_pipe_shell_order \
-        else ["vqsr.sh", "genotype"]
+    shell_fname, shell_log_folder = [kwargs.project_name + ".step6.VQSR.sh", "06.VQSR"] \
+        if kwargs.as_pipe_shell_order else [kwargs.project_name + ".vqsr.sh", "genotype"]
 
     _f(kwargs, aione, shell_fname, shell_log_folder, gatk_variantrecalibrator)
-
     return aione
