@@ -48,10 +48,11 @@ if __name__ == "__main__":
 
             n = 0
             for j, cmd in enumerate(commands[k:k+inter_step_size]):
-                OUT.write("%s &\n" % cmd)
+                OUT.write("%s &\n" % cmd if args.t > 1 else "%s\n" % cmd)
                 if (j + 1) % args.t == 0:
                     n += 1
-                    OUT.write("wait\n")
+                    if args.t > 1:
+                        OUT.write("wait\n")
                     OUT.write("echo \"----------- %d ----------\"\n" %n)
 
             OUT.write("wait\n")
