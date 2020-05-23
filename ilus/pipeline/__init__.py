@@ -126,7 +126,6 @@ def genotypeGVCFs(kwargs, aione):
         if kwargs.as_pipe_shell_order else [kwargs.project_name + ".genotype.sh", "genotype"]
 
     _f(kwargs, aione, shell_fname, shell_log_folder, gatk_genotypeGVCFs)
-
     return aione
 
 
