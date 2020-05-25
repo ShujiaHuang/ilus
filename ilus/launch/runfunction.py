@@ -256,7 +256,7 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione):
             cmd.append(echo_mark_done)
             _create_cmd_file(sub_shell_fname, cmd)
 
-        genotype_vcf_shell_files_list.append([interval, sub_shell_fname])
+        genotype_vcf_shell_files_list.append([kwargs.project_name + "." + interval, sub_shell_fname])
         aione["genotype"][interval] = genotype_vcf_fname
 
     return genotype_vcf_shell_files_list
