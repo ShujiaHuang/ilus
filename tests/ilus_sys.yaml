@@ -25,6 +25,14 @@ sambamba:
   merge_options: ["-t 8"]
   markdup_options: []
 
+
+verifyBamID2:
+    verifyBamID2: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/verifyBamID2
+    options: [
+        "--SVDPrefix /WORK/gzfezx_shhli_3/BioSoftware/verifyBamID2/1.0.6/resource/1000g.phase3.10k.b38.vcf.gz.dat"
+    ]
+
+
 bgzip: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bgzip
 tabix: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/tabix
 
