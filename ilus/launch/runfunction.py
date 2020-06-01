@@ -251,7 +251,7 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione):
         sample_gvcf_list = aione["gvcf"][interval]
 
         if not os.path.exists(sub_shell_fname) or kwargs.overwrite:
-            cmd = [gatk.genotypegvcfs(aione["config"], sample_gvcf_list, genotype_vcf_fname)]
+            cmd = [gatk.genotypegvcfs(aione["config"], sample_gvcf_list, genotype_vcf_fname, interval=interval)]
             echo_mark_done = "echo \"[Genotype] %s done\"" % interval
             cmd.append(echo_mark_done)
             _create_cmd_file(sub_shell_fname, cmd)

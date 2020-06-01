@@ -67,7 +67,7 @@ def haplotypecaller_gvcf(config, input_bam, output_gvcf_fname, interval=None):
     return cmd
 
 
-def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname):
+def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
     gatk = config["gatk"]["gatk"]
     java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["genotype_java_options"]) \
         if "genotype_java_options" in config["gatk"] \
@@ -82,11 +82,28 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname):
     combine_gvcf_fname = os.path.join(directory, fname.replace(".vcf", ".g.vcf"))
 
     genotype_cmd = []
-    if len(input_sample_gvcfs) > 1:
-        gvcfs = " ".join(["-V %s" % s for s in input_sample_gvcfs])
+    gvcfs = " ".join(["-V %s" % s for s in input_sample_gvcfs])
+    is_gDBI = False
+    if len(input_sample_gvcfs) > 200:
+        # use GenomicsDBImport
+        is_gDBI = True
+        genomicsDBImport_cmd = ("rm -rf {combine_gvcf_fname} && "
+                                "time {gatk} {java_options} GenomicsDBImport "
+                                "-R {reference} {gvcfs} "
+                                "--genomicsdb-workspace-path {combine_gvcf_fname}").format(**locals())
+        if interval:
+            genomicsDBImport_cmd += " -L %s" % interval
+
+        genotype_cmd = [genomicsDBImport_cmd]
+
+    elif len(input_sample_gvcfs) > 1:
         combine_gvcf_cmd = ("time {gatk} {java_options} CombineGVCFs "
                             "-R {reference} {gvcfs} "
                             "-O {combine_gvcf_fname}").format(**locals())
+
+        if interval:
+            combine_gvcf_cmd += " -L %s" % interval
+
         genotype_cmd = [combine_gvcf_cmd]
     else:
         combine_gvcf_fname = input_sample_gvcfs[0]
@@ -96,7 +113,7 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname):
                          "-V {combine_gvcf_fname} "
                          "-O {output_vcf_fname}").format(**locals()))
 
-    genotype_cmd.append("rm -f %s %s.tbi" % (combine_gvcf_fname, combine_gvcf_fname))
+    genotype_cmd.append("rm -rf %s %s.tbi" % (combine_gvcf_fname, combine_gvcf_fname))
     return " && ".join(genotype_cmd)
 
 
