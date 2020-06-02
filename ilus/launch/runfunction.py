@@ -131,6 +131,8 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=T
 
     aione["sample_final_bqsr_bam"] = []
     bqsr_shell_files_list = []
+
+    is_calculate_contamination = True if "verifyBamID2" in aione["config"] else False
     for sample, sample_markdup_bam in aione["sample_final_markdup_bam"]:
         dirname, f_name = os.path.split(sample_markdup_bam)
 
@@ -152,6 +154,10 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=T
             if is_calculate_summary:
                 cmd.append(bam.stats(aione["config"], out_bqsr_bam_fname, out_bamstats_fname))
                 cmd.append(bam.genomecoverage(aione["config"], out_bqsr_bam_fname, genome_cvg_fname))
+
+            if is_calculate_contamination:
+                out_verifybamid_stat_prefix = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.verifyBamID2")
+                cmd.append(bam.verifyBamID2(aione["config"], out_bqsr_bam_fname, out_verifybamid_stat_prefix))
 
             if kwargs.cram:
                 out_bqsr_bai_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.bai")

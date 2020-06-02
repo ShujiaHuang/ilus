@@ -29,3 +29,18 @@ def genomecoverage(config, input_bamfile, output_cvg_fname):
            "&& {tabix} -f -p bed {output_cvg_fname}").format(**locals())
 
     return cmd
+
+
+def verifyBamID2(config, input_bamfile, output_prefix):
+    verifyBamID = config["verifyBamID2"]["verifyBamID2"]
+    verifyBamID_options = "%s" % " ".join(config["verifyBamID2"]["options"]) \
+        if "options" in config["verifyBamID2"] and \
+           len(config["verifyBamID2"]["options"]) else ""
+
+    reference = config["resources"]["reference"]  # reference fasta
+    cmd = ("time {verifyBamID} {verifyBamID_options} "
+           "--Reference {reference} "
+           "--BamFile {input_bamfile} "
+           "--Output {output_prefix}").format(**locals())
+
+    return cmd
