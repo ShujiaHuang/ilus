@@ -1,7 +1,8 @@
-"""
-Find the Low Speed Region along the human genome.
+"""Find the Low Speed Region along the human genome.
+
 Cut genome region from N.
 /zfssz3/SOLEXA_DATA/BC_RD_P2/USER/huangshujia/ifs5_BC_ONLINE_RD/project/201605_ODPS4WGS/20160626_find_lowspeed_region/bin
+
 Author: Shujia Huang
 Date: 2016-06-26
 """
