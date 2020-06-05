@@ -105,7 +105,7 @@ def main():
                         if line.startswith("#"):
                             continue
                         else:
-                            intervals.append(line.strip().split())
+                            intervals.append(line.strip().split()[:3])
             else:
                 intervals.append([r])
 
