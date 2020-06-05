@@ -250,20 +250,27 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione):
     utils.safe_makedir(shell_dirtory)
 
     genotype_vcf_shell_files_list = []
-    aione["genotype"] = {}
-    for interval in aione["intervals"]:
-        genotype_vcf_fname = os.path.join(output_dirtory, "%s.%s.vcf.gz" % (kwargs.project_name, interval))
-        sub_shell_fname = os.path.join(shell_dirtory, "%s.%s.genotype.sh" % (kwargs.project_name, interval))
-        sample_gvcf_list = aione["gvcf"][interval]
+    aione["genotype_vcf_list"] = []
+
+    for interval in aione["config"]["gatk"]["variant_calling_interval"]:
+        interval_n = "_".join(interval)
+        genotype_vcf_fname = os.path.join(output_dirtory, "%s.%s.vcf.gz" % (kwargs.project_name, interval_n))
+        sub_shell_fname = os.path.join(shell_dirtory, "%s.%s.genotype.sh" % (kwargs.project_name, interval_n))
+
+        if interval[0] in aione["gvcf"]:
+            sample_gvcf_list = aione["gvcf"][interval[0]]  # The chromosome id
+        else:
+            # The ``interval`` parameter in Configure Yaml is a file instead of regions
+            sample_gvcf_list = aione["gvcf"][aione["intervals"][0]]
 
         if not os.path.exists(sub_shell_fname) or kwargs.overwrite:
             cmd = [gatk.genotypegvcfs(aione["config"], sample_gvcf_list, genotype_vcf_fname, interval=interval)]
-            echo_mark_done = "echo \"[Genotype] %s done\"" % interval
+            echo_mark_done = "echo \"[Genotype] %s done\"" % interval_n
             cmd.append(echo_mark_done)
             _create_cmd_file(sub_shell_fname, cmd)
 
-        genotype_vcf_shell_files_list.append([kwargs.project_name + "." + interval, sub_shell_fname])
-        aione["genotype"][interval] = genotype_vcf_fname
+        genotype_vcf_shell_files_list.append([kwargs.project_name + "." + interval_n, sub_shell_fname])
+        aione["genotype_vcf_list"].append(genotype_vcf_fname)
 
     return genotype_vcf_shell_files_list
 
@@ -281,14 +288,12 @@ def gatk_variantrecalibrator(kwargs, out_folder_name, aione):
 
     if not os.path.exists(shell_fname) or kwargs.overwrite:
         cmd = []
-        if len(aione["intervals"]) > 1:
+        if len(aione["genotype_vcf_list"]) > 1:
             # concat-vcf
-            concat_vcf_cmd = bcftools.concat(aione["config"],
-                                             [aione["genotype"][interval] for interval in aione["intervals"]],
-                                             combine_vcf_fname)
+            concat_vcf_cmd = bcftools.concat(aione["config"], aione["genotype_vcf_list"], combine_vcf_fname)
             cmd.append(concat_vcf_cmd)
         else:
-            combine_vcf_fname = aione["genotype"][aione["interval"][0]]
+            combine_vcf_fname = aione["genotype_vcf_list"][0]
 
         # VQSR
         cmd.append(gatk.variantrecalibrator(aione["config"], combine_vcf_fname, genotype_vqsr_fname))

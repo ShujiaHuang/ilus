@@ -130,20 +130,14 @@ def genotypeGVCFs(kwargs, aione):
 
 
 def variantrecalibrator(kwargs, aione):
-
-    aione["intervals"] = []
-    aione["genotype"] = {}  # will be called in ``gatk_variantrecalibrator``
+    aione["genotype_vcf_list"] = []  # will be called in ``gatk_variantrecalibrator``
     with open(kwargs.vcflist) as I:
-        # Format in vcfilist: [Interval  vcf_file_path]
+        # Format in vcfilist one file per row
         for line in I:
             if line.startswith("#"):
                 continue
 
-            interval, vcf = line.strip().split()
-            if interval not in aione["genotype"]:
-                aione["intervals"].append(interval)
-
-            aione["genotype"][interval] = vcf
+            aione["genotype_vcf_list"].append(line.strip().split()[0])
 
     shell_fname, shell_log_folder = [kwargs.project_name + ".step6.VQSR.sh", "06.VQSR"] \
         if kwargs.as_pipe_shell_order else [kwargs.project_name + ".vqsr.sh", "genotype"]

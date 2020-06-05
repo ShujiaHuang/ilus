@@ -68,6 +68,22 @@ def haplotypecaller_gvcf(config, input_bam, output_gvcf_fname, interval=None):
 
 
 def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
+    """
+    :param config:
+    :param input_sample_gvcfs:
+    :param output_vcf_fname:
+    :param interval: A list like
+    :return:
+    """
+    interval_str = ""
+    if interval:
+        if len(interval) == 1:
+            interval_str = interval[0]
+        elif len(interval) == 2:
+            interval_str = ":".join(interval)
+        else:
+            interval_str = "%s:%s-%s" % (interval[0], interval[1], interval[2])
+
     gatk = config["gatk"]["gatk"]
     java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["genotype_java_options"]) \
         if "genotype_java_options" in config["gatk"] \
@@ -92,7 +108,7 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
                                 "-R {reference} {gvcfs} "
                                 "--genomicsdb-workspace-path {combine_gvcf_fname}").format(**locals())
         if interval:
-            genomicsDBImport_cmd += " -L %s" % interval
+            genomicsDBImport_cmd += " -L %s" % interval_str
 
         genotype_cmd = [genomicsDBImport_cmd]
 
@@ -102,7 +118,7 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
                             "-O {combine_gvcf_fname}").format(**locals())
 
         if interval:
-            combine_gvcf_cmd += " -L %s" % interval
+            combine_gvcf_cmd += " -L %s" % interval_str
 
         genotype_cmd = [combine_gvcf_cmd]
     else:

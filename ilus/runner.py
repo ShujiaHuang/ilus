@@ -5,6 +5,7 @@ configured parameters.
 
 """
 import argparse
+import os
 import sys
 import yaml
 
@@ -46,7 +47,7 @@ def parse_commandline_args():
     genotype_cmd.add_argument("-n", "--name", dest="project_name", type=str, default="test",
                               help="Name of the project. [test]")
     genotype_cmd.add_argument("--as_pipe_shell_order", dest="as_pipe_shell_order", action="store_true",
-                              help="Keep the shell name as the order of `pipeline`.")
+                              help="Keep the shell name as the order of `WGS`.")
     genotype_cmd.add_argument("-f", "--force", dest="overwrite", action="store_true",
                               help="Force overwrite existing shell scripts and folders.")
     genotype_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
@@ -63,7 +64,7 @@ def parse_commandline_args():
     vqsr_cmd.add_argument("-n", "--name", dest="project_name", type=str, default="test",
                           help="Name of the project. [test]")
     vqsr_cmd.add_argument("--as_pipe_shell_order", dest="as_pipe_shell_order", action="store_true",
-                          help="Keep the shell name as the order of `pipeline`.")
+                          help="Keep the shell name as the order of `WGS`.")
     vqsr_cmd.add_argument("-f", "--force", dest="overwrite", action="store_true",
                           help="Force overwrite existing shell scripts and folders.")
     vqsr_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
@@ -88,6 +89,31 @@ def main():
     # loaded global configuration file
     with open(kwargs.sysconf) as C:
         aione["config"] = yaml.safe_load(C)
+
+    # Normalize interval regions
+    if "variant_calling_interval" in aione["config"]["gatk"]:
+        intervals = []  # A 2-D array
+        for r in aione["config"]["gatk"]["variant_calling_interval"]:
+            if os.path.isfile(r):
+                with open(r) as I:
+                    """Format:
+                    
+                    chr1	10001	207666
+                    chr1	257667	297968
+                    """
+                    for line in I:
+                        if line.startswith("#"):
+                            continue
+                        else:
+                            intervals.append(line.strip().split())
+            else:
+                intervals.append([r])
+
+        # Update
+        aione["config"]["gatk"]["variant_calling_interval"] = intervals
+    else:
+        sys.stderr.write("[Error] 'variant_calling_interval' parameter in [\"gatk\"][\"variant_calling_interval\"] "
+                         "in configure file %s is required." % kwargs.sysconf)
 
     runner[kwargs.command](kwargs, aione)
     elapsed_time = datetime.now() - START_TIME
