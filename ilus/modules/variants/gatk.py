@@ -89,6 +89,9 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
         if "genotype_java_options" in config["gatk"] \
            and len(config["gatk"]["genotype_java_options"]) else ""
 
+    genomicsDBImport_options = "%s" % " ".join(config["gatk"]["genomicsDBImport_options"]) \
+        if "genomicsDBImport_options" in config["gatk"] else ""
+
     reference = config["resources"]["reference"]  # reference fasta
 
     # create a combine gvcf
@@ -104,7 +107,7 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
         # use GenomicsDBImport
         is_gDBI = True
         genomicsDBImport_cmd = ("rm -rf {combine_gvcf_fname} && "
-                                "time {gatk} {java_options} GenomicsDBImport "
+                                "time {gatk} {java_options} GenomicsDBImport {genomicsDBImport_options} "
                                 "-R {reference} {gvcfs} "
                                 "--genomicsdb-workspace-path {combine_gvcf_fname}").format(**locals())
         if interval:
