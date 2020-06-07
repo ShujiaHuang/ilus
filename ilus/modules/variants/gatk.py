@@ -111,8 +111,6 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
                                 "-R {reference} {gvcfs} "
                                 "--genomicsdb-workspace-path {combine_gvcf_fname}").format(**locals())
 
-        # Regular input file for GenomicsDMImport
-        combine_gvcf_fname = "gendb://" + combine_gvcf_fname
         if interval:
             genomicsDBImport_cmd += " -L %s" % interval_str
 
@@ -130,10 +128,16 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
     else:
         combine_gvcf_fname = input_sample_gvcfs[0]
 
-    genotype_cmd.append(("time {gatk} {java_options} GenotypeGVCFs "
-                         "-R {reference} "
-                         "-V {combine_gvcf_fname} "
-                         "-O {output_vcf_fname}").format(**locals()))
+    if is_gDBI:
+        genotype_cmd.append(("time {gatk} {java_options} GenotypeGVCFs "
+                             "-R {reference} "
+                             "-V gendb://{combine_gvcf_fname} "
+                             "-O {output_vcf_fname}").format(**locals()))
+    else:
+        genotype_cmd.append(("time {gatk} {java_options} GenotypeGVCFs "
+                             "-R {reference} "
+                             "-V {combine_gvcf_fname} "
+                             "-O {output_vcf_fname}").format(**locals()))
 
     genotype_cmd.append("rm -rf %s %s.tbi" % (combine_gvcf_fname, combine_gvcf_fname))
     return " && ".join(genotype_cmd)
