@@ -17,4 +17,6 @@ ilus VQSR -C ilus_sys.yaml -L vcf.list -O 03.genotype --as_pipe_shell_order -f
 ```bash
 python ../../scripts/yhbatch_slurm_jobs.py -I step1.bwa.sh -n 10 -t 3
 ```
-python ../scripts/get_runnable_region.py -f GCA_000001405.15_GRCh38_no_alt_analysis_set.fa.fai -n GCA_000001405.15_GRCh38_no_alt_analysis_set.N.interval_list
+python ../scripts/create_wgs_calling_intervals.py -f GCA_000001405.15_GRCh38_no_alt_analysis_set.fa.fai -n GCA_000001405.15_GRCh38_no_alt_analysis_set.N.interval_list
+
+python ../scripts/create_wgs_calling_intervals.py -f GCA_000001405.15_GRCh38_no_alt_analysis_set.fa.fai -n GCA_000001405.15_GRCh38_no_alt_analysis_set.N.interval_list -w 5000000 | head -820 > wgs_calling_regions.GRCh38.5M.interval.bed

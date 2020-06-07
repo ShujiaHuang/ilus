@@ -4,7 +4,7 @@ Author: Shujia Huang
 Date: 2018-09-07
 """
 import sys
-import optparse
+import argparse
 
 MAXSIZE = 4550000  # 4.6Mb
 SLOWCHUNKSIZE = 500000  # 0.5 Mb
@@ -136,23 +136,28 @@ def main(opts):
     call_region = get_nonN_region(opts.n_reg_file, opts.nsize, fa)
     for chrom in chrom_order_list:
         for start_pos, end_pos in call_region[chrom]:
-            print("\t".join(map(str, [chrom, start_pos, end_pos])))
+            # print("\t".join(map(str, [chrom, start_pos, end_pos])))
+            for pos in range(start_pos, end_pos + 1, opts.win):
+                s = pos
+                e = end_pos if pos + opts.win >= end_pos else pos + opts.win - 1
+
+                print("\t".join(map(str, [chrom, s, e])))
 
 
 if __name__ == '__main__':
     usage = '\nUsage: python %prog [options] -f <fasta_faifile> > Output'
-    optp = optparse.OptionParser(usage=usage)
-    optp.add_option('-f', '--fai', dest='ref_fai_file', metavar='STR',
-                    help='The reference fasta fai file.', default='')
-    optp.add_option('-n', '--nbed', dest='n_reg_file', metavar='STR',
-                    help='The N-base region bed file.', default='')
-    optp.add_option('-N', '--nbase', dest='nsize', metavar='int',
-                    help='The biggest continue N size could be allowed '
-                         'in one region.', default=1000)
+    cmdparse = argparse.ArgumentParser(description=usage)
+    cmdparse.add_argument('-f', '--fai', dest='ref_fai_file', metavar='STR', required=True,
+                          help='The reference fasta fai file.')
+    cmdparse.add_argument('-n', '--nbed', dest='n_reg_file', metavar='STR', required=True,
+                          help='The N-base region bed file.')
+    cmdparse.add_argument('-N', '--nbase', dest='nsize', metavar='int',
+                          help='The biggest continue N size could be allowed '
+                               'in one region.', default=1000)
+    cmdparse.add_argument('-w', '--win', dest='win', metavar='int', type=int,
+                          help='The max window size.', default=5000000)
 
-    opt, _ = optp.parse_args()
-    if not opt.ref_fai_file:
-        optp.error('Required [-f ref_fai_file]\n')
+    opt = cmdparse.parse_args()
 
     main(opt)
     sys.stderr.write('** For the flowers bloom in the desert **\n')
