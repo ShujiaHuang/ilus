@@ -110,6 +110,9 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
                                 "time {gatk} {java_options} GenomicsDBImport {genomicsDBImport_options} "
                                 "-R {reference} {gvcfs} "
                                 "--genomicsdb-workspace-path {combine_gvcf_fname}").format(**locals())
+
+        # Regular input file for GenomicsDMImport
+        combine_gvcf_fname = "gendb://" + combine_gvcf_fname
         if interval:
             genomicsDBImport_cmd += " -L %s" % interval_str
 
