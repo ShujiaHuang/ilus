@@ -6,9 +6,6 @@ Date: 2018-09-07
 import sys
 import argparse
 
-MAXSIZE = 4550000  # 4.6Mb
-SLOWCHUNKSIZE = 500000  # 0.5 Mb
-
 
 def get_fasta_size_from_faifile(infile):
     """
