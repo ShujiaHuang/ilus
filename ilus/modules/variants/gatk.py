@@ -103,8 +103,9 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
     genotype_cmd = []
     gvcfs = " ".join(["-V %s" % s for s in input_sample_gvcfs])
     is_gDBI = False
-    if len(input_sample_gvcfs) > 200:
+    if len(input_sample_gvcfs) > 2:
         # use GenomicsDBImport
+        combine_gvcf_fname = combine_gvcf_fname.split(".g.vcf")[0] + ".gvcfs_db"
         is_gDBI = True
         genomicsDBImport_cmd = ("rm -rf {combine_gvcf_fname} && "
                                 "time {gatk} {java_options} GenomicsDBImport {genomicsDBImport_options} "
