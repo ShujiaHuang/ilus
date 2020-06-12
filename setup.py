@@ -44,7 +44,7 @@ if __name__ == "__main__":
           # scripts = [],
           entry_points={
               "console_scripts": [
-                  'ilus = ilus.runner:main'
+                  'ilus = ilus.main:main'
               ]
           },
           classifiers=[
