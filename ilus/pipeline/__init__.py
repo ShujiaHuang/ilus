@@ -1,6 +1,7 @@
 """Pipeline functions."""
 import os
 import stat
+import sys
 
 from ilus.utils import safe_makedir
 from ilus.launch.runfunction import bwamem, gatk_markduplicates, gatk_baserecalibrator, \
@@ -26,7 +27,11 @@ def _create_a_total_shell_file(shell_list, out_shell_filename, sub_shell_log_dir
     return
 
 
-def _make_process_shell(output_shell_fname, shell_log_directory, process_shells=None, is_overwrite=False):
+def _make_process_shell(output_shell_fname, shell_log_directory, process_shells=None, is_overwrite=False,
+                        is_dry_run=False):
+    if is_dry_run:
+        return
+
     safe_makedir(shell_log_directory)
     o_log_file = shell_log_directory + ".o.log.list"
     e_log_file = shell_log_directory + ".e.log.list"
@@ -43,17 +48,16 @@ def wgs(kwargs, aione):
     # All the WGS processes.
     runner_module = {
         # [func, shell_file, shell_log_folder, output_folder]
-
-        # bwa/sort/merge process
+        # create bwa/sort/merge process
         "align": [bwamem, kwargs.project_name + ".step1.bwa.sh", "01.alignment", "01.alignment"],
 
-        # Create Markduplicates running shells.
+        # Create Markduplicates shells.
         "markdup": [gatk_markduplicates, kwargs.project_name + ".step2.markdup.sh", "02.markdup", "01.alignment"],
 
-        # Create BQSR+ApplyBQSR running shells.
+        # Create BQSR+ApplyBQSR shells.
         "BQSR": [gatk_baserecalibrator, kwargs.project_name + ".step3.bqsr.sh", "03.BQSR", "01.alignment"],
 
-        # Create GVCF running shells
+        # Create GVCF shells
         "gvcf": [gatk_haplotypecaller_gvcf, kwargs.project_name + ".step4.gvcf.sh", "04.gvcf", "02.gvcf"],
 
         # GenotypeGVCF
@@ -66,25 +70,35 @@ def wgs(kwargs, aione):
         "summary": []
     }
 
-    # Create project directory
+    # Create project directory and return the abspath
     kwargs.outdir = safe_makedir(os.path.abspath(kwargs.outdir))  # return abspath
+
     shell_dirtory = os.path.join(kwargs.outdir, "00.shell")
     shell_log_dirtory = os.path.join(shell_dirtory, "loginfo")
     safe_makedir(shell_dirtory)
     safe_makedir(shell_log_dirtory)
 
-    for p in ["align", "markdup", "BQSR", "gvcf", "genotype", "VQSR"]:
+    wgs_processes = ["align", "markdup", "BQSR", "gvcf", "genotype", "VQSR"]
+    processes_set = set(kwargs.wgs_processes.split(","))
+    for p in processes_set:
+        if p not in wgs_processes:
+            sys.stderr.write("[ERROR] %s is not one of the wgs processes: %s\n" % (p, ",".join(wgs_processes)))
+            sys.exit(1)
+
+    for p in wgs_processes:
+        is_dry_run = False if p in processes_set else True
+
         func, shell_fname, shell_log_folder, output_result_folder = runner_module[p]
         _make_process_shell(output_shell_fname=os.path.join(shell_dirtory, shell_fname),
                             shell_log_directory=os.path.join(shell_log_dirtory, shell_log_folder),
-                            process_shells=func(kwargs, output_result_folder, aione),
-                            is_overwrite=kwargs.overwrite)
+                            process_shells=func(kwargs, output_result_folder, aione, is_dry_run=is_dry_run),
+                            is_overwrite=kwargs.overwrite,
+                            is_dry_run=is_dry_run)
 
     return aione
 
 
 def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
-
     kwargs.outdir = safe_makedir(os.path.abspath(kwargs.outdir))  # return abspath
     root_path, output_result_folder = os.path.split(kwargs.outdir)
     kwargs.outdir = root_path

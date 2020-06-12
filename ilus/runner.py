@@ -27,8 +27,14 @@ def parse_commandline_args():
                               help="YAML configuration file specifying details about system.")
     pipeline_cmd.add_argument("-L", "--fastqlist", dest="fastqlist", type=str, required=True,
                               help="Alignment FASTQ Index File.")
+    pipeline_cmd.add_argument("-P", "--Process", dest="wgs_processes", type=str,
+                              help="Specific one or more processes (separated by comma) of WGS pipeline. "
+                                   "Defualt value: align,markdup,BQSR,gvcf,genotype,VQSR. "
+                                   "Possible values: {align,markdup,BQSR,gvcf,genotype,VQSR}",
+                              default="align,markdup,BQSR,gvcf,genotype,VQSR")
+
     pipeline_cmd.add_argument("-n", "--name", dest="project_name", type=str, default="test",
-                              help="Name of the project. [test]")
+                              help="Name of the project. Default value: test")
     pipeline_cmd.add_argument("-f", "--force_overwrite", dest="overwrite", action="store_true",
                               help="Force overwrite existing shell scripts and folders.")
     pipeline_cmd.add_argument("-c", "--cram", dest="cram", action="store_true",
@@ -118,7 +124,3 @@ def main():
     runner[kwargs.command](kwargs, aione)
     elapsed_time = datetime.now() - START_TIME
     print ("\n** %s done, %d seconds elapsed **\n" % (sys.argv[1], elapsed_time.seconds))
-
-
-if __name__ == "__main__":
-    main()

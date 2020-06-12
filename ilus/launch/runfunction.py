@@ -22,12 +22,14 @@ def _create_cmd_file(out_shell_file, cmd):
     os.chmod(out_shell_file, stat.S_IRWXU)  # 0700
 
 
-def bwamem(kwargs, out_folder_name, aione):
+def bwamem(kwargs, out_folder_name, aione, is_dry_run=False):
     """Run bwamem aligment for fastq to BAM"""
     output_dirtory = os.path.join(kwargs.outdir, out_folder_name, "output")
     shell_dirtory = os.path.join(kwargs.outdir, out_folder_name, "shell", "bwa")
-    utils.safe_makedir(output_dirtory)
-    utils.safe_makedir(shell_dirtory)
+
+    if not is_dry_run:
+        utils.safe_makedir(output_dirtory)
+        utils.safe_makedir(shell_dirtory)
 
     if not utils.file_exists(kwargs.fastqlist):
         sys.stderr.write("[ERROR] %s is not a file.\n" % kwargs.fastqlist)
@@ -46,7 +48,8 @@ def bwamem(kwargs, out_folder_name, aione):
             sample_id, rgID, fq1, fq2, lane = line.strip().split()[:5]
             sample_outdir = os.path.join(output_dirtory, sample_id)
             if sample_id not in sample_bamfiles_by_lane:
-                utils.safe_makedir(sample_outdir)
+                if not is_dry_run:
+                    utils.safe_makedir(sample_outdir)
                 sample_bamfiles_by_lane[sample_id] = []
 
                 # record the samples' id and keep the order as the same as input.
@@ -63,7 +66,7 @@ def bwamem(kwargs, out_folder_name, aione):
         aione["sample_final_sorted_bam"].append([sample, sample_final_bamfile])
         sample_shell_fname = os.path.join(shell_dirtory, sample + ".bwa.sh")
 
-        if not os.path.exists(sample_shell_fname) or kwargs.overwrite:
+        if not is_dry_run and (not os.path.exists(sample_shell_fname) or kwargs.overwrite):
             if len(sample_bamfiles_by_lane[sample]) == 1:
 
                 lane_bam_file, cmd = sample_bamfiles_by_lane[sample][0][0], [sample_bamfiles_by_lane[sample][0][1]]
@@ -88,15 +91,16 @@ def bwamem(kwargs, out_folder_name, aione):
             _create_cmd_file(sample_shell_fname, cmd)
 
         bwa_shell_files_list.append([sample, sample_shell_fname])
-
     return bwa_shell_files_list  # [[sample, bwa_shell_file], ...]
 
 
-def gatk_markduplicates(kwargs, out_folder_name, aione):
+def gatk_markduplicates(kwargs, out_folder_name, aione, is_dry_run=False):
     """Markduplicates by GATK4
     """
     shell_dirtory = os.path.join(kwargs.outdir, out_folder_name, "shell", "markdup")
-    utils.safe_makedir(shell_dirtory)
+
+    if not is_dry_run:
+        utils.safe_makedir(shell_dirtory)
 
     aione["sample_final_markdup_bam"] = []
     markdup_shell_files_list = []
@@ -108,7 +112,7 @@ def gatk_markduplicates(kwargs, out_folder_name, aione):
         out_markdup_metrics_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".metrics.txt")
         sample_shell_fname = os.path.join(shell_dirtory, sample + ".markdup.sh")
 
-        if not os.path.exists(sample_shell_fname) or kwargs.overwrite:
+        if not is_dry_run and (not os.path.exists(sample_shell_fname) or kwargs.overwrite):
             cmd = [gatk.markduplicates(aione["config"], sample_sorted_bam, out_markdup_bam_fname,
                                        out_markdup_metrics_fname)]
 
@@ -125,9 +129,11 @@ def gatk_markduplicates(kwargs, out_folder_name, aione):
     return markdup_shell_files_list  # [[sample, sample_shell_fname], ...]
 
 
-def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=True):
+def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=True, is_dry_run=False):
     shell_dirtory = os.path.join(kwargs.outdir, out_folder_name, "shell", "bqsr")
-    utils.safe_makedir(shell_dirtory)
+
+    if not is_dry_run:
+        utils.safe_makedir(shell_dirtory)
 
     aione["sample_final_bqsr_bam"] = []
     bqsr_shell_files_list = []
@@ -137,13 +143,17 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=T
         dirname, f_name = os.path.split(sample_markdup_bam)
 
         out_bqsr_bam_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.bam")
+        out_bqsr_bai_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.bai")
         out_bqsr_recal_table = os.path.join(dirname, os.path.splitext(f_name)[0] + ".recal.table")
+
+        # when convert to CRAM format
+        out_cram_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.cram")
 
         out_bamstats_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.stats")
         genome_cvg_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.depth.bed.gz")
 
         sample_shell_fname = os.path.join(shell_dirtory, sample + ".bqsr.sh")
-        if not os.path.exists(sample_shell_fname) or kwargs.overwrite:
+        if not is_dry_run and (not os.path.exists(sample_shell_fname) or kwargs.overwrite):
             cmd = [gatk.baserecalibrator(aione["config"],
                                          sample_markdup_bam,
                                          out_bqsr_bam_fname,
@@ -160,25 +170,21 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=T
                 cmd.append(bam.verifyBamID2(aione["config"], out_bqsr_bam_fname, out_verifybamid_stat_prefix))
 
             if kwargs.cram:
-                out_bqsr_bai_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.bai")
-
-                out_cram_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.cram")
                 cmd.append(bwa.bam_to_cram(aione["config"], out_bqsr_bam_fname, out_cram_fname))
                 cmd.append("rm -rf %s" % out_bqsr_bam_fname)
                 cmd.append("rm -rf %s" % out_bqsr_bai_fname)
-                out_bqsr_bam_fname = out_cram_fname
 
             echo_mark_done = "echo \"[BQSR] %s done\"" % sample
             cmd.append(echo_mark_done)
             _create_cmd_file(sample_shell_fname, cmd)
 
         bqsr_shell_files_list.append([sample, sample_shell_fname])
-        aione["sample_final_bqsr_bam"].append([sample, out_bqsr_bam_fname])
+        aione["sample_final_bqsr_bam"].append([sample, out_bqsr_bam_fname if not kwargs.cram else out_cram_fname])
 
     return bqsr_shell_files_list
 
 
-def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione):
+def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione, is_dry_run=False):
     """Create gvcf shell."""
 
     def _create_sub_shell(sample, sample_shell_dir, sample_output_dir, raw_interval=None):
@@ -190,7 +196,7 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione):
         sample_shell_fname = os.path.join(sample_shell_dir, sample + ".%s.gvcf.sh" % interval)
         out_gvcf_fname = os.path.join(sample_output_dir, sample + ".%s.g.vcf.gz" % interval)
 
-        if not os.path.exists(sample_shell_fname) or kwargs.overwrite:
+        if not is_dry_run and (not os.path.exists(sample_shell_fname) or kwargs.overwrite):
             if raw_interval:
                 cmd = [
                     gatk.haplotypecaller_gvcf(aione["config"], sample_bqsr_bam, out_gvcf_fname, interval=raw_interval)]
@@ -205,8 +211,10 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione):
 
     shell_dirtory = os.path.join(kwargs.outdir, out_folder_name, "shell")
     output_dirtory = os.path.join(kwargs.outdir, out_folder_name, "output")
-    utils.safe_makedir(output_dirtory)
-    utils.safe_makedir(shell_dirtory)
+
+    if not is_dry_run:
+        utils.safe_makedir(output_dirtory)
+        utils.safe_makedir(shell_dirtory)
 
     gvcf_shell_files_list = []
     aione["gvcf"] = {}
@@ -218,8 +226,10 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione):
     for sample, sample_bqsr_bam in aione["sample_final_bqsr_bam"]:
         sample_shell_dir = os.path.join(shell_dirtory, sample)
         sample_output_dir = os.path.join(output_dirtory, sample)
-        utils.safe_makedir(sample_shell_dir)
-        utils.safe_makedir(sample_output_dir)
+
+        if not is_dry_run:
+            utils.safe_makedir(sample_shell_dir)
+            utils.safe_makedir(sample_output_dir)
 
         for interval in aione["config"]["gatk"]["interval"]:
 
@@ -243,11 +253,13 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione):
     return gvcf_shell_files_list
 
 
-def gatk_genotypeGVCFs(kwargs, out_folder_name, aione):
+def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
     shell_dirtory = os.path.join(kwargs.outdir, out_folder_name, "shell")
     output_dirtory = os.path.join(kwargs.outdir, out_folder_name, "output")
-    utils.safe_makedir(output_dirtory)
-    utils.safe_makedir(shell_dirtory)
+
+    if not is_dry_run:
+        utils.safe_makedir(output_dirtory)
+        utils.safe_makedir(shell_dirtory)
 
     genotype_vcf_shell_files_list = []
     aione["genotype_vcf_list"] = []
@@ -263,7 +275,7 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione):
             # The ``interval`` parameter in Configure Yaml is a file instead of regions
             sample_gvcf_list = aione["gvcf"][aione["intervals"][0]]
 
-        if not os.path.exists(sub_shell_fname) or kwargs.overwrite:
+        if not is_dry_run and (not os.path.exists(sub_shell_fname) or kwargs.overwrite):
             cmd = [gatk.genotypegvcfs(aione["config"], sample_gvcf_list, genotype_vcf_fname, interval=interval)]
             echo_mark_done = "echo \"[Genotype] %s done\"" % interval_n
             cmd.append(echo_mark_done)
@@ -275,18 +287,20 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione):
     return genotype_vcf_shell_files_list
 
 
-def gatk_variantrecalibrator(kwargs, out_folder_name, aione):
+def gatk_variantrecalibrator(kwargs, out_folder_name, aione, is_dry_run=False):
     """Run VQSR"""
     output_dirtory = os.path.join(kwargs.outdir, out_folder_name, "output")
     shell_dirtory = os.path.join(kwargs.outdir, out_folder_name, "shell")
-    utils.safe_makedir(output_dirtory)
-    utils.safe_makedir(shell_dirtory)
+
+    if not is_dry_run:
+        utils.safe_makedir(output_dirtory)
+        utils.safe_makedir(shell_dirtory)
 
     genotype_vqsr_fname = os.path.join(output_dirtory, "%s.VQSR.vcf.gz" % kwargs.project_name)
     combine_vcf_fname = os.path.join(output_dirtory, "%s.raw.vcf.gz" % kwargs.project_name)
     shell_fname = os.path.join(shell_dirtory, "%s.VQSR.sh" % kwargs.project_name)
 
-    if not os.path.exists(shell_fname) or kwargs.overwrite:
+    if not is_dry_run and (not os.path.exists(shell_fname) or kwargs.overwrite):
         cmd = []
         if len(aione["genotype_vcf_list"]) > 1:
             # concat-vcf
