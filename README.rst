@@ -11,18 +11,18 @@ Ilus is writed by Python and maintain in PyPI. You can install it just by runnin
 
     pip install ilus
 
-You can type `ilus` in your commandline terminal if everything is smooth.
+You can type **ilus** in your commandline terminal if everything is smooth.
 
 Quick Start
 -----------
 
-There are several functions in `ilus`:
+There are several functions in **ilus**:
 
 .. code:: bash
 
     $ ilus --help
 
-You will see some options like below:
+You will see all the functions:
 
 .. code:: bash
 
@@ -39,8 +39,10 @@ You will see some options like below:
         genotype-joint-calling Genotype from GVCFs.
         VQSR                VQSR
 
+Run GATK Best Practices Workflow
+--------------------------------
 
-
+**ilus** implelement the whole WGS analysis workflow base on the [GATK Best Practices](https://gatk.broadinstitute.org/hc/en-us/sections/360007226651-Best-Practices-Workflows).
 
 
 
