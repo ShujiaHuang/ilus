@@ -1,4 +1,9 @@
-"""Pipeline functions."""
+"""Pipeline functions.
+
+Author: Shujia Huang
+Date: 2020-04-19
+
+"""
 import os
 import stat
 import sys

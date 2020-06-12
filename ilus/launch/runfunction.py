@@ -1,4 +1,7 @@
 """Run functions by provided a name with arguments.
+
+Author:  Shujia Huang
+Date: 2020-04-19
 """
 import sys
 import os

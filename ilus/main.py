@@ -3,6 +3,9 @@
 Handles runs in local or distributed mode based on the command line or
 configured parameters.
 
+Author: Shujia Huang
+Date: 2020-04-19
+
 """
 import argparse
 import os
