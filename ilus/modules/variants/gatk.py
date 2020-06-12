@@ -68,13 +68,6 @@ def haplotypecaller_gvcf(config, input_bam, output_gvcf_fname, interval=None):
 
 
 def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
-    """
-    :param config:
-    :param input_sample_gvcfs:
-    :param output_vcf_fname:
-    :param interval: A list like
-    :return:
-    """
     interval_str = ""
     if interval:
         if len(interval) == 1:
