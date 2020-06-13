@@ -45,6 +45,7 @@ gatk:
   vqsr_java_options: ["-Xmx10G"]
 
   genomicsDBImport_options: ["--reader-threads 12"]
+  use_genomicsDBImport: false  # Do not use genomicsDBImport to combine GVCFs by default
   vqsr_options: [
     "-an DP -an QD -an FS -an SOR -an ReadPosRankSum -an MQRankSum",
     "-tranche 100.0 -tranche 99.9 -tranche 99.5 -tranche 99.0 -tranche 95.0 -tranche 90.0",

@@ -93,37 +93,39 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
     # The prefix of file name of combine gvcf set to be the same with input ``fname``
     combine_gvcf_fname = os.path.join(directory, fname.replace(".vcf", ".g.vcf"))
 
-    genotype_cmd = []
     gvcfs = " ".join(["-V %s" % s for s in input_sample_gvcfs])
-    is_gDBI = False
-    if len(input_sample_gvcfs) > 200:
-        # use GenomicsDBImport
-        # Changed the name for genomicsDBImport directory
-        combine_gvcf_fname = combine_gvcf_fname.split(".g.vcf")[0] + ".gvcfs_db"
-        is_gDBI = True
-        genomicsDBImport_cmd = ("rm -rf {combine_gvcf_fname} && "
-                                "time {gatk} {java_options} GenomicsDBImport {genomicsDBImport_options} "
+    use_gDBI = config["gatk"]["use_genomicsDBImport"] if "use_genomicsDBImport" in config["gatk"] else False
+
+    genotype_cmd = []
+    if len(input_sample_gvcfs) > 1:
+        if use_gDBI:
+            # use GenomicsDBImport
+            # Changed the name for genomicsDBImport directory
+            combine_gvcf_fname = combine_gvcf_fname.split(".g.vcf")[0] + ".gvcfs_db"
+            genomicsDBImport_cmd = ("rm -rf {combine_gvcf_fname} && "
+                                    "time {gatk} {java_options} GenomicsDBImport {genomicsDBImport_options} "
+                                    "-R {reference} {gvcfs} "
+                                    "--genomicsdb-workspace-path {combine_gvcf_fname}").format(**locals())
+
+            if interval:
+                genomicsDBImport_cmd += " -L %s" % interval_str
+
+            genotype_cmd = [genomicsDBImport_cmd]
+
+        else:
+            combine_gvcf_cmd = ("time {gatk} {java_options} CombineGVCFs "
                                 "-R {reference} {gvcfs} "
-                                "--genomicsdb-workspace-path {combine_gvcf_fname}").format(**locals())
+                                "-O {combine_gvcf_fname}").format(**locals())
 
-        if interval:
-            genomicsDBImport_cmd += " -L %s" % interval_str
+            if interval:
+                combine_gvcf_cmd += " -L %s" % interval_str
 
-        genotype_cmd = [genomicsDBImport_cmd]
-
-    elif len(input_sample_gvcfs) > 1:
-        combine_gvcf_cmd = ("time {gatk} {java_options} CombineGVCFs "
-                            "-R {reference} {gvcfs} "
-                            "-O {combine_gvcf_fname}").format(**locals())
-
-        if interval:
-            combine_gvcf_cmd += " -L %s" % interval_str
-
-        genotype_cmd = [combine_gvcf_cmd]
+            genotype_cmd = [combine_gvcf_cmd]
     else:
+        use_gDBI = False
         combine_gvcf_fname = input_sample_gvcfs[0]
 
-    if is_gDBI:
+    if use_gDBI:
         genotype_cmd.append(("time {gatk} {java_options} GenotypeGVCFs "
                              "-R {reference} "
                              "-V gendb://{combine_gvcf_fname} "
@@ -144,9 +146,8 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
         if "vqsr_java_options" in config["gatk"] \
            and len(config["gatk"]["vqsr_java_options"]) else ""
 
-    vqsr_options = " ".join(config["gatk"]["vqsr_options"]) if "vqsr_options" in config["gatk"] else ""
-
     reference = config["resources"]["reference"]  # reference fasta
+    vqsr_options = " ".join(config["gatk"]["vqsr_options"]) if "vqsr_options" in config["gatk"] else ""
 
     # Set name
     out_prefix = output_vcf_fname.replace(".gz", "").replace(".vcf", "")  # delete .vcf.gz
