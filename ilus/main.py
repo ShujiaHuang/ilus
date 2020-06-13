@@ -14,7 +14,7 @@ import yaml
 
 from datetime import datetime
 
-from ilus.pipeline import wgs, genotypeGVCFs, variantrecalibrator
+from ilus.pipeline.wgs import wgs, genotypeGVCFs, variantrecalibrator
 
 
 def parse_commandline_args():
