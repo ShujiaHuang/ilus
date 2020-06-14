@@ -20,7 +20,7 @@ from ilus.pipeline.wgs import wgs, genotypeGVCFs, variantrecalibrator
 def parse_commandline_args():
     """Parse input commandline arguments, handling multiple cases.
     """
-    desc = "ilus: A WGS analysis pipeline."
+    desc = "ilus: A NGS analysis pipeline."
     cmdparser = argparse.ArgumentParser(description=desc)
     commands = cmdparser.add_subparsers(dest="command", title="ilus commands")
 
