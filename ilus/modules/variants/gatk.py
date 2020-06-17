@@ -210,7 +210,7 @@ def collect_alignment_summary_metrics(config, input_bam, output_fname):
         if "CollectAlignmentSummaryMetrics_jave_options" in config["gatk"] \
            and len(config["gatk"]["CollectAlignmentSummaryMetrics_jave_options"]) else ""
 
-    metric_options = "--java-options \"%s\"" % " ".join(config["gatk"]["CollectAlignmentSummaryMetrics_options"]) \
+    metric_options = " ".join(config["gatk"]["CollectAlignmentSummaryMetrics_options"]) \
         if "CollectAlignmentSummaryMetrics_options" in config["gatk"] \
            and len(config["gatk"]["CollectAlignmentSummaryMetrics_options"]) else ""
 
