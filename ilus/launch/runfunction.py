@@ -149,11 +149,14 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=T
         out_bqsr_bai_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.bai")
         out_bqsr_recal_table = os.path.join(dirname, os.path.splitext(f_name)[0] + ".recal.table")
 
-        # when convert to CRAM format
-        out_cram_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.cram")
+        out_alignment_summary_metric = os.path.join(
+            dirname, os.path.splitext(f_name)[0] + ".AlignmentSummaryMetrics.txt")
 
         out_bamstats_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.stats")
         genome_cvg_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.depth.bed.gz")
+
+        # when convert to CRAM format
+        out_cram_fname = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.cram")
 
         sample_shell_fname = os.path.join(shell_dirtory, sample + ".bqsr.sh")
         if not is_dry_run and (not os.path.exists(sample_shell_fname) or kwargs.overwrite):
@@ -165,6 +168,9 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=T
                 cmd.append("rm -rf %s" % sample_markdup_bam)
 
             if is_calculate_summary:
+                cmd.append(gatk.collect_alignment_summary_metrics(
+                    aione["config"], out_bqsr_bam_fname, out_alignment_summary_metric)
+                )
                 cmd.append(bam.stats(aione["config"], out_bqsr_bam_fname, out_bamstats_fname))
                 cmd.append(bam.genomecoverage(aione["config"], out_bqsr_bam_fname, genome_cvg_fname))
 

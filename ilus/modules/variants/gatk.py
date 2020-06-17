@@ -204,12 +204,17 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
 
 def collect_alignment_summary_metrics(config, input_bam, output_fname):
     gatk = config["gatk"]["gatk"]
-    java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["CollectAlignmentSummaryMetrics_options"]) \
+    reference = config["resources"]["reference"]  # reference fasta
+
+    java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["CollectAlignmentSummaryMetrics_jave_options"]) \
+        if "CollectAlignmentSummaryMetrics_jave_options" in config["gatk"] \
+           and len(config["gatk"]["CollectAlignmentSummaryMetrics_jave_options"]) else ""
+
+    metric_options = "--java-options \"%s\"" % " ".join(config["gatk"]["CollectAlignmentSummaryMetrics_options"]) \
         if "CollectAlignmentSummaryMetrics_options" in config["gatk"] \
            and len(config["gatk"]["CollectAlignmentSummaryMetrics_options"]) else ""
 
-    reference = config["resources"]["reference"]  # reference fasta
-    cmd = ("time {gatk} {java_options} CollectAlignmentSummaryMetrics "
+    cmd = ("time {gatk} {java_options} CollectAlignmentSummaryMetrics {metric_options} "
            "-R {reference} "
            "-I {input_bam} "
            "-O {output_fname}").format(**locals())
