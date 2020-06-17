@@ -8,9 +8,9 @@ Ilus
 
 目前在 **Ilus** 中含有三个独立的功能模块，分别是：
 
-* 第一、全基因组数据分析流程，该流程基于 `GATK 的最佳实践 <https://gatk.broadinstitute.org/hc/en-us/sections/360007226651-Best-Practices-Workflows>`_，即使用 bwa-mem + GATK 的方式进行构建，包含了比对、排序、同样本多lane数据合并、标记重复序列（Markduplicates）、单样本 gvcf 生成、多样本联合变异检测（Joint-calling）和 变异质控（Variant quality score recalibrator, VQSR） 这若干个过程。
-* 第二、独立的多样本联合变异检测模块，之所以将该部分从原来的 WGS 流程中分离出来作为一个独立的功能，这是因为，在有些情况下，我们已经有了各个样本的 gvcf ，或者我们的数据是分多批次完成的，那么这个时候，只需要整理一个 gvcf 列表文件，并用该功能就可以接下去完成多样本的联合变异检测了，而没有必要从测序数据 fastq 开始从头分析。
-* 第三、独立的变异质控模块（VQSR），该模块同样是为了方便对单独的变异检测结果（VCF格式）进行变异质控。
+- 第一、全基因组数据分析流程，该流程基于 `GATK 的最佳实践 <https://gatk.broadinstitute.org/hc/en-us/sections/360007226651-Best-Practices-Workflows>`_，即使用 bwa-mem + GATK 的方式进行构建，包含了比对、排序、同样本多lane数据合并、标记重复序列（Markduplicates）、单样本 gvcf 生成、多样本联合变异检测（Joint-calling）和 变异质控（Variant quality score recalibrator, VQSR） 这若干个过程。
+- 第二、独立的多样本联合变异检测模块，之所以将该部分从原来的 WGS 流程中分离出来作为一个独立的功能，这是因为，在有些情况下，我们已经有了各个样本的 gvcf ，或者我们的数据是分多批次完成的，那么这个时候，只需要整理一个 gvcf 列表文件，并用该功能就可以接下去完成多样本的联合变异检测了，而没有必要从测序数据 fastq 开始从头分析。
+- 第三、独立的变异质控模块（VQSR），该模块同样是为了方便对单独的变异检测结果（VCF格式）进行变异质控。
 
 
     需要注意的是 ilus 不包含原始 fastq 数据的质控，ilus WGS 流程默认你所输入的测序数据都是 clean data， 即已经经过了严格的质控。
@@ -100,7 +100,7 @@ Ilus 基于 Python 编写，并已经发布至 PyPI，因此要使用 Ilus, 你�
 
 首先是配置文件，我们需要在其中指定 ``WGS`` 流程各个步骤中所用的程序的路径以及所使用到 ``GATK bundle`` 文件和参考序列的路径。
 
-需要注意的是 BWA MEM 的索引文件前缀需要与配置文件的 {resources}{reference} 相同，并存放在同一个目录中。如下：
+**需要注意的是 ``BWA MEM`` 的索引文件前缀需要与配置文件的 {resources}{reference} 相同，并存放在同一个目录中。**如下：
 
 .. code:: bash
 
