@@ -95,7 +95,7 @@ Ilus 是基于 Python 编写的，同时已经发布至 PyPI，因此要使用 I
                             A directory for output results.
 
 
-在 WGS 功能中，只有 ``-C``, ``-L`` 和 ``-O``这三个参数是必须的，其它的参数按照需要进行选择即可。其中，``-O`` 参数比较简单，就是项目的输出目录，该目录如果不存在，那么 **ilus** 会为你自动新建一个目录。最重要的是 ``-C`` 和 ``-L`` 参数，前者是 **ilus** 的配置文件，没有这个文件，**ilus** 就无法生成正确的流程，因此十分重要，后者是输入文件的列表文件，该列表文件一共有 5 列，每一列都是必须的信息，以下分别对这两个参数的格式进行说明：
+在 WGS 功能中，只有 ``-C``, ``-L`` 和 ``-O`` 这三个参数是必须的，其它的参数按照需要进行选择即可。其中，``-O`` 参数比较简单，就是项目的输出目录，该目录如果不存在，那么 **ilus** 会为你自动新建一个目录。最重要的是 ``-C`` 和 ``-L`` 参数，前者是 **ilus** 的配置文件，没有这个文件，**ilus** 就无法生成正确的流程，因此十分重要，后者是输入文件的列表文件，该列表文件一共有 5 列，每一列都是必须的信息，以下分别对这两个参数的格式进行说明：
 
 首先是配置文件，我们需要在其中指定 WGS 流程各个步骤中所用的程序的路径以及所使用到GATK bundle文件和参考序列的路径。
 
@@ -157,7 +157,7 @@ Ilus 是基于 Python 编写的，同时已经发布至 PyPI，因此要使用 I
 
       CollectAlignmentSummaryMetrics_jave_options: ["-Xmx10G"]
 
-      # Adapter sequencing of BGISEQ-500 instead of illumina
+      # Adapter sequencing of BGISEQ-500
       CollectAlignmentSummaryMetrics_options: [
         "--ADAPTER_SEQUENCE AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA",
         "--ADAPTER_SEQUENCE AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG"
@@ -293,6 +293,107 @@ Ilus 是基于 Python 编写的，同时已经发布至 PyPI，因此要使用 I
 
     $ ilus WGS -c -n my_wgs -C ilus_sys.yaml -L input.list -P BQSR -O ./output
 
-需要注意的是，**ilus** 为了节省项目的空间，最后只会为每一个样本保留最后 BQSR 之后的BAM/CRAM文件，因此，如果你想重新跑 BQSR 需要确定在 BQSR 前一步（即，markdup）的 BAM 文件是否已经被删除了，如果原先 **ilus** 在BQSR这一步没有正常结束的话，那么该 markdup 的 BAM 文件应该还会被保留着的，**ilus** 执行任务时具有“原子属性”，只有当所有步骤都成功结束时才会删除在之后的分析中完全不需要的文件。
+需要注意的是，**ilus** 为了节省项目的空间，只会为每一个样本保留 BQSR 之后的 BAM/CRAM 文件，因此，如果你想重新跑 BQSR 需要确定在 BQSR 前一步（即，markdup）的 BAM 文件是否已经被删除了，如果原先 **ilus** 在BQSR这一步没有正常结束的话，那么该 markdup 的 BAM 文件应该还会被保留着的，**ilus** 执行任务时具有“原子属性”，只有当所有步骤都成功结束时才会删除在之后的分析中完全不需要的文件。
+
+
+genotype-joint-calling
+----------------------
+
+如果我们已经有了各个样本的 gvcf 需要从这些 gvcf 开始完成多样本的联合变异检测（Joint-calling），那么就可以使用 ``genotype-joint-calling`` 来实现。具体用法如下：
+
+.. code:: bash
+
+    $ ilus genotype-joint-calling --help
+    usage: ilus genotype-joint-calling [-h] -C SYSCONF -L GVCFLIST
+                                       [-n PROJECT_NAME] [--as_pipe_shell_order]
+                                       [-f] -O OUTDIR
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -C SYSCONF, --conf SYSCONF
+                            YAML configuration file specifying details about
+                            system.
+      -L GVCFLIST, --gvcflist GVCFLIST
+                            GVCFs file list. One gvcf_file per-row and the format
+                            should looks like: [interval gvcf_file_path]. Column
+                            [1] is a symbol which could represent the genome
+                            region of the gvcf_file and column [2] should be the
+                            path.
+      -O OUTDIR, --outdir OUTDIR
+                            A directory for output results.
+      -n PROJECT_NAME, --name PROJECT_NAME
+                            Name of the project. [test]
+      --as_pipe_shell_order
+                            Keep the shell name as the order of `WGS`.
+      -f, --force           Force overwrite existing shell scripts and folders.
+
+
+在 **ilus genotype-joint-calling** 中输入的 gvcf list 文件，由两列构成，第一列是该 gvcf 所在的区间或者染色体编号，第二列是该 gvcf 文件的路径，举个例子：
+
+.. code:: bash
+
+    $ ilus genotype-joint-calling -n my_project -C ilus_sys.yaml -L gvcf.list -O 03.genotype --as_pipe_shell_order
+
+其中 ``gvcf.list`` 的格式类似如下：
+
+.. code:: bash
+
+    chr1    /path/sample1.chr1.g.vcf.gz
+    chr1    /paht/sample2.chr1.g.vcf.gz
+    chr2    /path/sample1.chr2.g.vcf.gz
+    chr2    /path/sample2.chr2.g.vcf.gz
+    ...
+    chrM    /path/sample1.chrM.g.vcf.gz
+    chrM    /path/sample2.chrM.g.vcf.gz
+
+以上假设 gvcf.list 中只有两个样本。
+
+参数 ``--as_pipe_shell_order`` 可加也可不加（默认是不加），它唯一的作用就是按照 **ilus WGS** 流程的方式输出执行脚本的名字，维持和 WGS 流程一样的次序。
+
+
+VQSR
+----
+
+该功能仅用于生成基于 ``GATK VQSR`` 的执行脚本。我们如果已经有了 VCF 结果，现在只想单独对这个变异数据跑 VQSR 进行初步的质控，那么就可以使用这个模块，用法与 ``genotype-joint-calling`` 大同小异，如下：
+
+.. code:: bash
+
+    $ ilus VQSR --help
+    usage: ilus VQSR [-h] -C SYSCONF -L VCFLIST [-n PROJECT_NAME]
+                     [--as_pipe_shell_order] [-f] -O OUTDIR
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -C SYSCONF, --conf SYSCONF
+                            YAML configuration file specifying details about
+                            system.
+      -L VCFLIST, --vcflist VCFLIST
+                            VCFs file list. One vcf_file per-row and the format
+                            should looks like: [interval vcf_file_path]. Column
+                            [1] is a symbol which could represent the genome
+                            region of the vcf_file and column [2] should be the
+                            path.
+      -O OUTDIR, --outdir OUTDIR
+                            A directory for output results.
+      -n PROJECT_NAME, --name PROJECT_NAME
+                            Name of the project. [test]
+      --as_pipe_shell_order
+                            Keep the shell name as the order of `WGS`.
+      -f, --force           Force overwrite existing shell scripts and folders.
+
+跟 ``genotype-joint-calling`` 相比不同的是，**ilus VQSR** 中的输入文件是 VCF 文件列表，并且每行只有一列，为 vcf 文件的路径，举个例子，如下：
+
+.. code:: bash
+
+    /path/chr1.vcf.gz
+    /path/chr2.vcf.gz
+    ...
+    /path/chrM.vcf.gz
+
+**ilus VQSR** 的其它参数与 ``genotype-joint-calling`` 相同，以下为一个完整的例子：
+
+.. code:: bash
+
+    $ ilus VQSR -C ilus_sys.yaml -L vcf.list -O 03.genotype --as_pipe_shell_order
 
 
