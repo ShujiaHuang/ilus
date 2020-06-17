@@ -200,3 +200,18 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
                             "-O {output_vcf_fname} && rm -f {out_snp_vqsr_fname}").format(**locals())
 
     return " && ".join([snp_vqsr_cmd, apply_snp_vqsr_cmd, indel_vqsr_cmd, apply_indel_vqsr_cmd])
+
+
+def collect_alignment_summary_metrics(config, input_bam, output_fname):
+    gatk = config["gatk"]["gatk"]
+    java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["CollectAlignmentSummaryMetrics_options"]) \
+        if "CollectAlignmentSummaryMetrics_options" in config["gatk"] \
+           and len(config["gatk"]["CollectAlignmentSummaryMetrics_options"]) else ""
+
+    reference = config["resources"]["reference"]  # reference fasta
+    cmd = ("time {gatk} {java_options} CollectAlignmentSummaryMetrics "
+           "-R {reference} "
+           "-I {input_bam} "
+           "-O {output_fname}").format(**locals())
+
+    return cmd
