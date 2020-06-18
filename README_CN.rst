@@ -1,12 +1,12 @@
 Ilus
 ====
 
-**Ilus** 是一个轻量的、可拓展的、简单易用的生成**半自动化**全基因组测序数据（Whole genome sequencing, WGS）分析流程的Python包.
+**ilus** 是一个轻量的、可拓展的、简单易用的生成 **半自动化** 全基因组测序数据（Whole genome sequencing, WGS）分析流程的Python包.
 
 简介
 ----
 
-**Ilus** 的用途是生成流程，而不是执行具体的分析流程。具体的执行将在生成流程脚本之后，由用户自己手动完成，该过程独立于 **ilus**，这也是为何称之为半自动化的原因. 目前 **Ilus** 中含有三个功能模块，分别是：
+**ilus** 的作用是生成数据分析流程，而不是执行具体的流程。具体的执行将在生成流程脚本之后，由用户自己手动完成，该过程独立于 **ilus**，这也是为何称之为半自动化的原因. 目前 **Ilus** 中含有三个功能模块，分别是：
 
 - 第一、``WGS`` 全基因组数据分析流程模块，该功能模块基于 `GATK 的最佳实践 <https://gatk.broadinstitute.org/hc/en-us/sections/360007226651-Best-Practices-Workflows>`_，使用 ``bwa-mem + GATK`` 的构建分析流程，其中包含了比对、排序、同一个样本多lane数据合并、重复序列标记（Markduplicates）、样本 gvcf 生成、多样本联合变异检测（Joint-calling）和 变异质控（Variant quality score recalibrator, VQSR） 这5个过程。该模块同样适用于 ``WES`` 数据的分析，只需要将配置文件的 ``variant_calling_interval`` 设置为 WES 测序的外显子捕获区间即可。
 - 第二、``genotype-joint-calling`` 多样本联合变异检测模块。该模块是从 ** ilus WGS** 中分离出来的。这样可以满足对已有 gvcf 样本单独进行变异检测的需要。或者碰到分多批次完成的WGS分析时，如果需要合并做变异检测，也只需要整理一个 gvcf 列表文件，并用该功能就可以了，没有必要从测序数据 fastq 开始。
@@ -62,7 +62,8 @@ Ilus 是基于 Python 编写的，稳定版本的代码已经发布至 PyPI。�
         genotype-joint-calling Genotype from GVCFs.
         VQSR                VQSR
 
-下面，将用例子分别对这三个功能的使用进行说明。
+
+下面，通过例子分别对这三个功能的使用进行说明。
 
 全基因组数据分析
 --------------
@@ -82,6 +83,9 @@ Ilus 是基于 Python 编写的，稳定版本的代码已经发布至 PyPI。�
                             system.
       -L FASTQLIST, --fastqlist FASTQLIST
                             Alignment FASTQ Index File.
+      -O OUTDIR, --outdir OUTDIR
+                            A directory for output results.
+
       -n PROJECT_NAME, --name PROJECT_NAME
                             Name of the project. Default value: test
       -P WGS_PROCESSES, --Process WGS_PROCESSES
@@ -92,8 +96,7 @@ Ilus 是基于 Python 编写的，稳定版本的代码已经发布至 PyPI。�
       -f, --force_overwrite
                             Force overwrite existing shell scripts and folders.
       -c, --cram            Covert BAM to CRAM after BQSR and save alignment file storage.
-      -O OUTDIR, --outdir OUTDIR
-                            A directory for output results.
+      
 
 
 其中，``-C``, ``-L`` 和 ``-O`` 这三个参数是**必须参数**，其它的参数按照我们的实际需要做选择即可。``-O`` 参数比较简单，为输出目录，该目录如果不存在，**ilus** 将会自动创建。最重要的是 ``-C`` 和 ``-L`` 参数，前者是 **ilus** 的配置文件，没有这个文件，**ilus** 就无法生成正确的流程，因此十分重要；后者是输入文件的列表文件，该列表文件一共有 5 列，每一列都是必须的信息。
@@ -102,7 +105,7 @@ Ilus 是基于 Python 编写的，稳定版本的代码已经发布至 PyPI。�
 
 首先是配置文件，我们需要在其中指定 ``WGS`` 流程各个步骤中所用的程序的路径以及所使用到 ``GATK bundle`` 文件和参考序列的路径。
 
-**需要注意的是 ``BWA MEM`` 的索引文件前缀需要与配置文件的 {resources}{reference} 相同，并存放在同一个目录中。**如下：
+需要注意的是 ``BWA MEM`` 的索引文件前缀需要与配置文件的 {resources}{reference} 相同，并存放在同一个目录中。如下：
 
 .. code:: bash
 
@@ -117,9 +120,9 @@ Ilus 是基于 Python 编写的，稳定版本的代码已经发布至 PyPI。�
     |-- GCA_000001405.15_GRCh38_no_alt_analysis_set.fa.sa
 
 
-该配置文件使用 Yaml 语法进行编写，在这里我提供一份该`配置文件的例子 <https://github.com/ShujiaHuang/ilus/blob/master/tests/ilus_sys.yaml>`_，如下：
+该配置文件使用 Yaml 语法进行编写，在这里我提供一份该 `配置文件的例子 <https://github.com/ShujiaHuang/ilus/blob/master/tests/ilus_sys.yaml>`_，如下：
 
-.. code:: bash
+.. code:: yaml
 
     aligner:
       bwa: /path_to/bwa
@@ -287,7 +290,7 @@ Ilus 是基于 Python 编写的，稳定版本的代码已经发布至 PyPI。�
     └── my_wgs.step6.VQSR.sh
 
 
-投递任务运行流程时，我们按顺序从 step1 执行到 step6 即可。``loginfo`` 目录记录了各个步骤各个样本的运行状态，我们可以检查各个步骤的 ``.o.log.list`` 日志文件，获得该样本是否成功结束的标记。如果成功了，那么在该日志文件的末尾会有一个 ``**[xx] xxxx done**`` 的标记。可以通过使用 **ilus** 提供的脚本 ``check_jobs_status.py`` 检查各个步骤是否已经全部顺利完成，如果有错那么该脚本会将未完成的任务输出，方便我们重新执行。用法为：
+投递任务运行流程时，我们按顺序从 step1 执行到 step6 即可。``loginfo`` 目录记录了各个步骤各个样本的运行状态，我们可以检查各个步骤的 ``.o.log.list`` 日志文件，获得该样本是否成功结束的标记。如果成功了，那么在该日志文件的末尾会有一个 ``[xxxx] xxxx done`` 的标记。可以通过使用 **ilus** 提供的脚本 ``check_jobs_status.py`` 检查各个步骤是否已经全部顺利完成，如果有错那么该脚本会将未完成的任务输出，方便我们重新执行。用法为：
 
 .. code:: bash
 
@@ -351,13 +354,13 @@ genotype-joint-calling
       -f, --force           Force overwrite existing shell scripts and folders.
 
 
-``-L`` 是 **ilus genotype-joint-calling** 的输入参数，它接受的是一个 ``gvcf list`` 文件，这个文件由两列构成，第一列是该 gvcf 文件所对应的区间或者染色体编号，第二列是该 gvcf 文件的路径，目前 **ilus** 要求各个样本的 gvcf 都按照主要染色体（1-22、X、Y、M）分开，举个例子：
+``-L`` 是 **ilus genotype-joint-calling** 的输入参数，它接受的是一个 ``gvcf list`` 文件，这个文件由两列构成，第一列是 gvcf 文件所对应的区间或者染色体编号，第二列是 gvcf 文件的路径，目前 **ilus** 要求各个样本的 gvcf 都按照主要染色体（1-22、X、Y、M）分开，举个例子：
 
 .. code:: bash
 
     $ ilus genotype-joint-calling -n my_project -C ilus_sys.yaml -L gvcf.list -O genotype --as_pipe_shell_order
 
-其中 ``gvcf.list`` 格式如下：
+其中 ``gvcf.list`` 的格式如下：
 
 .. code:: bash
 
