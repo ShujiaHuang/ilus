@@ -31,7 +31,7 @@ Ilus 是基于 Python 编写的，稳定版本的代码已经发布至 PyPI。�
 
     pip install ilus
 
-该命令除了主程序 ilus 之外，还会自动地将 ``ilus`` 所依赖的 Python 包也一并装上。安装完成之后，在命令行执行 ``ilus`` 这个命令了，如果没有报错信息，并看到类似如下的内容，那么就说明你已经安装成功了。
+该命令除了主程序 ilus 之外，还会自动地将 ``ilus`` 所依赖的 Python 包也一并装上。安装完成之后，在命令行执行 ``ilus`` 这个命令，如果看到类似如下的内容，那么就说明你已经安装成功了。
 
 
 .. code:: bash
@@ -117,7 +117,7 @@ Ilus 是基于 Python 编写的，稳定版本的代码已经发布至 PyPI。�
     |-- GCA_000001405.15_GRCh38_no_alt_analysis_set.fa.bwt
     |-- GCA_000001405.15_GRCh38_no_alt_analysis_set.fa.fai
     |-- GCA_000001405.15_GRCh38_no_alt_analysis_set.fa.pac
-    |-- GCA_000001405.15_GRCh38_no_alt_analysis_set.fa.sa
+    `-- GCA_000001405.15_GRCh38_no_alt_analysis_set.fa.sa
 
 
 该配置文件使用 Yaml 语法进行编写，在这里我提供一份该 `配置文件的例子 <https://github.com/ShujiaHuang/ilus/blob/master/tests/ilus_sys.yaml>`_，如下：
@@ -219,11 +219,11 @@ Ilus 是基于 Python 编写的，稳定版本的代码已经发布至 PyPI。�
 
 ``-L`` 参数是输入文件，文件中包含了WGS/WES分析流程所必须的所有测序数据信息，各列的信息如下：
 
-- [1] Sample ID 样本名
-- [2] Read Group，使用bwa mem时通过 -R 参数指定的 read group
-- [3] Fastq1 路径
-- [4] Fastq2 路径，如果是Single End测序，没有fastq2，则该列用空格代替
-- [5] fastq 的 lane 编号
+- [1] SAMPLE，样本名
+- [2] RGID，Read Group，使用bwa mem时通过 -R 参数指定的 read group
+- [3] FASTQ1，Fastq1 文件的路径
+- [4] FASTQ2，Fastq2 文件路径，如果是Single End测序，没有fastq2，此时该列用空格代替
+- [5] LANE，fastq 的 lane 编号
 
 如果某个样本的测序量比较大，导致一个样本有多个 lane 数据，或者同一个 lane 的数据被拆分成了多个，这个时候不需要人工对这些 fastq 数据进行合并，只需要依照如上信息编写好即可。同一个样本的数据在流程中会在各个子数据跑完比对并完成排序之后自动对进行合并。下面给出这个输入文件的例子：
 
@@ -302,7 +302,7 @@ Ilus 是基于 Python 编写的，稳定版本的代码已经发布至 PyPI。�
 - ``02.gvcf`` 用于存放各个样本的 ``gvcf`` 结果
 - ``03.genotype`` 用于存放最后变异检测的结果
 
-**例子2：只执行 WGS 流程中某个/某些步骤**
+**例子2：只生成 WGS 流程中的某个/某些步骤**
 
 有时，我们并打算（或者没有必要）从头到尾完整地将 WGS 流程执行下去，比如我们只想执行从 ``fastq`` 比对到生成 ``gvcf`` 这个步骤，暂时不想执行 ``genotype`` 和 ``VQSR``，那么这个时候我们可以通过 ``-P`` 参数指定特定的步骤来实现：
 
@@ -320,6 +320,8 @@ Ilus 是基于 Python 编写的，稳定版本的代码已经发布至 PyPI。�
     $ ilus WGS -c -n my_wgs -C ilus_sys.yaml -L input.list -P BQSR -O ./output
 
 需要注意的是，**ilus** 为了节省项目的空间，只会为每一个样本保留 BQSR 之后的 BAM/CRAM 文件，因此，如果你想重新跑 BQSR 需要确定在 BQSR 前一步（即，markdup）的 BAM 文件是否已经被删除了，如果原先 **ilus** 在BQSR这一步没有正常结束的话，那么该 markdup 的 BAM 文件应该还会被保留着的，**ilus** 执行任务时具有“原子属性”，也就是说只有当所有步骤都成功结束时才会删除在之后的分析中完全不需要的文件。
+
+    -P 参数能够指定的步骤必须属于「align,markdup,BQSR,gvcf,genotype,VQSR」中的一个或多个.
 
 
 genotype-joint-calling
