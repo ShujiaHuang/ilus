@@ -45,6 +45,9 @@ gatk:
   vqsr_java_options: ["-Xmx10G"]
 
   CollectAlignmentSummaryMetrics_jave_options: ["-Xmx10G"]
+
+  # Adapter sequencing of BGISEQ-500. If you use illumina(or other) sequencing system you should
+  # change the value of this parameter.
   CollectAlignmentSummaryMetrics_options: [
     "--ADAPTER_SEQUENCE AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA",
     "--ADAPTER_SEQUENCE AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG"
@@ -59,13 +62,23 @@ gatk:
     "--max-gaussians 6"
   ]
 
+  # ``interval`` value could be a interval region file in bed format or could be a list here
   interval: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9",
              "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
              "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
   
-  # Specific variant calling interval, this could be the same as ``interval`` above
-  variant_calling_interval: ["./wgs_calling_regions.GRCh38.interval.bed"]
+  # Specific variant calling intervals. The value could be a file in bed format (recommend) or a interval list here,
+  # and the value could be as the same as ``interval`` parameter above.
+  # The first three columns in interval regions file must be ``Sequencing ID``, ``region start`` and ``region end``,e.g.:
+  #         chr1    10001   207666
+  #         chr1    257667  297968
 
+  # variant_calling_interval: ["./wgs_calling_regions.GRCh38.interval.bed"]
+  variant_calling_interval: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9",
+                             "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
+                             "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
+
+  # GATK bundle
   bundle:
     hapmap: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/hapmap_3.3.hg38.vcf.gz
     omni: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/1000G_omni2.5.hg38.vcf.gz
