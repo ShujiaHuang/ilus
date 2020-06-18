@@ -1,35 +1,37 @@
 Ilus
 ====
 
-**Ilus** 是一个轻量级的、半自动的、可拓展的、简单易用的全基因组测序数据（Whole genome sequencing, WGS）分析流程包.
+**Ilus** 是一个轻量的、可拓展的、简单易用的生成**半自动化**全基因组测序数据（Whole genome sequencing, WGS）分析流程的Python包.
 
 简介
 ----
 
-目前在 **Ilus** 中含有三个独立的功能模块，分别是：
+**Ilus** 的用途是生成流程，而不是执行具体的分析流程。具体的执行将在生成流程脚本之后，由用户自己手动完成，该过程独立于 **ilus**，这也是为何称之为半自动化的原因. 目前 **Ilus** 中含有三个功能模块，分别是：
 
-- 第一、全基因组数据分析流程，该流程基于 `GATK 的最佳实践 <https://gatk.broadinstitute.org/hc/en-us/sections/360007226651-Best-Practices-Workflows>`_，即使用 bwa-mem + GATK 的方式进行构建，包含了比对、排序、同样本多lane数据合并、标记重复序列（Markduplicates）、单样本 gvcf 生成、多样本联合变异检测（Joint-calling）和 变异质控（Variant quality score recalibrator, VQSR） 这若干个过程。
-- 第二、独立的多样本联合变异检测模块，之所以将该部分从原来的 WGS 流程中分离出来作为一个独立的功能，这是因为，在有些情况下，我们已经有了各个样本的 gvcf ，或者我们的数据是分多批次完成的，那么这个时候，只需要整理一个 gvcf 列表文件，并用该功能就可以接下去完成多样本的联合变异检测了，而没有必要从测序数据 fastq 开始从头分析。
-- 第三、独立的变异质控模块（VQSR），该模块同样是为了方便对单独的变异检测结果（VCF格式）进行变异质控。
-
+- 第一、``WGS`` 全基因组数据分析流程模块，该功能模块基于 `GATK 的最佳实践 <https://gatk.broadinstitute.org/hc/en-us/sections/360007226651-Best-Practices-Workflows>`_，使用 ``bwa-mem + GATK`` 的构建分析流程，其中包含了比对、排序、同一个样本多lane数据合并、重复序列标记（Markduplicates）、样本 gvcf 生成、多样本联合变异检测（Joint-calling）和 变异质控（Variant quality score recalibrator, VQSR） 这5个过程。该模块同样适用于 ``WES`` 数据的分析，只需要将配置文件的 ``variant_calling_interval`` 设置为 WES 测序的外显子捕获区间即可。
+- 第二、``genotype-joint-calling`` 多样本联合变异检测模块。该模块是从 ** ilus WGS** 中分离出来的。这样可以满足对已有 gvcf 样本单独进行变异检测的需要。或者碰到分多批次完成的WGS分析时，如果需要合并做变异检测，也只需要整理一个 gvcf 列表文件，并用该功能就可以了，没有必要从测序数据 fastq 开始。
+- 第三、``VQSR`` 变异质控模块（VQSR），同样是从 **ilus WGS** 中分离出来的，这样可以方便对单独的变异检测结果（VCF格式）进行变异质控。
 
     需要注意的是 ilus 不包含原始 fastq 数据的质控，ilus WGS 流程默认你所输入的测序数据都是 clean data， 即已经经过了严格的质控。
 
-另外，考虑到不同计算集群（本地和云上）的作业调度情况存在一定的区别，``ilus`` 并不会直接在你的计算机或者集群里自动投递和运行任务，而是严格依据你的输入数据（包括数据的顺序）和配置文件的信息，生成分析流程的各个 Bash 执行脚本。你需要手动将这些执行脚本，分步骤投递和运行，并且在投递下一个任务之前，要先确保上一步已经正确完成。这样做的目的是希望能够尽可能地满足不同用户使用不同计算环境时的需要，而且，这些步骤的分析脚本都会统一生成并汇集在一个固定的目录下（目录名通常是 ``00.shell``）。
+**ilus** 不具体执行任务的原因有两点：
+- 第一，在不同的计算集群（本地和云上）条件下，作业调度的情况往往会有差别，如果将这些情况都一一考虑进去，那么整体功能会不可避免地变得臃肿复杂，而且还不一定能够覆盖所有的情况。因此，作为一个轻量级的工具，``ilus`` 在设计之初就不将自动投递和运行任务的功能考虑在内，而是严格依据你的输入数据（包括数据的顺序）和配置文件的信息，生成分析流程的各个 Bash 执行脚本。如果要实现作业的自动投递和监控，**ilus** 希望将来和开发者协作通过设计外部插件的形式来实现，目前你需要手动将这些执行脚本，分步骤投递和运行。
 
-除了可以按照顺序投递任务之外，假如你有充足的计算资源，那么你可以按照需要将一个汇总的运行脚本拆分成若干个子执行脚本，具体拆成多少个取决于你要并行成多少个任务。比如你一共有 10 个样本，第一步的 bwa 比对脚本中就一共有10行，每行代表一个样本的bwa，这里每一行的运行命令都是可以并行运行的，每个任务之间是彼此独立的。因此你可以将该步骤步的执行脚本拆分为 10 个（或者其它小于10的个数）子任务，然后分别手动投递这10个任务就行了。至于如何将一个完整的执行脚本拆分为多个，你既可以自己写程序完成，也可以使用 **ilus** 提供的程序 ``yhbatch_slurm_jobs.py`` 来完成。这样做虽然牺牲了自动化的任务投递，但却可以增加适应性和操控性。
+任务完成状态的自动化监控是非常重要的，特别是当有成千上万的样本需要完成分析时，这个过程如果是人工手动来检查，那么过程一定是低效并且易出错的。虽然 **ilus** 目前没有提供实时的任务监控工具，但是也已经实现了一个简单的程序专门用于检查用户的作业是否都已成功完成，具体见下文例子。
+
+**ilus** 所生成的流程运行脚本有一个特点，那就是脚本中的每一行都是可以独立运行的，彼此之间互不影响。这样做的好处是，当你有充足的计算资源时，你可以按照需要将这个脚本拆分成若干个子脚本，然后分别独立投递任务。但具体要拆成多少个取决于你要并行成多少个任务。比如你一共有 10 个样本，第一步的 ``bwa`` 比对脚本中就一共有10个比对命令，每行代表一个样本的 ``bwa``，由于每行命令都是彼此独立互不依赖的。因此你可以将该步骤步的执行脚本拆分为 10 （或者小于10）个子任务，然后分别手动投递这10个任务。至于如何将一个完整的执行脚本拆分为多个，你既可以自己写程序完成，也可以使用 **ilus** 提供的`yhbatch_slurm_jobs程序 <https://github.com/ShujiaHuang/ilus/blob/master/scripts/yhbatch_slurm_jobs.py>`_ 来完成，如果该程序不能直接满足你的需求，你可以对其进行修改。虽然 **ilus** 没有自动化管理任务的投递和执行，但是通过这样的做法却可以增加适应性和操控性。
 
 
 如何安装
 -------
 
-Ilus 基于 Python 编写，并已经发布至 PyPI，因此要使用 Ilus, 你只需要通过运行以下命令进行安装即可：
+Ilus 是基于 Python 编写的，稳定版本的代码已经发布至 PyPI。因此要使用 Ilus, 你可以通过 ``pip`` 这个Python包管理工具进行安装：
 
 .. code:: bash
 
     pip install ilus
 
-该命令除了主程序 ilus 之外，还会自动地将 ``ilus`` 所依赖的 Python 包也一并装上。安装完成之后，你就可以在命令行执行 ``ilus`` 这个命令了，如果没有任何报错信息，并看到类似如下的内容，那么就说明你已经安装成功了。
+该命令除了主程序 ilus 之外，还会自动地将 ``ilus`` 所依赖的 Python 包也一并装上。安装完成之后，在命令行执行 ``ilus`` 这个命令了，如果没有报错信息，并看到类似如下的内容，那么就说明你已经安装成功了。
 
 
 .. code:: bash
@@ -42,7 +44,7 @@ Ilus 基于 Python 编写，并已经发布至 PyPI，因此要使用 Ilus, 你�
 快速开始
 -------
 
-通过执行 ``ilus --help`` 可以查看到三个功能模块，分别是 ``WGS``, ``genotype-joint-calling`` 和 ``VQSR``。
+通过执行 ``ilus --help`` 可以查看三个功能模块，分别是 ``WGS``, ``genotype-joint-calling`` 和 ``VQSR``。
 
 .. code:: bash
 
@@ -94,7 +96,7 @@ Ilus 基于 Python 编写，并已经发布至 PyPI，因此要使用 Ilus, 你�
                             A directory for output results.
 
 
-在该功能中，``-C``, ``-L`` 和 ``-O`` 这三个参数是**必须的**，其它的参数按照我们的实际需要做选择即可。``-O`` 参数比较简单，为输出目录，该目录如果不存在，**ilus** 将会自动创建。最重要的是 ``-C`` 和 ``-L`` 参数，前者是 **ilus** 的配置文件，没有这个文件，**ilus** 就无法生成正确的流程，因此十分重要；后者是输入文件的列表文件，该列表文件一共有 5 列，每一列都是必须的信息。
+其中，``-C``, ``-L`` 和 ``-O`` 这三个参数是**必须参数**，其它的参数按照我们的实际需要做选择即可。``-O`` 参数比较简单，为输出目录，该目录如果不存在，**ilus** 将会自动创建。最重要的是 ``-C`` 和 ``-L`` 参数，前者是 **ilus** 的配置文件，没有这个文件，**ilus** 就无法生成正确的流程，因此十分重要；后者是输入文件的列表文件，该列表文件一共有 5 列，每一列都是必须的信息。
 
 以下分别对这两个参数的格式展开说明：
 
@@ -115,7 +117,7 @@ Ilus 基于 Python 编写，并已经发布至 PyPI，因此要使用 Ilus, 你�
     |-- GCA_000001405.15_GRCh38_no_alt_analysis_set.fa.sa
 
 
-该配置文件使用 Yaml 语法进行编写，在这里我提供一份该配置文件的例子，如下：
+该配置文件使用 Yaml 语法进行编写，在这里我提供一份该`配置文件的例子 <https://github.com/ShujiaHuang/ilus/blob/master/tests/ilus_sys.yaml>`_，如下：
 
 .. code:: bash
 
@@ -138,6 +140,7 @@ Ilus 基于 Python 编写，并已经发布至 PyPI，因此要使用 Ilus, 你�
         concat_options: []
         genomecov_options: ["-bga -split"]
 
+    # https://github.com/Griffan/VerifyBamID
     verifyBamID2:
         verifyBamID2: /path_to/verifyBamID2
         options: [
@@ -158,7 +161,8 @@ Ilus 基于 Python 编写，并已经发布至 PyPI，因此要使用 Ilus, 你�
 
       CollectAlignmentSummaryMetrics_jave_options: ["-Xmx10G"]
 
-      # Adapter sequencing of BGISEQ-500
+      # Adapter sequencing of BGISEQ-500. If you use illumina (or others) sequencing system you should
+      # change the value of this parameter.
       CollectAlignmentSummaryMetrics_options: [
         "--ADAPTER_SEQUENCE AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA",
         "--ADAPTER_SEQUENCE AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG"
@@ -173,12 +177,24 @@ Ilus 基于 Python 编写，并已经发布至 PyPI，因此要使用 Ilus, 你�
         "--max-gaussians 6"
       ]
 
+      # interval value could be a file which contain all interval regions in it or could be a list here
       interval: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9",
                  "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
                  "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
       
-      # Specific variant calling interval, this could be the same as ``interval`` above
+      # Specific variant calling intervals. The value could be a file in bed format (recommend) or a interval list,
+      # and the value could be as the same as ``interval`` parameter above.
+      # The first three columns in interval regions file must be ``Sequencing ID``, ``region start`` and ``region end``,e.g.:
+      #         chr1    10001   207666
+      #         chr1    257667  297968
+
       variant_calling_interval: ["./wgs_calling_regions.GRCh38.interval.bed"]
+      # variant_calling_interval: [
+      #  "chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", 
+      #  "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", 
+      #  "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", 
+      #  "chrX", "chrY", "chrM"
+      #]
 
       bundle:
         hapmap: /path_to/gatk/bundle/hg38/hapmap_3.3.hg38.vcf.gz
@@ -195,18 +211,18 @@ Ilus 基于 Python 编写，并已经发布至 PyPI，因此要使用 Ilus, 你�
       reference: /path_to/human_reference/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa
 
 
-在该配置文件，对于 WGS 流程来说所必须的生信软件是：bwa、samtools，bcftools、bedtools、gatk、bgzip和tabix，文件中的 ``verifyBamID2`` 参数仅用于计算样本是否存在污染，并不是必填的参数，如果配置文件中没有这个参数，那么流程则不进行样本污染情况的计算。另外，所必须的数据则是：gatk bundle 和参考序列。
+在配置文件中， ``bwa``、``samtools``、``bcftools``、``bedtools``、``gatk``、``bgzip`` 和 ``tabix`` 都是必须的生信软件，需要自行安装，并将路径填入到对应的参数中，`verifyBamID2 <https://github.com/Griffan/VerifyBamID>`_ 仅用于计算样本是否存在污染，并不是必填的参数，如果配置文件中没有这个参数，则代表流程不会对样本的污染情况进行计算。另外，所必须的数据则是：``gatk bundle`` 和基因组参考序列。
 
 
-接着是 ``-L`` 输入文件，这是分析流程所必须的所有测序数据，各列的信息如下：
+``-L`` 参数是输入文件，文件中包含了WGS/WES分析流程所必须的所有测序数据信息，各列的信息如下：
 
 - [1] Sample ID 样本名
-- [2] Read Group，使用bwa mem时通过 -R 参数指定的 read group)
+- [2] Read Group，使用bwa mem时通过 -R 参数指定的 read group
 - [3] Fastq1 路径
 - [4] Fastq2 路径，如果是Single End测序，没有fastq2，则该列用空格代替
 - [5] fastq 的 lane 编号
 
-对于测序量比较大，含有多个 lane 数据的样本，或者同一个 lane 的数据被拆分成了多个，不需要人工合并，只需要依照如上信息按行编写好输入文件即可，同一个样本的数据在流程中会在适当的时候由程序自动对其进行合并。如下是一个输入文件的例子：
+如果某个样本的测序量比较大，导致一个样本有多个 lane 数据，或者同一个 lane 的数据被拆分成了多个，这个时候不需要人工对这些 fastq 数据进行合并，只需要依照如上信息编写好即可。同一个样本的数据在流程中会在各个子数据跑完比对并完成排序之后自动对进行合并。下面给出这个输入文件的例子：
 
 .. code:: bash
 
@@ -219,16 +235,18 @@ Ilus 基于 Python 编写，并已经发布至 PyPI，因此要使用 Ilus, 你�
     HG004   "@RG\tID:CL100076266_L02\tPL:COMPLETE\tPU:CL100076266_L02_HG004\tLB:CL100076266_L02\tSM:HG004"  /path/HG004_NA24143_mother/BGISEQ500/BGISEQ500_PCRfree_NA24143_CL100076266_L02_read_1.clean.fq.gz   /path/HG004_NA24143_mother/BGISEQ500/BGISEQ500_PCRfree_NA24143_CL100076266_L02_read_2.clean.fq.gz   CL100076266_L02
     HG005   "@RG\tID:CL100076244_L01\tPL:COMPLETE\tPU:CL100076244_L01_HG005\tLB:CL100076244_L01\tSM:HG005"  /path/HG005_NA24631_son/BGISEQ500/BGISEQ500_PCRfree_NA24631_CL100076244_L01_read_1.clean.fq.gz  /path/HG005_NA24631_son/BGISEQ500/BGISEQ500_PCRfree_NA24631_CL100076244_L01_read_2.clean.fq.gz  CL100076244_L01
 
-以下是一些使用 **ilus** 生成 WGS 分析流程的例子。
+以下提供使用 **ilus** 生成 WGS 分析流程的例子。
 
 
-**例子1：从头开始执行 WGS 流程**
+**例子1：从头开始生成 WGS 分析流程**
 
 .. code:: bash
 
-    $ ilus WGS -c -n my_wgs -C ilus_sys.yaml -L input.list -O ./output
+    $ ilus WGS -c -n my_wgs -C ilus_sys.yaml -L input.list -O output/
 
-这个命令的意思是，依据 ``ilus_sys.yaml`` 和 ``input.list`` 在输出目录 ``output`` 生成名为 （-n）``my_wgs`` 的 WGS 分析流程，并将最后的比对数据从 BAM 转为 CRAM (-c)。输出目录 ``output`` 有 4 个文件夹（如下），用于存放由 WGS 分析流程产生的各类数据。
+这个命令的意思是，项目 ``my_wgs``（-n）依据 ``ilus_sys.yaml`` 和 ``input.list`` 在输出目录 ``output`` 中生成 WGS 分析流程，并将最后的比对数据从 BAM 转为 CRAM (-c)。
+
+在输出目录 ``output`` 一共有 4 个文件夹（如下），分别用于存放分析流程产生的各类数据。其中：
 
 .. code:: bash
     
@@ -237,7 +255,7 @@ Ilus 基于 Python 编写，并已经发布至 PyPI，因此要使用 Ilus, 你�
     02.gvcf/
     03.genotype/
 
-从文件夹的名字，我们也可以了解到各个目录的具体作用。比如 ``00.shell`` 目录存放的是流程各个步骤的执行脚本和日志文件的目录：
+- ``00.shell`` 目录是分析流程的汇集目录，在该目录中，生成了分步骤生成了流程各个步骤的执行脚本，同时还包含一个日志文件目录： 
 
 .. code:: bash
 
@@ -269,7 +287,7 @@ Ilus 基于 Python 编写，并已经发布至 PyPI，因此要使用 Ilus, 你�
     └── my_wgs.step6.VQSR.sh
 
 
-我们依照从 step1 到 step6执行流程即可。loginfo目录记录了各个步骤各个样本的运行状态，我们可以检查各个步骤的 .o.log.list 日志文件，获得该样本是否成功结束的标记。如果成功结束了，那么在该日志文件的末尾会有一个 ``**[xx] xxxx done**`` 的标记。可以通过使用 **ilus** 提供的脚本 ``check_jobs_status.py`` 检查各个步骤是否已经全部顺利完成，如果有错那么该脚本会将未完成的任务输出，方便我们重新执行。用法为：
+投递任务运行流程时，我们按顺序从 step1 执行到 step6 即可。``loginfo`` 目录记录了各个步骤各个样本的运行状态，我们可以检查各个步骤的 ``.o.log.list`` 日志文件，获得该样本是否成功结束的标记。如果成功了，那么在该日志文件的末尾会有一个 ``**[xx] xxxx done**`` 的标记。可以通过使用 **ilus** 提供的脚本 ``check_jobs_status.py`` 检查各个步骤是否已经全部顺利完成，如果有错那么该脚本会将未完成的任务输出，方便我们重新执行。用法为：
 
 .. code:: bash
 
@@ -277,18 +295,22 @@ Ilus 基于 Python 编写，并已经发布至 PyPI，因此要使用 Ilus, 你�
 
 如果任务都是成功结束的，那么该 list 文件为空，并输出 ``** All Jobs done **``。
 
+- ``01.alignment`` 用于存放各个样本的比对结果
+- ``02.gvcf`` 用于存放各个样本的 ``gvcf`` 结果
+- ``03.genotype`` 用于存放最后变异检测的结果
+
 **例子2：只执行 WGS 流程中某个/某些步骤**
 
-有时候，我们并打算从头到尾完整地将 WGS 流程执行下去，比如我们只想执行从 fastq 比对到生成 gvcf 这个步骤，暂时不想执行 genotype joint-calling 和 VQSR，那么这个时候我们可以通过 ``-P`` 参数指定特定的步骤：
+有时，我们并打算（或者没有必要）从头到尾完整地将 WGS 流程执行下去，比如我们只想执行从 ``fastq`` 比对到生成 ``gvcf`` 这个步骤，暂时不想执行 ``genotype`` 和 ``VQSR``，那么这个时候我们可以通过 ``-P`` 参数指定特定的步骤来实现：
 
 .. code:: bash
 
     $ ilus WGS -c -n my_wgs -C ilus_sys.yaml -L input.list -P align,markdup,BQSR,gvcf -O ./output
 
 
-这样就只会生成从 bwa 到 gvcf 的 shell 脚本。
+这样就只生成从 ``bwa`` 到 ``gvcf`` 的执行脚本。
 
-除此之外，当你发现 WGS 的某个步骤跑错了，需要重新更新时，你也可以用 ``-P`` 指定重跑特定的步骤。比如我想重生成 BQSR 这个步骤的运行脚本，那么就可以这样做：
+除此之外，如果某个 WGS 步骤跑错了，调整之后，需要重新更新时，你也可以用 ``-P`` 指定重跑特定的步骤。比如我想重生成 BQSR 这个步骤的运行脚本，那么就可以这样做：
 
 .. code:: bash
 
@@ -300,7 +322,7 @@ Ilus 基于 Python 编写，并已经发布至 PyPI，因此要使用 Ilus, 你�
 genotype-joint-calling
 ----------------------
 
-如果我们已经有了各个样本的 gvcf 需要从这些 gvcf 开始完成多样本的联合变异检测（Joint-calling），那么就可以使用 ``genotype-joint-calling`` 来实现。具体用法如下：
+如果我们已经有了各个样本的 gvcf 数据，现在要用这些 gvcf 完成多样本的联合变异检测（Joint-calling），那么就可以使用 ``genotype-joint-calling`` 来实现。具体用法如下：
 
 .. code:: bash
 
@@ -329,13 +351,13 @@ genotype-joint-calling
       -f, --force           Force overwrite existing shell scripts and folders.
 
 
-在 **ilus genotype-joint-calling** 中输入的 gvcf list 文件，由两列构成，第一列是该 gvcf 所在的区间或者染色体编号，第二列是该 gvcf 文件的路径，举个例子：
+``-L`` 是 **ilus genotype-joint-calling** 的输入参数，它接受的是一个 ``gvcf list`` 文件，这个文件由两列构成，第一列是该 gvcf 文件所对应的区间或者染色体编号，第二列是该 gvcf 文件的路径，目前 **ilus** 要求各个样本的 gvcf 都按照主要染色体（1-22、X、Y、M）分开，举个例子：
 
 .. code:: bash
 
-    $ ilus genotype-joint-calling -n my_project -C ilus_sys.yaml -L gvcf.list -O 03.genotype --as_pipe_shell_order
+    $ ilus genotype-joint-calling -n my_project -C ilus_sys.yaml -L gvcf.list -O genotype --as_pipe_shell_order
 
-其中 ``gvcf.list`` 的格式类似如下：
+其中 ``gvcf.list`` 格式如下：
 
 .. code:: bash
 
@@ -347,15 +369,15 @@ genotype-joint-calling
     chrM    /path/sample1.chrM.g.vcf.gz
     chrM    /path/sample2.chrM.g.vcf.gz
 
-以上假设 gvcf.list 中只有两个样本。
+以上 ``gvcf.list`` 中只有两个样本。
 
-参数 ``--as_pipe_shell_order`` 可加也可不加（默认是不加），它唯一的作用就是按照 **ilus WGS** 流程的方式输出执行脚本的名字，维持和 WGS 流程一样的次序。
+参数 ``--as_pipe_shell_order`` 可加也可不加（默认是不加），它唯一的作用就是按照 **ilus WGS** 流程的方式输出执行脚本的名字，维持和 ``WGS`` 流程一样的次序和相同的目录结构。
 
 
 VQSR
 ----
 
-该功能仅用于生成基于 ``GATK VQSR`` 的执行脚本。我们如果已经有了 VCF 结果，现在只想单独对这个变异数据跑 VQSR 进行初步的质控，那么就可以使用这个模块，用法与 ``genotype-joint-calling`` 大同小异，如下：
+该功能仅用于生成基于 ``GATK VQSR`` 的执行脚本。我们如果已经有了最终的变异检测（VCF格式）结果，现在只想借助 ``GATK VQSR`` 完成这个变异数据的质控，那么就可以使用这个模块了，用法与 ``genotype-joint-calling`` 大同小异，如下：
 
 .. code:: bash
 
@@ -391,10 +413,11 @@ VQSR
     ...
     /path/chrM.vcf.gz
 
-**ilus VQSR** 的其它参数与 ``genotype-joint-calling`` 相同，以下为一个完整的例子：
+**ilus VQSR** 的其它参数与 ``genotype-joint-calling`` 相同，以下提供一个完整的例子：
 
 .. code:: bash
 
-    $ ilus VQSR -C ilus_sys.yaml -L vcf.list -O 03.genotype --as_pipe_shell_order
+    $ ilus VQSR -C ilus_sys.yaml -L vcf.list -O genotype --as_pipe_shell_order
+
 
 
