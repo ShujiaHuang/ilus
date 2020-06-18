@@ -30,6 +30,9 @@ def parse_commandline_args():
                               help="YAML configuration file specifying details about system.")
     pipeline_cmd.add_argument("-L", "--fastqlist", dest="fastqlist", type=str, required=True,
                               help="Alignment FASTQ Index File.")
+    pipeline_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
+                              help="A directory for output results.")
+
     pipeline_cmd.add_argument("-P", "--Process", dest="wgs_processes", type=str,
                               help="Specific one or more processes (separated by comma) of WGS pipeline. "
                                    "Defualt value: align,markdup,BQSR,gvcf,genotype,VQSR. "
@@ -41,9 +44,7 @@ def parse_commandline_args():
     pipeline_cmd.add_argument("-f", "--force_overwrite", dest="overwrite", action="store_true",
                               help="Force overwrite existing shell scripts and folders.")
     pipeline_cmd.add_argument("-c", "--cram", dest="cram", action="store_true",
-                              help="Covert BAM to CRAM after BQSR.")
-    pipeline_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
-                              help="A directory for output results.")
+                              help="Covert BAM to CRAM after BQSR and save alignment file storage.")
 
     # Genotype from GVCFs
     genotype_cmd = commands.add_parser("genotype-joint-calling", help="Genotype from GVCFs.")
@@ -53,14 +54,15 @@ def parse_commandline_args():
                               help="GVCFs file list. One gvcf_file per-row and the format should looks like: "
                                    "[interval\tgvcf_file_path]. Column [1] is a symbol which could represent "
                                    "the genome region of the gvcf_file and column [2] should be the path.")
+    genotype_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
+                              help="A directory for output results.")
+
     genotype_cmd.add_argument("-n", "--name", dest="project_name", type=str, default="test",
                               help="Name of the project. [test]")
     genotype_cmd.add_argument("--as_pipe_shell_order", dest="as_pipe_shell_order", action="store_true",
                               help="Keep the shell name as the order of `WGS`.")
     genotype_cmd.add_argument("-f", "--force", dest="overwrite", action="store_true",
                               help="Force overwrite existing shell scripts and folders.")
-    genotype_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
-                              help="A directory for output results.")
 
     # Genotype from GVCFs
     vqsr_cmd = commands.add_parser("VQSR", help="VQSR")
@@ -70,14 +72,15 @@ def parse_commandline_args():
                           help="VCFs file list. One vcf_file per-row and the format should looks like: "
                                "[interval\tvcf_file_path]. Column [1] is a symbol which could represent "
                                "the genome region of the vcf_file and column [2] should be the path.")
+    vqsr_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
+                          help="A directory for output results.")
+
     vqsr_cmd.add_argument("-n", "--name", dest="project_name", type=str, default="test",
                           help="Name of the project. [test]")
     vqsr_cmd.add_argument("--as_pipe_shell_order", dest="as_pipe_shell_order", action="store_true",
                           help="Keep the shell name as the order of `WGS`.")
     vqsr_cmd.add_argument("-f", "--force", dest="overwrite", action="store_true",
                           help="Force overwrite existing shell scripts and folders.")
-    vqsr_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
-                          help="A directory for output results.")
 
     return cmdparser.parse_args()
 
@@ -105,7 +108,7 @@ def main():
         for r in aione["config"]["gatk"]["variant_calling_interval"]:
             if os.path.isfile(r):
                 with open(r) as I:
-                    """Format:
+                    """ bed format:
                     
                     chr1	10001	207666
                     chr1	257667	297968
@@ -118,7 +121,7 @@ def main():
             else:
                 intervals.append([r])
 
-        # Update
+        # Update by regular regions information
         aione["config"]["gatk"]["variant_calling_interval"] = intervals
     else:
         sys.stderr.write("[Error] 'variant_calling_interval' parameter in [\"gatk\"][\"variant_calling_interval\"] "
