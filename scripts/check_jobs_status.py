@@ -44,4 +44,4 @@ if __name__ == "__main__":
                 print ("[unfinish]\t%s\t%s" % (sample, task_shell))
 
     if is_all_finish:
-        print ("** All Jobs done **")
+        sys.stderr.write("** All Jobs done **\n")
