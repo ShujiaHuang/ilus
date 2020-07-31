@@ -220,3 +220,16 @@ def collect_alignment_summary_metrics(config, input_bam, output_fname):
            "-O {output_fname}").format(**locals())
 
     return cmd
+
+
+def mergevcfs(config, input_vcfs, output_fname):
+    gatk = config["gatk"]["gatk"]
+
+    java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["mergevcfs_java_options"]) \
+        if "mergevcfs_java_options" in config["gatk"] \
+           and len(config["gatk"]["mergevcfs_java_options"]) else ""
+
+    cmd = [("time {gatk} {java_options} MergeVcfs "
+           "-O {output_fname}").format(locals())] + ["-I %s" % f for f in input_vcfs]
+
+    return " ".join(cmd)
