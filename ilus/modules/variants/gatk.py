@@ -223,6 +223,7 @@ def collect_alignment_summary_metrics(config, input_bam, output_fname):
 
 
 def mergevcfs(config, input_vcfs, output_fname):
+    # Sometimes bcftools concat is better than MergeVcfs
     gatk = config["gatk"]["gatk"]
 
     java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["mergevcfs_java_options"]) \
