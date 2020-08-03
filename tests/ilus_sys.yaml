@@ -12,11 +12,10 @@ samtools:
 
 bcftools:
     bcftools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bcftools
-    options: []
+    concat_options: ["-a --rm-dups all"]
 
 bedtools:
     bedtools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bedtools
-    concat_options: []
     genomecov_options: ["-bga -split"]
 
 sambamba:
