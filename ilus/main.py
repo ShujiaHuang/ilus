@@ -64,14 +64,12 @@ def parse_commandline_args():
     genotype_cmd.add_argument("-f", "--force", dest="overwrite", action="store_true",
                               help="Force overwrite existing shell scripts and folders.")
 
-    # Genotype from GVCFs
+    # Genotype from VQSR
     vqsr_cmd = commands.add_parser("VQSR", help="VQSR")
     vqsr_cmd.add_argument("-C", "--conf", dest="sysconf", required=True,
                           help="YAML configuration file specifying details about system.")
     vqsr_cmd.add_argument("-L", "--vcflist", dest="vcflist", type=str, required=True,
-                          help="VCFs file list. One vcf_file per-row and the format should looks like: "
-                               "[interval\tvcf_file_path]. Column [1] is a symbol which could represent "
-                               "the genome region of the vcf_file and column [2] should be the path.")
+                          help="VCFs file list. One file per-row.")
     vqsr_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
                           help="A directory for output results.")
 
