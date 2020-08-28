@@ -40,7 +40,8 @@ You will see all the functions:
         genotype-joint-calling Genotype from GVCFs.
         VQSR                VQSR
 
-Here is all the Chinese [README](https://github.com/ShujiaHuang/ilus/blob/master/README_cn.rst) for how to creat WGS/WES pipeline by ilus. 
+
+Here is all the Chinese `README <https://github.com/ShujiaHuang/ilus/blob/master/README_cn.rst>`_ for how to creat WGS/WES pipeline by ilus. 
 
 English version is coming.  
 
