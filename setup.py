@@ -1,6 +1,6 @@
-"""Setup file and install script for NGS data analysis.
+"""Setup file and install scripts.
 
-Version 0.1.0 (April 23, 2020)
+Version 1.0.0 (May 23, 2020)
 Copyright (c) 2020 Shujia Huang
 """
 import os
@@ -12,14 +12,14 @@ except ImportError:
     from distutils.core import setup, find_packages
 
 
-DESCRIPTION = "ilus: A python package for NGS data analysis."
+DESCRIPTION = "ilus: A WGS/WES analysis pipeline generater."
 DISTNAME = 'ilus'
 MAINTAINER = 'Shujia Huang'
-MAINTAINER_EMAIL = 'hshujia@qq.com'
+MAINTAINER_EMAIL = 'huangshujia9@gmail.com'
 URL = 'https://github.com/ShujiaHuang/ilus'
 LICENSE = 'BSD (3-clause)'
 DOWNLOAD_URL = 'https://github.com/ShujiaHuang/ilus'
-VERSION = "0.1.0"
+VERSION = "1.0.0"
 
 ROOT_DIR = os.path.split(os.path.realpath(__file__))[0]
 
@@ -52,9 +52,7 @@ if __name__ == "__main__":
              'Programming Language :: Python :: 3.7',
              'License :: OSI Approved :: BSD License',
              'Topic :: Scientific/Engineering :: Bio-Informatics',
-             'Topic :: Scientific/Engineering :: Tools',
-             'Topic :: Multimedia :: WGS',
              'Operating System :: POSIX',
-             'Operating System :: Linux/Unix',
+             'Operating System :: POSIX :: Linux',
              'Operating System :: MacOS'],
           )
