@@ -59,11 +59,11 @@ ilus 是基于 Python 编写的，同时支持Python2.7+和Python3.6+，稳定�
 
 
 快速开始
--------
+--------
 
 通过执行 ``ilus --help`` 可以看到有三个功能模块，分别是 ``WGS``, ``genotype-joint-calling`` 和 ``VQSR``。
 
-.. code:: bash
+.. code::
 
     $ ilus --help
     usage: ilus [-h] {WGS,genotype-joint-calling,VQSR} ...
@@ -84,11 +84,11 @@ ilus 是基于 Python 编写的，同时支持Python2.7+和Python3.6+，稳定�
 
 
 全基因组数据分析
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 全基因组数据分析流程（WGS）的运行脚本通过 ``ilus WGS`` 来生成，用法如下：
 
-.. code:: bash
+.. code::
 
     $ ilus WGS --help
     usage: ilus WGS [-h] -C SYSCONF -L FASTQLIST [-P WGS_PROCESSES]
@@ -125,7 +125,7 @@ ilus 是基于 Python 编写的，同时支持Python2.7+和Python3.6+，稳定�
 
 需要注意的是 ``BWA MEM`` 的索引文件前缀要与配置文件的 ``{resources}{reference}`` 相同，并放在同一个文件夹里。如下：
 
-.. code:: bash
+.. code::
 
     /path/human_reference/GRCh38/
     |-- human_GRCh38.fa
@@ -265,7 +265,7 @@ ilus 是基于 Python 编写的，同时支持Python2.7+和Python3.6+，稳定�
 
 那些属于同一个样本的数据，哪怕事前被拆分成了成千上万份，流程中也会在各个子数据跑完比对和排序之后自动进行合并。下面我给出一个输入文件的例子，其中就有样本的数据分拆输出的情况：
 
-.. code:: bash
+.. code::
 
     #SAMPLE RGID    FASTQ1  FASTQ2  LANE
     HG002   "@RG\tID:CL100076190_L01\tPL:COMPLETE\tPU:CL100076190_L01_HG002\tLB:CL100076190_L01\tSM:HG002"  /path/HG002_NA24385_son/BGISEQ500/BGISEQ500_PCRfree_NA24385_CL100076190_L01_read_1.clean.fq.gz  /path/HG002_NA24385_son/BGISEQ500/BGISEQ500_PCRfree_NA24385_CL100076190_L01_read_2.clean.fq.gz  CL100076190_L01
@@ -290,7 +290,7 @@ ilus 是基于 Python 编写的，同时支持Python2.7+和Python3.6+，稳定�
 
 以上命令顺利执行之后，在输出目录 ``output`` 中一共有 4 个文件夹（如下）：
 
-.. code:: bash
+.. code::
     
     00.shell/
     01.alignment/
@@ -307,7 +307,7 @@ ilus 是基于 Python 编写的，同时支持Python2.7+和Python3.6+，稳定�
 
 ``00.shell``目录里有分析流程的各个执行脚本和日志目录：
 
-.. code:: bash
+.. code::
 
     /00.shell
     ├── loginfo
@@ -341,7 +341,7 @@ ilus 是基于 Python 编写的，同时支持Python2.7+和Python3.6+，稳定�
 
 如果成功了，可以在日志文件的末尾看到一个类似于 ``[xxxx] xxxx done`` 的标记。通过我在 **ilus** 中提供的程序 `check_jobs_status <https://github.com/ShujiaHuang/ilus/blob/master/scripts/check_jobs_status.py>`_ 你可以很方便地知道哪些样本（步骤）已经顺利完成，哪些还没有。这个脚本会帮你将那些未完成的任务全部输出，方便检查问题和重新执行这部分未完成的任务。``check_jobs_status`` 用法如下：
 
-.. code:: bash
+.. code::
 
     $ python check_jobs_status.py loginfo/01.alignment.o.log.list > bwa.unfinish.list
 
@@ -361,7 +361,7 @@ ilus 是基于 Python 编写的，同时支持Python2.7+和Python3.6+，稳定�
 
 有时，我们并不打算（或者没有必要）从头到尾完整地将 WGS 流程执行下去，比如我们只想执行从 ``fastq`` 比对到生成 ``gvcf`` 这个步骤，暂时不想执行 ``genotype`` 和 ``VQSR``，该怎么办呢？ilus 的 ``-P`` 参数就可以实现这个目的：
 
-.. code:: bash
+.. code::
 
     $ ilus WGS -c -n my_wgs -C ilus_sys.yaml -L input.list -P align,markdup,BQSR,gvcf -O ./output
 
@@ -370,7 +370,7 @@ ilus 是基于 Python 编写的，同时支持Python2.7+和Python3.6+，稳定�
 
 除此之外，这个 ``-P`` 参数还有一个作用，那就是假如某个 WGS 步骤跑错了，调整之后，需要重新更新对应的步骤，那你就可以用 ``-P`` 重跑特定的步骤。比如我想重生成 BQSR 这个步骤的运行脚本，那么就可以这样做：
 
-.. code:: bash
+.. code::
 
     $ ilus WGS -c -n my_wgs -C ilus_sys.yaml -L input.list -P BQSR -O ./output
 
@@ -384,7 +384,7 @@ genotype-joint-calling
 
 如果我们已经有了各个样本的 gvcf 数据，现在要用这些 gvcf 完成多样本的联合变异检测（Joint-calling），那么就可以使用 ``genotype-joint-calling`` 来实现。具体用法如下：
 
-.. code:: bash
+.. code::
 
     $ ilus genotype-joint-calling --help
     usage: ilus genotype-joint-calling [-h] -C SYSCONF -L GVCFLIST
@@ -413,13 +413,13 @@ genotype-joint-calling
 
 ``-L`` 是 **ilus genotype-joint-calling** 的输入参数，它接受的是一个 ``gvcf list`` 文件，这个文件由两列构成，第一列是每个 gvcf 文件所对应的区间或者染色体编号，第二列是 gvcf 文件的路径。目前 **ilus** 要求各个样本的 gvcf 都按照主要染色体（1-22、X、Y、M）分开，举个例子：
 
-.. code:: bash
+.. code::
 
     $ ilus genotype-joint-calling -n my_project -C ilus_sys.yaml -L gvcf.list -O genotype --as_pipe_shell_order
 
 其中 ``gvcf.list`` 的格式如下：
 
-.. code:: bash
+.. code::
 
     chr1    /path/sample1.chr1.g.vcf.gz
     chr1    /paht/sample2.chr1.g.vcf.gz
@@ -439,7 +439,7 @@ VQSR
 
 我们如果已经有了最终的变异检测（VCF格式）结果，现在只想借助 ``GATK VQSR`` 对这个变异数据做质控，那么就可以使用这个模块了，用法与 ``genotype-joint-calling`` 大同小异，如下：
 
-.. code:: bash
+.. code::
 
     $ ilus VQSR --help
     usage: ilus VQSR [-h] -C SYSCONF -L VCFLIST [-n PROJECT_NAME]
@@ -466,7 +466,7 @@ VQSR
 
 跟 ``genotype-joint-calling`` 相比不同的是，**ilus VQSR** 中的输入文件是 VCF 文件列表，并且 **每行只有一列**——vcf文件的路径，举个例子，如下：
 
-.. code:: bash
+.. code::
 
     /path/chr1.vcf.gz
     /path/chr2.vcf.gz
@@ -475,7 +475,7 @@ VQSR
 
 **ilus VQSR** 的其它参数与 ``genotype-joint-calling`` 相同。还有就是vcf文件列表中的vcf不用事先手动合并，ilus VQSR会帮你合并的。以下提供一个完整的例子：
 
-.. code:: bash
+.. code::
 
     $ ilus VQSR -C ilus_sys.yaml -L vcf.list -O genotype --as_pipe_shell_order
 
