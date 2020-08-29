@@ -12,7 +12,7 @@ except ImportError:
     from distutils.core import setup, find_packages
 
 
-DESCRIPTION = "ilus: A WGS/WES analysis pipeline generater."
+DESCRIPTION = "ilus: A handy tools for generating WGS/WES analysis pipeline."
 DISTNAME = 'ilus'
 MAINTAINER = 'Shujia Huang'
 MAINTAINER_EMAIL = 'huangshujia9@gmail.com'
