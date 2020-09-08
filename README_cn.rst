@@ -138,7 +138,7 @@ Ilus
     `-- human_GRCh38.fa.sa
 
 
-配置文件要使用 `Yaml 语法 <https://www.runoob.com/w3cnote/yaml-intro.html>`_ 进行编写，这里我提供一份 `配置文件的模板 <https://github.com/ShujiaHuang/ilus/blob/master/tests/ilus_sys.yaml>`_，参考如下：
+配置文件要使用 `Yaml 语法 <https://zh.wikipedia.org/wiki/YAML>`_ 进行编写，这里我提供一份 `配置文件的模板 <https://github.com/ShujiaHuang/ilus/blob/master/tests/ilus_sys.yaml>`_，参考如下：
 
 .. code:: yaml
 
