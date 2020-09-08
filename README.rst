@@ -6,7 +6,7 @@ Ilus
 
 Installation
 ------------
-Ilus is writed by Python and maintain in PyPI. You can install it just by running the following command:
+**ilus** is writed by Python and release in PyPI. You can install it just by running the following command:
 
 .. code:: bash
 
