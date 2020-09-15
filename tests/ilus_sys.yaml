@@ -1,25 +1,25 @@
 # Configuration file specifying system details for running an analysis pipeline
 # location programs for pipeline.
 aligner:
-  bwa: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bwa
+  bwa: /path/to/BioSoftware/local/bin/bwa
   bwamem_options: [-Y -M -t 8]
 
 samtools:
-    samtools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/samtools
+    samtools: /path/to/BioSoftware/local/bin/samtools
     sort_options: ["-@ 8"]
     merge_options: ["-@ 8 -f"]
     stats_options: ["-@ 8"]
 
 bcftools:
-    bcftools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bcftools
+    bcftools: /path/to/BioSoftware/local/bin/bcftools
     concat_options: ["-a --rm-dups all"]
 
 bedtools:
-    bedtools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bedtools
+    bedtools: /path/to/BioSoftware/local/bin/bedtools
     genomecov_options: ["-bga -split"]
 
 sambamba:
-  sambamba: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/sambamba
+  sambamba: /path/to/BioSoftware/local/bin/sambamba
   sort_options: ["-t 8"]
   merge_options: ["-t 8"]
   markdup_options: []
@@ -27,18 +27,18 @@ sambamba:
 
 verifyBamID2:
     # This is the VerifyBamID2: https://github.com/Griffan/VerifyBamID
-    verifyBamID2: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/verifyBamID2
+    verifyBamID2: /path/to/BioSoftware/local/bin/verifyBamID2
     options: [
         # download from: https://github.com/Griffan/VerifyBamID/tree/master/resource 
-        "--SVDPrefix /WORK/gzfezx_shhli_3/BioSoftware/verifyBamID2/1.0.6/resource/1000g.phase3.10k.b38.vcf.gz.dat"
+        "--SVDPrefix /path/to/BioSoftware/verifyBamID2/1.0.6/resource/1000g.phase3.10k.b38.vcf.gz.dat"
     ]
 
 
-bgzip: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bgzip
-tabix: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/tabix
+bgzip: /path/to/BioSoftware/local/bin/bgzip
+tabix: /path/to/BioSoftware/local/bin/tabix
 
 gatk:
-  gatk: /WORK/gzfezx_shhli_3/BioSoftware/gatk/4.1.4.1/gatk
+  gatk: /path/to/BioSoftware/gatk/4.1.4.1/gatk
   markdup_java_options: ["-Xmx10G", "-Djava.io.tmpdir=/your_path/cache"]
   bqsr_java_options: ["-Xmx8G", "-Djava.io.tmpdir=/your_path/cache"]
   hc_gvcf_java_options: ["-Xmx4G"]
@@ -84,15 +84,15 @@ gatk:
 
   # GATK bundle
   bundle:
-    hapmap: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/hapmap_3.3.hg38.vcf.gz
-    omni: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/1000G_omni2.5.hg38.vcf.gz
-    1000G: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/1000G_phase1.snps.high_confidence.hg38.vcf.gz
-    mills: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
-    1000G_known_indel: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.known_indels.vcf.gz
-    dbsnp: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
+    hapmap: /path/to/BioDatahub/gatk/bundle/hg38/hapmap_3.3.hg38.vcf.gz
+    omni: /path/to/BioDatahub/gatk/bundle/hg38/1000G_omni2.5.hg38.vcf.gz
+    1000G: /path/to/BioDatahub/gatk/bundle/hg38/1000G_phase1.snps.high_confidence.hg38.vcf.gz
+    mills: /path/to/BioDatahub/gatk/bundle/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+    1000G_known_indel: /path/to/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.known_indels.vcf.gz
+    dbsnp: /path/to/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
 
 
 # Define resources to be used for individual programs on multicore machines.
 # These can be defined specifically for memory and processor availability.
 resources:
-  reference: /WORK/gzfezx_shhli_3/BioDatahub/human_reference/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa
+  reference: /path/to/BioDatahub/human_reference/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa
