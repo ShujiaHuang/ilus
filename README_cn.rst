@@ -1,8 +1,8 @@
 Ilus
 ====
 
-**ilus** 是一个轻量的、可拓展的、易用的生成 **半自动化** 全基因组（Whole genome sequencing, WGS）和
-全外显子（Whole exom sequencing，WES）分析流程的程序.
+**ilus** 是一个轻量的、可拓展的、易用的 **半自动化** 全基因组（Whole genome sequencing, WGS）和
+全外显子（Whole exom sequencing，WES）分析流程生成器.
 
 简介
 ----
@@ -42,7 +42,7 @@ Ilus
 --------
 
 
-**ilus** 是基于 Python 编写的，同时支持 Python2.7+ 和 Python3.6+，稳定版本的代码已经发布至 PyPI。因此要使用 **ilus**, 你可以通过 ``pip`` 这个 Python 包管理工具进行安装：
+**ilus** 是基于 Python 编写的，同时支持 Python2.7+ 和 Python3.7+，稳定版本的代码已经发布至 PyPI。因此要使用 **ilus**, 直接通过 ``pip`` 这个 Python 包管理工具进行安装：
 
 .. code::
 
@@ -143,25 +143,25 @@ Ilus
 .. code:: yaml
 
     aligner:
-      bwa: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bwa
+      bwa: /path/to/BioSoftware/local/bin/bwa
       bwamem_options: [-Y -M -t 8]
 
     samtools:
-        samtools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/samtools
+        samtools: /path/to/BioSoftware/local/bin/samtools
         sort_options: ["-@ 8"]
         merge_options: ["-@ 8 -f"]
         stats_options: ["-@ 8"]
 
     bcftools:
-        bcftools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bcftools
+        bcftools: /path/to/BioSoftware/local/bin/bcftools
         concat_options: ["-a --rm-dups all"]
 
     bedtools:
-        bedtools: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bedtools
+        bedtools: /path/to/BioSoftware/local/bin/bedtools
         genomecov_options: ["-bga -split"]
 
     sambamba:
-      sambamba: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/sambamba
+      sambamba: /path/to/BioSoftware/local/bin/sambamba
       sort_options: ["-t 8"]
       merge_options: ["-t 8"]
       markdup_options: []
@@ -169,18 +169,18 @@ Ilus
 
     verifyBamID2:
         # This is the VerifyBamID2: https://github.com/Griffan/VerifyBamID
-        verifyBamID2: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/verifyBamID2
+        verifyBamID2: /path/to/BioSoftware/local/bin/verifyBamID2
         options: [
             # download from: https://github.com/Griffan/VerifyBamID/tree/master/resource
-            "--SVDPrefix /WORK/gzfezx_shhli_3/BioSoftware/verifyBamID2/1.0.6/resource/1000g.phase3.10k.b38.vcf.gz.dat"
+            "--SVDPrefix /path/to/BioSoftware/verifyBamID2/1.0.6/resource/1000g.phase3.10k.b38.vcf.gz.dat"
         ]
 
 
-    bgzip: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/bgzip
-    tabix: /WORK/gzfezx_shhli_3/BioSoftware/local/bin/tabix
+    bgzip: /path/to/BioSoftware/local/bin/bgzip
+    tabix: /path/to/BioSoftware/local/bin/tabix
 
     gatk:
-      gatk: /WORK/gzfezx_shhli_3/BioSoftware/gatk/4.1.4.1/gatk
+      gatk: /path/to/BioSoftware/gatk/4.1.4.1/gatk
       markdup_java_options: ["-Xmx10G", "-Djava.io.tmpdir=/your_path/cache"]
       bqsr_java_options: ["-Xmx8G", "-Djava.io.tmpdir=/your_path/cache"]
       hc_gvcf_java_options: ["-Xmx4G"]
@@ -226,18 +226,18 @@ Ilus
 
       # GATK bundle
       bundle:
-        hapmap: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/hapmap_3.3.hg38.vcf.gz
-        omni: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/1000G_omni2.5.hg38.vcf.gz
-        1000G: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/1000G_phase1.snps.high_confidence.hg38.vcf.gz
-        mills: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
-        1000G_known_indel: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.known_indels.vcf.gz
-        dbsnp: /WORK/gzfezx_shhli_3/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
+        hapmap: /path/to/BioDatahub/gatk/bundle/hg38/hapmap_3.3.hg38.vcf.gz
+        omni: /path/to/BioDatahub/gatk/bundle/hg38/1000G_omni2.5.hg38.vcf.gz
+        1000G: /path/to/BioDatahub/gatk/bundle/hg38/1000G_phase1.snps.high_confidence.hg38.vcf.gz
+        mills: /path/to/BioDatahub/gatk/bundle/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+        1000G_known_indel: /path/to/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.known_indels.vcf.gz
+        dbsnp: /path/to/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
 
 
     # Define resources to be used for individual programs on multicore machines.
     # These can be defined specifically for memory and processor availability.
     resources:
-      reference: /WORK/gzfezx_shhli_3/BioDatahub/human_reference/GRCh38/human_GRCh38.fa
+      reference: /path/to/BioDatahub/human_reference/GRCh38/human_GRCh38.fa
 
 
 在配置文件中，``bwa``、``samtools``、``bcftools``、``bedtools``、``gatk``、``bgzip`` 和 ``tabix`` 都是必须的生信软件，需要自行安装，再将路径填入到对应的参数里（如模板所示）。`verifyBamID2 <https://github.com/Griffan/VerifyBamID>`_ 仅用于计算样本是否存在污染，**它并不是一个必填的参数**，如果你的配置文件中没有这个参数，则代表流程不对样本的污染情况进行推算，如果有那么你要自行安装并下载与之配套的 resource  数据，模板里我也告诉你该去哪里下载相关的数据了。
@@ -263,7 +263,7 @@ Ilus
 
 另外，假如某个样本的测序量比较大，导致一个样本有多个 ``lane`` 的测序数据，或者同一个 ``lane`` 的数据被拆分成了多个子文件，这个时候不需要人工对这些 ``fastq`` 数据进行合并，只需要依照测序信息编写好这个输入文件即可。
 
-那些属于同一个样本的数据，哪怕事前被拆分成了成千上万份，流程中也会在各个子数据跑完比对和排序之后自动进行合并。下面我给出一个输入文件的例子，其中就有样本的数据分拆输出的情况：
+那些属于同一个样本的数据，即使输入的 ``fastq`` 已被拆分成了成千上万份，流程中也会在各个子数据跑完比对和排序之后自动进行合并。下面我给出一个输入文件的例子，其中就有样本的数据分拆输出的情况：
 
 .. code::
 
