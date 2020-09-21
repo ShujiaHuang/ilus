@@ -53,10 +53,11 @@ def haplotypecaller_gvcf(config, input_bam, output_gvcf_fname, interval=None):
     java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["hc_gvcf_java_options"]) \
         if "hc_gvcf_java_options" in config["gatk"] \
            and len(config["gatk"]["hc_gvcf_java_options"]) else ""
+    hc_options = " ".join(config["gatk"]["hc_gvcf_options"]) if "hc_gvcf_options" in config["gatk"] else ""
 
     reference = config["resources"]["reference"]  # reference fasta
     cmd = ("time {gatk} {java_options} HaplotypeCaller "
-           "-R {reference} "
+           "-R {reference} {hc_options} "
            "--emit-ref-confidence GVCF "
            "-I {input_bam} "
            "-O {output_gvcf_fname}").format(**locals())
@@ -68,19 +69,22 @@ def haplotypecaller_gvcf(config, input_bam, output_gvcf_fname, interval=None):
 
 
 def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
-    interval_str = ""
-    if interval:
-        if len(interval) == 1:
-            interval_str = interval[0]
-        elif len(interval) == 2:
-            interval_str = ":".join(interval)
-        else:
-            interval_str = "%s:%s-%s" % (interval[0], interval[1], interval[2])
+    # interval_str = ""
+    # if interval:
+    #     if len(interval) == 1:
+    #         interval_str = interval[0]
+    #     elif len(interval) == 2:
+    #         interval_str = ":".join(interval)
+    #     else:
+    #         interval_str = "%s:%s-%s" % (interval[0], interval[1], interval[2])
 
     gatk = config["gatk"]["gatk"]
     java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["genotype_java_options"]) \
         if "genotype_java_options" in config["gatk"] \
            and len(config["gatk"]["genotype_java_options"]) else ""
+
+    genotypeGVCFs_options = " ".join(config["gatk"]["genotypeGVCFs_options"]) \
+        if "genotypeGVCFs_options" in config["gatk"] else ""
 
     genomicsDBImport_options = "%s" % " ".join(config["gatk"]["genomicsDBImport_options"]) \
         if "genomicsDBImport_options" in config["gatk"] else ""
@@ -108,7 +112,7 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
                                     "--genomicsdb-workspace-path {combine_gvcf_fname}").format(**locals())
 
             if interval:
-                genomicsDBImport_cmd += " -L %s" % interval_str
+                genomicsDBImport_cmd += " -L %s" % interval
 
             genotype_cmd = [genomicsDBImport_cmd]
 
@@ -118,22 +122,27 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
                                 "-O {combine_gvcf_fname}").format(**locals())
 
             if interval:
-                combine_gvcf_cmd += " -L %s" % interval_str
+                combine_gvcf_cmd += " -L %s" % interval
 
             genotype_cmd = [combine_gvcf_cmd]
     else:
         use_gDBI = False
         combine_gvcf_fname = input_sample_gvcfs[0]
 
+    variants_calling_interval = config["gatk"]["variant_calling_interval"][0] \
+        if os.path.isfile(config["gatk"]["variant_calling_interval"][0]) else interval
+
     if use_gDBI:
         genotype_cmd.append(("time {gatk} {java_options} GenotypeGVCFs "
-                             "-R {reference} "
+                             "-R {reference} {genotypeGVCFs_options} "
                              "-V gendb://{combine_gvcf_fname} "
+                             "-L {variants_calling_interval} "
                              "-O {output_vcf_fname}").format(**locals()))
     else:
         genotype_cmd.append(("time {gatk} {java_options} GenotypeGVCFs "
-                             "-R {reference} "
+                             "-R {reference} {genotypeGVCFs_options} "
                              "-V {combine_gvcf_fname} "
+                             "-L {variants_calling_interval} "
                              "-O {output_vcf_fname}").format(**locals()))
 
     genotype_cmd.append("rm -rf %s %s.tbi" % (combine_gvcf_fname, combine_gvcf_fname))
@@ -231,6 +240,6 @@ def mergevcfs(config, input_vcfs, output_fname):
            and len(config["gatk"]["mergevcfs_java_options"]) else ""
 
     cmd = [("time {gatk} {java_options} MergeVcfs "
-           "-O {output_fname}").format(locals())] + ["-I %s" % f for f in input_vcfs]
+            "-O {output_fname}").format(locals())] + ["-I %s" % f for f in input_vcfs]
 
     return " ".join(cmd)

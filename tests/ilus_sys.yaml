@@ -54,6 +54,8 @@ gatk:
     "--ADAPTER_SEQUENCE AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG"
   ]
 
+  hc_gvcf_options: [""]
+  genotypeGVCFs_options: [""]
   genomicsDBImport_options: ["--reader-threads 12"]
   use_genomicsDBImport: false  # Do not use genomicsDBImport to combine GVCFs by default
 
@@ -80,6 +82,7 @@ gatk:
                              "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
                              "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
   # variant_calling_interval: ["./wgs_calling_regions.GRCh38.interval.bed"]
+  split_calling_interval_onebyone: false
 
 
   # GATK bundle

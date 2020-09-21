@@ -273,20 +273,29 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
     genotype_vcf_shell_files_list = []
     aione["genotype_vcf_list"] = []
 
-    for interval in aione["config"]["gatk"]["variant_calling_interval"]:
-        interval_n = "_".join(interval)
+    variant_calling_intervals = aione["config"]["gatk"]["variant_calling_interval"]
+    if os.path.isfile(aione["config"]["gatk"]["variant_calling_interval"][0]):
+        variant_calling_intervals = aione["config"]["gatk"]["interval"]
+
+    for interval in variant_calling_intervals:
+        interval_n = "_".join(interval) if type(interval) is list else interval
         genotype_vcf_fname = os.path.join(output_dirtory, "%s.%s.vcf.gz" % (kwargs.project_name, interval_n))
         sub_shell_fname = os.path.join(shell_dirtory, "%s.%s.genotype.sh" % (kwargs.project_name, interval_n))
 
-        if interval[0] in aione["gvcf"]:
-            sample_gvcf_list = aione["gvcf"][interval[0]]  # The chromosome id
+        interval_id = interval[0] if type(interval) is list else interval
+        if interval_id in aione["gvcf"]:
+            sample_gvcf_list = aione["gvcf"][interval_id]  # The chromosome id
         else:
-            # The ``interval`` parameter in Configure Yaml is a file instead of regions
-            sample_gvcf_list = aione["gvcf"][aione["intervals"][0]]
+            sys.stderr.write("[Error] Interval error when joint-calling by genotypeGVCFs: %s " % interval)
+            sys.exit(1)
 
+        calling_interval = "%s:%s-%s" % (interval[0], interval[1], interval[2]) if type(interval) is list else interval
         if not is_dry_run and (not os.path.exists(sub_shell_fname) or kwargs.overwrite):
-            cmd = [gatk.genotypegvcfs(aione["config"], sample_gvcf_list, genotype_vcf_fname, interval=interval)]
-            echo_mark_done = "echo \"[Genotype] %s done\"" % interval_n
+            cmd = [gatk.genotypegvcfs(aione["config"],
+                                      sample_gvcf_list,
+                                      genotype_vcf_fname,
+                                      interval=calling_interval)]
+            echo_mark_done = "echo \"[Genotype] %s done\"" % calling_interval
             cmd.append(echo_mark_done)
             _create_cmd_file(sub_shell_fname, cmd)
 
