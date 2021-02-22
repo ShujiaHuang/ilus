@@ -1,12 +1,14 @@
 Ilus
 ====
 
-
 **Ilus** is a handy pipeline generater for whole genome re-sequencing (WGS) and whole exom sequencing data (WES) analysis.
+
+English | `简体中文 <./README_CN.rst>`__
+
 
 Installation
 ------------
-**ilus** is writed by Python and release in PyPI. You can install it just by running the following command:
+**ilus** is written by Python and release in PyPI. You can install it just by running the following command:
 
 .. code:: bash
 
@@ -41,7 +43,7 @@ You will see all the functions:
         VQSR                VQSR
 
 
-Here is all the Chinese `README <https://github.com/ShujiaHuang/ilus/blob/master/README_cn.rst>`_ for how to creat WGS/WES pipeline by ilus. 
+Here is all the Chinese `简体中文帮助文档 <./README_CN.rst>`_ for how to creat WGS/WES pipeline by ilus. 
 
 English version is coming.  
 

@@ -4,6 +4,8 @@ Ilus
 **ilus** 是一个轻量的、可拓展的、易用的 **半自动化** 全基因组（Whole genome sequencing, WGS）和
 全外显子（Whole exom sequencing，WES）分析流程生成器.
 
+`English <./README.rst>`__ | 简体中文_
+
 简介
 ----
 
