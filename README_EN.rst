@@ -3,7 +3,7 @@ Ilus
 
 **Ilus** is a handy pipeline generater for whole genome re-sequencing (WGS) and whole exom sequencing data (WES) analysis.
 
-English | `简体中文 <./README_CN.rst>`__
+English | `简体中文 <./README.rst>`__
 
 
 Installation
