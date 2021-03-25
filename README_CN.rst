@@ -236,8 +236,7 @@ Ilus
         dbsnp: /path/to/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
 
 
-    # Define resources to be used for individual programs on multicore machines.
-    # These can be defined specifically for memory and processor availability.
+    # Set Reference
     resources:
       reference: /path/to/BioDatahub/human_reference/GRCh38/human_GRCh38.fa
 
