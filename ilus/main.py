@@ -20,7 +20,7 @@ from ilus.pipeline.wgs import wgs, genotypeGVCFs, variantrecalibrator
 def parse_commandline_args():
     """Parse input commandline arguments, handling multiple cases.
     """
-    desc = "ilus: A NGS analysis pipeline."
+    desc = "ilus: A WGS/WES analysis pipeline generator."
     cmdparser = argparse.ArgumentParser(description=desc)
     commands = cmdparser.add_subparsers(dest="command", title="ilus commands")
 
@@ -92,6 +92,9 @@ def main():
     }
 
     kwargs = parse_commandline_args()
+    if kwargs.command is None:
+        print("Please type: ilus -h or ilus --help to show the help message.")
+        sys.exit(1)
 
     # all information in one dict.
     aione = {}
@@ -130,4 +133,4 @@ def main():
 
     runner[kwargs.command](kwargs, aione)
     elapsed_time = datetime.now() - START_TIME
-    print ("\n** %s done, %d seconds elapsed **\n" % (sys.argv[1], elapsed_time.seconds))
+    print("\n** %s done, %d seconds elapsed **\n" % (sys.argv[1], elapsed_time.seconds))

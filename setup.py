@@ -19,7 +19,7 @@ MAINTAINER_EMAIL = 'huangshujia9@gmail.com'
 URL = 'https://github.com/ShujiaHuang/ilus'
 LICENSE = 'BSD (3-clause)'
 DOWNLOAD_URL = 'https://github.com/ShujiaHuang/ilus'
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 
 ROOT_DIR = os.path.split(os.path.realpath(__file__))[0]
 
@@ -50,6 +50,8 @@ if __name__ == "__main__":
              'Intended Audience :: Science/Research',
              'Programming Language :: Python :: 2.7',
              'Programming Language :: Python :: 3.7',
+             'Programming Language :: Python :: 3.8',
+             'Programming Language :: Python :: 3.9',
              'License :: OSI Approved :: BSD License',
              'Topic :: Scientific/Engineering :: Bio-Informatics',
              'Operating System :: POSIX',
