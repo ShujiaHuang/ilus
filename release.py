@@ -1,4 +1,4 @@
-"""Release and publish geneview to PyPI.
+"""Release and publish ilus to PyPI.
 
 Author: Shujia Huang
 Date: 2021-04-30
