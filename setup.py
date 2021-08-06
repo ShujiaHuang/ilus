@@ -14,7 +14,6 @@ except ImportError:
 
 
 DESCRIPTION = "ilus: A handy tools for generating WGS/WES analysis pipeline."
-
 meta = Namespace(
     __DISTNAME__     = "ilus",
     __AUTHOR__       = "Shujia Huang",
@@ -41,8 +40,8 @@ if __name__ == "__main__":
           long_description_content_type="text/markdown",
           license=meta.__LICENSE__,
           url=meta.__URL__,
-          download_url=meta.__DOWNLOAD_URL__,
           version=meta.__VERSION__,
+          download_url=meta.__DOWNLOAD_URL__,
           packages=find_packages(),
           install_requires=[
               'PyYAML>=5.1.2',
