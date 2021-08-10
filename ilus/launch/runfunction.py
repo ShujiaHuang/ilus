@@ -175,7 +175,7 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=T
                 cmd.append(bam.genomecoverage(aione["config"], out_bqsr_bam_fname, genome_cvg_fname))
 
             if is_calculate_contamination:
-                out_verifybamid_stat_prefix = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.verifyBamID2")
+                out_verifybamid_stat_prefix = os.path.join(dirname, os.path.splitext(f_name)[0]+".BQSR.verifyBamID2")
                 cmd.append(bam.verifyBamID2(aione["config"], out_bqsr_bam_fname, out_verifybamid_stat_prefix))
 
             if kwargs.cram:
@@ -207,8 +207,8 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione, is_dry_run=False):
 
         if not is_dry_run and (not os.path.exists(sample_shell_fname) or kwargs.overwrite):
             if raw_interval:
-                cmd = [
-                    gatk.haplotypecaller_gvcf(aione["config"], sample_bqsr_bam, out_gvcf_fname, interval=raw_interval)]
+                cmd = [gatk.haplotypecaller_gvcf(aione["config"], sample_bqsr_bam, 
+                                                 out_gvcf_fname, interval=raw_interval)]
             else:
                 cmd = [gatk.haplotypecaller_gvcf(aione["config"], sample_bqsr_bam, out_gvcf_fname)]
 
@@ -249,7 +249,7 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione, is_dry_run=False):
                 sample_shell_fname, out_gvcf_fname = _create_sub_shell(
                     sample, sample_shell_dir, sample_output_dir, raw_interval=interval)
 
-            # ``interval`` and ``aione["config"]["gatk"]["interval"]`` could be different.
+            # ``interval`` and ``aione["config"]["gatk"]["interval"]`` may be different.
             # The raw interval could be a file path.
             interval, _ = os.path.splitext(os.path.split(interval)[-1])
             if interval not in aione["gvcf"]:
@@ -289,7 +289,7 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
             sys.stderr.write("[Error] Interval error when joint-calling by genotypeGVCFs: %s " % interval)
             sys.exit(1)
 
-        calling_interval = "%s:%s-%s" % (interval[0], interval[1], interval[2]) if type(interval) is list else interval
+        calling_interval = "%s:%s-%s" % (interval[0],interval[1],interval[2]) if type(interval) is list else interval
         if not is_dry_run and (not os.path.exists(sub_shell_fname) or kwargs.overwrite):
             cmd = [gatk.genotypegvcfs(aione["config"],
                                       sample_gvcf_list,
