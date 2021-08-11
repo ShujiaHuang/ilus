@@ -47,7 +47,7 @@ gatk:
 
   CollectAlignmentSummaryMetrics_jave_options: ["-Xmx10G"]
 
-  # Adapter sequencing of BGISEQ-500. If you use illumina(or other) sequencing system you should
+  # Adapter sequencing of BGISEQ-500/MGISEQ/DNBSEQ. If you use illumina(or other) sequencing system you should
   # change the value of this parameter.
   CollectAlignmentSummaryMetrics_options: [
     "--ADAPTER_SEQUENCE AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA",
