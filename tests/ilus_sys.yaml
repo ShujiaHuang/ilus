@@ -1,5 +1,4 @@
 # Configuration file specifying system details for running an analysis pipeline
-# location programs for pipeline.
 aligner:
   bwa: /path/to/BioSoftware/local/bin/bwa
   bwamem_options: [-Y -M -t 8]
@@ -47,8 +46,12 @@ gatk:
 
   CollectAlignmentSummaryMetrics_jave_options: ["-Xmx10G"]
 
-  # Adapter sequencing of BGISEQ-500/MGISEQ/DNBSEQ. If you use illumina(or other) sequencing system you should
-  # change the value of this parameter.
+  # Default adapter sequence is BGISEQ-500/MGISEQ/DNBSEQ in ilus. If you use illumina (or other) sequencing system 
+  # you should change the value of this parameter. The most widely used adapter of Illumina is TruSeq adapters. If 
+  # your data is from the TruSeq library, you can replace the parameter with the two following sequences: 
+  # "--ADAPTER_SEQUENCE AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
+  # "--ADAPTER_SEQUENCE AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
+
   CollectAlignmentSummaryMetrics_options: [
     "--ADAPTER_SEQUENCE AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA",
     "--ADAPTER_SEQUENCE AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG"
