@@ -68,7 +68,8 @@ gatk:
     "--max-gaussians 6"
   ]
 
-  # ``interval`` for create gvcf. The value could be a interval region file in bed format or could be a list here
+  # Fro creating gvcf. The value could be a interval region file in bed format or 
+  # could be chromosomes list here. I suggest you to use chromosome list here.
   interval: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9",
              "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
              "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
@@ -81,12 +82,11 @@ gatk:
   #         chr1    257667  297968
 
   # These invertals could be any regions alone the genome as you wish or just set the same as ``interval`` parameter above.
-  variant_calling_interval: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9",
-                             "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
-                             "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
-  # variant_calling_interval: ["./wgs_calling_regions.GRCh38.interval.list"]
-  split_calling_interval_onebyone: false
-
+  variant_calling_interval: ["./wgs_calling_regions.GRCh38.5M.interval.bed"]
+  # variant_calling_interval: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9",
+  #                            "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
+  #                            "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
+  
 
   # GATK bundle
   bundle:
