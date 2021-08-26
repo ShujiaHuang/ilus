@@ -21,7 +21,7 @@ meta = Namespace(
     __URL__          = "https://github.com/ShujiaHuang/ilus",
     __LICENSE__      = "BSD (3-clause)",
     __DOWNLOAD_URL__ = "https://github.com/ShujiaHuang/ilus",
-    __VERSION__      = "1.0.4",
+    __VERSION__      = "1.1.0",
 )
 
 
@@ -55,7 +55,6 @@ if __name__ == "__main__":
           },
           classifiers=[
              'Intended Audience :: Science/Research',
-             'Programming Language :: Python :: 2.7',
              'Programming Language :: Python :: 3.7',
              'Programming Language :: Python :: 3.8',
              'Programming Language :: Python :: 3.9',
