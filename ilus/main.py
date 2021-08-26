@@ -105,27 +105,22 @@ def main():
 
     # Normalize interval regions
     if "variant_calling_interval" in aione["config"]["gatk"]:
-
-        if "split_calling_interval_onebyone" in aione["config"] and aione["config"]["split_calling_interval_onebyone"]:
-            intervals = []  # A 2-D array
-            for r in aione["config"]["gatk"]["variant_calling_interval"]:
-                if os.path.isfile(r):
-                    with open(r) as I:
-                        """ bed format:
-                        
-                        chr1	10001	207666
-                        chr1	257667	297968
-                        """
-                        for line in I:
-                            if line.startswith("#"):
-                                continue
-                            else:
-                                intervals.append(line.strip().split()[:3])
-                else:
-                    intervals.append([r])
+        intervals = []  # A 2-D array
+        if os.path.isfile(aione["config"]["gatk"]["variant_calling_interval"][0]):
+            with open(aione["config"]["gatk"]["variant_calling_interval"][0]) as I:
+                """ Bed format:
+                chr1	10001	207666
+                chr1	257667	297968
+                """
+                for line in I:
+                    if line.startswith("#"):
+                        continue
+                    else:
+                        intervals.append(line.strip().split()[:3])
 
             # Update by regular regions information
             aione["config"]["gatk"]["variant_calling_interval"] = intervals
+
     else:
         sys.stderr.write("[Error] 'variant_calling_interval' parameter in [\"gatk\"][\"variant_calling_interval\"] "
                          "in configure file %s is required." % kwargs.sysconf)

@@ -274,9 +274,6 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
     aione["genotype_vcf_list"] = []
 
     variant_calling_intervals = aione["config"]["gatk"]["variant_calling_interval"]
-    if os.path.isfile(aione["config"]["gatk"]["variant_calling_interval"][0]):
-        variant_calling_intervals = aione["config"]["gatk"]["interval"]
-
     for interval in variant_calling_intervals:
         interval_n = "_".join(interval) if type(interval) is list else interval
         genotype_vcf_fname = os.path.join(output_dirtory, "%s.%s.vcf.gz" % (kwargs.project_name, interval_n))

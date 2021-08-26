@@ -69,14 +69,6 @@ def haplotypecaller_gvcf(config, input_bam, output_gvcf_fname, interval=None):
 
 
 def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
-    # interval_str = ""
-    # if interval:
-    #     if len(interval) == 1:
-    #         interval_str = interval[0]
-    #     elif len(interval) == 2:
-    #         interval_str = ":".join(interval)
-    #     else:
-    #         interval_str = "%s:%s-%s" % (interval[0], interval[1], interval[2])
 
     gatk = config["gatk"]["gatk"]
     java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["genotype_java_options"]) \
@@ -129,9 +121,7 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
         use_gDBI = False
         combine_gvcf_fname = input_sample_gvcfs[0]
 
-    variants_calling_interval = config["gatk"]["variant_calling_interval"][0] \
-        if os.path.isfile(config["gatk"]["variant_calling_interval"][0]) else interval
-
+    variants_calling_interval = interval
     if use_gDBI:
         genotype_cmd.append(("time {gatk} {java_options} GenotypeGVCFs "
                              "-R {reference} {genotypeGVCFs_options} "
