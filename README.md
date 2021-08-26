@@ -164,6 +164,7 @@ optional arguments:
 配置文件要使用 [Yaml 语法](https://zh.wikipedia.org/wiki/YAML) 进行编写，这里我提供一份 [配置文件的模板](https://github.com/ShujiaHuang/ilus/blob/master/tests/ilus_sys.yaml)，参考如下：
 
 ```yaml
+# Configuration file specifying system details for running an analysis pipeline
 aligner:
   bwa: /path/to/BioSoftware/local/bin/bwa
   bwamem_options: [-Y -M -t 8]
@@ -193,7 +194,7 @@ verifyBamID2:
     # This is the VerifyBamID2: https://github.com/Griffan/VerifyBamID
     verifyBamID2: /path/to/BioSoftware/local/bin/verifyBamID2
     options: [
-        # download from: https://github.com/Griffan/VerifyBamID/tree/master/resource
+        # download from: https://github.com/Griffan/VerifyBamID/tree/master/resource 
         "--SVDPrefix /path/to/BioSoftware/verifyBamID2/1.0.6/resource/1000g.phase3.10k.b38.vcf.gz.dat"
     ]
 
@@ -211,13 +212,19 @@ gatk:
 
   CollectAlignmentSummaryMetrics_jave_options: ["-Xmx10G"]
 
-  # Adapter sequencing of BGISEQ-500. If you use illumina(or other) sequencing system you should
-  # change the value of this parameter.
+  # Default adapter sequence is BGISEQ-500/MGISEQ/DNBSEQ in ilus. If you use illumina (or other) sequencing system 
+  # you should change the value of this parameter. The most widely used adapter of Illumina is TruSeq adapters. If 
+  # your data is from the TruSeq library, you can replace the parameter with the two following sequences: 
+  # "--ADAPTER_SEQUENCE AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
+  # "--ADAPTER_SEQUENCE AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
+
   CollectAlignmentSummaryMetrics_options: [
     "--ADAPTER_SEQUENCE AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA",
     "--ADAPTER_SEQUENCE AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG"
   ]
 
+  hc_gvcf_options: [""]
+  genotypeGVCFs_options: [""]
   genomicsDBImport_options: ["--reader-threads 12"]
   use_genomicsDBImport: false  # Do not use genomicsDBImport to combine GVCFs by default
 
@@ -227,24 +234,25 @@ gatk:
     "--max-gaussians 6"
   ]
 
-  # ``interval`` for create gvcf. The value could be a interval region file in bed format or could be a list here
+  # Fro creating gvcf. The value could be a interval region file in bed format or 
+  # could be chromosomes list here. I suggest you to use chromosome list here.
   interval: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9",
              "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
              "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
+  
 
-
-  # Specific variant calling intervals.
+  # Specific variant calling intervals. 
   # The value could be a file in bed format (I show you a example bellow) or a interval of list.
   # Bed format of interval file only contain three columns: ``Sequencing ID``, ``region start`` and ``region end``,e.g.:
   #         chr1    10001   207666
   #         chr1    257667  297968
 
   # These invertals could be any regions alone the genome as you wish or just set the same as ``interval`` parameter above.
+  # variant_calling_interval: ["./wgs_calling_regions.GRCh38.5M.interval.bed"]
   variant_calling_interval: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9",
                              "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
                              "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
-  # variant_calling_interval: ["./wgs_calling_regions.GRCh38.interval.bed"]
-
+  
 
   # GATK bundle
   bundle:
@@ -256,9 +264,11 @@ gatk:
     dbsnp: /path/to/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
 
 
-# Set Reference
+# Define resources to be used for individual programs on multicore machines.
+# These can be defined specifically for memory and processor availability.
 resources:
-  reference: /path/to/BioDatahub/human_reference/GRCh38/human_GRCh38.fa
+  reference: /path/to/BioDatahub/human_reference/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa
+
 ```
 
 在配置文件中，`bwa`、`samtools`、`bcftools`、`bedtools`、`gatk`、`bgzip` 和 `tabix` 都是必须的生信软件，需要自行安装，再将路径填入到对应的参数里（如模板所示）。[verifyBamID2](https://github.com/Griffan/VerifyBamID) 仅用于计算样本是否存在污染，**它并不是一个必填的参数**，如果你的配置文件中没有这个参数，则代表流程不对样本的污染情况进行推算，如果有那么你要自行安装并下载与之配套的 `resource` 数据，模板里我也告诉你该去哪里下载相关的数据了。
@@ -267,22 +277,22 @@ resources:
 
 这是一个非常灵活有用的参数，`variant_calling_interval` 区间是可以任意指定的，除了可以按照我例子给出的赋值方式之外，还可以将区间 **文件的路径** 赋给这个参数。**我们知道 WGS 和 WES 有很多步骤是完全相同的，只在变异检测的区间上存在差别------WES数据没有必要也不能** 在全染色体上做变异检测，只在外显子捕获区域里进行就可以了。
 
-这个时候你只需要将外显子捕获区域的文件------注意是文件，这个文件的内容可以是 `.interval_list` 格式、`.list` 格式、`.intervals` 格式或者 `.bed` 格式。其中，`.list` 格式和 `.intervals` 文件格式如下所示：
+这个时候你只需要将外显子捕获区域的文件------注意是文件，这个文件的内容是 `.bed` 文件格式，例子如下所示：
 
 ```bash
-chr1:63697-63697
-chr1:101158-101158
-chr1:103241-103241
-chr1:104108-104108
-chr1:185336-185336
-chr1:261495-261495
-chr1:598862-598862
-chr1:601606-601606
-chr1:700596-700596
-chr1:725086-725086
+chr1    63697   63697
+chr1    101158  101158
+chr1    103241 103241
+chr1    104108  104108
+chr1    185336 185336
+chr1    261495  261495
+chr1    598862 598862
+chr1    601606  601606
+chr1    700596 700596
+chr1    725086  725086
 ```
 
-而 `.interval_list` 格式和 `.bed` 格式参照 [GATK的说明](<https://gatk.broadinstitute.org/hc/en-us/articles/360035531852-Intervals-and-interval-lists>)，你不需要手动拆分成一个个的区间，只需将文件的路径赋给这个参数就可以了，这时流程就成了 WES 分析流程。这也是为何 ilus 是一个WGS和WES分析流程生成器的原因。
+也可以参照 [GATK的说明](<https://gatk.broadinstitute.org/hc/en-us/articles/360035531852-Intervals-and-interval-lists>)，这里你不需要手动拆分成一个个的区间，只需将文件的路径赋给这个参数就可以了，这时流程就成了 WES 分析流程。这也是为何称 `ilus` 是一个WGS和WES分析流程生成器的原因。
 
 另外，**ilus** 必需的公用数据集是：`gatk bundle` 和基因组参考序列。
 
