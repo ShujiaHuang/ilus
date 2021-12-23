@@ -153,7 +153,7 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
     out_snp_vqsr_fname = out_prefix + ".SNPs.vcf.gz"
 
     resource_hapmap = config["gatk"]["bundle"]["hapmap"]
-    resource_omni = config["gatk"]["bundle"]["mills"]
+    resource_omni = config["gatk"]["bundle"]["omni"]
     resource_1000G = config["gatk"]["bundle"]["1000G"]
     resource_dbsnp = config["gatk"]["bundle"]["dbsnp"]
     resource_mills_gold_indels = config["gatk"]["bundle"]["mills"]
