@@ -32,10 +32,10 @@ def get_fasta_size_from_faifile(infile):
 
 
 def get_nonN_region(in_n_interval_file, thd_n_size, fa):
-    """
-    Read N region to get non-n region
+    """Read N region to get non-n region
 
     ``in_n_interval_file`` format:
+
         chr1	1	10000
         chr1	207667	257666
         chr1	297969	347968
@@ -43,7 +43,7 @@ def get_nonN_region(in_n_interval_file, thd_n_size, fa):
         chr1	2702782	2746290
     """
     reg, pre_pos = {}, {}
-    pre_id, pre_end = '', 0
+    pre_id, pre_end = "", 0
     with open(in_n_interval_file) as I:
         # dealing with N region file
 
@@ -72,7 +72,7 @@ def get_nonN_region(in_n_interval_file, thd_n_size, fa):
                 pre_id = chromid
 
             if n_region_size < thd_n_size:
-                # It's a small N-region keep it.
+                # It's a small N-region, keep it.
                 if reg[chromid][-1][1] != 0:
                     reg[chromid][-1][1] = n_end
 
@@ -107,14 +107,14 @@ def overlap_region(start1, end1, start2, end2):
 
     elif end1 <= end2 and start1 > start2:
         if end1 < start1:
-            sys.stderr.write('[ERROR] Start1(%d) > end1(%d)' % (start1, end1))
+            sys.stderr.write("[ERROR] Start1(%d) > end1(%d)" % (start1, end1))
             sys.exit(1)
 
         s, e = start1, end1
 
     elif start1 <= start2 and end1 > end2:
         if end2 < start2:
-            sys.stderr.write('[ERROR] Start2(%d) > end2(%d)\n' % (start2, end2))
+            sys.stderr.write("[ERROR] Start2(%d) > end2(%d)\n" % (start2, end2))
             sys.exit(1)
 
         s, e = start2, end2
@@ -123,7 +123,7 @@ def overlap_region(start1, end1, start2, end2):
         s, e = start1, end2
 
     else:
-        sys.stderr.write('[ERROR] Region not right.\n')
+        sys.stderr.write("[ERROR] Region not right.\n")
 
     return s, e
 
@@ -131,9 +131,9 @@ def overlap_region(start1, end1, start2, end2):
 def main(opts):
     chrom_order_list, fa = get_fasta_size_from_faifile(opts.ref_fai_file)
     call_region = get_nonN_region(opts.n_reg_file, opts.nsize, fa)
+
     for chrom in chrom_order_list:
         for start_pos, end_pos in call_region[chrom]:
-            # print("\t".join(map(str, [chrom, start_pos, end_pos])))
             for pos in range(start_pos, end_pos + 1, opts.win):
                 s = pos
                 e = end_pos if pos + opts.win >= end_pos else pos + opts.win - 1
@@ -141,20 +141,20 @@ def main(opts):
                 print("\t".join(map(str, [chrom, s, e])))
 
 
-if __name__ == '__main__':
-    usage = '\nUsage: python %prog [options] -f <fasta_faifile> > Output'
-    cmdparse = argparse.ArgumentParser(description=usage)
-    cmdparse.add_argument('-f', '--fai', dest='ref_fai_file', metavar='STR', required=True,
-                          help='The reference fasta fai file.')
-    cmdparse.add_argument('-n', '--nbed', dest='n_reg_file', metavar='STR', required=True,
-                          help='The N-base region bed file.')
-    cmdparse.add_argument('-N', '--nbase', dest='nsize', metavar='int',
-                          help='The biggest continue N size could be allowed '
-                               'in one region.', default=1000)
-    cmdparse.add_argument('-w', '--win', dest='win', metavar='int', type=int,
-                          help='The max window size.', default=5000000)
+if __name__ == "__main__":
 
+    usage = "\nUsage: python %prog [options] -f <fasta_faifile> > Output"
+    cmdparse = argparse.ArgumentParser(description=usage)
+    cmdparse.add_argument("-f", "--fai", dest="ref_fai_file", required=True,
+                          help="The reference fasta fai file.")
+    cmdparse.add_argument("-n", "--nbed", dest="n_reg_file", required=True,
+                          help="The N-base region bed file.")
+    cmdparse.add_argument("-N", "--nbase", dest="nsize",
+                          help="The biggest continue N size could be allowed "
+                               "in one region.", default=1000)
+    cmdparse.add_argument("-w", "--win", dest="win", type=int, help="The max "
+                          "window size.", default=5000000)
     opt = cmdparse.parse_args()
 
     main(opt)
-    sys.stderr.write('** For the flowers bloom in the desert **\n')
+    sys.stderr.write("** For the flowers bloom in the desert **\n")
