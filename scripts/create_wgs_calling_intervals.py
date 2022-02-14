@@ -55,7 +55,7 @@ def get_nonN_region(in_n_interval_file, thd_n_size, fa):
 
             pre_pos[chromid] = n_end
             if n_start == 1 and n_end == fa[chromid]:
-                # The whole chromsome is all N? Probably impossible
+                # The whole chromosome is all N? Probably impossible
                 continue
 
             if chromid not in reg:
@@ -90,16 +90,16 @@ def get_nonN_region(in_n_interval_file, thd_n_size, fa):
     if pre_id in reg and pre_pos[pre_id] < fa[pre_id]:
         reg[pre_id][-1][1] = fa[pre_id]
 
-    for chrom, chromsize in fa.items():
+    for chrom, chrom_size in fa.items():
         # loading all other non N regions
         if chrom not in reg:
-            reg[chrom] = [[1, chromsize]]
+            reg[chrom] = [[1, chrom_size]]
 
     return reg
 
 
 def overlap_region(start1, end1, start2, end2):
-    """
+    """Get the intersection region
     """
     s, e = 0, 0
     if end1 <= end2 and start1 <= start2:
@@ -119,18 +119,24 @@ def overlap_region(start1, end1, start2, end2):
 
         s, e = start2, end2
 
-    elif start1 <= end2 and end1 > end2:
+    elif (start1 > start2) and (start1 <= end2 < end1):
         s, e = start1, end2
 
     else:
-        sys.stderr.write("[ERROR] Region not right.\n")
+        sys.stderr.write("[ERROR] The input region is not overlap with each other: "
+                         "[%d-%d, %d-%d].\n" % (start1, end1, start2, end2))
 
     return s, e
 
 
 def main(opts):
     chrom_order_list, fa = get_fasta_size_from_faifile(opts.ref_fai_file)
-    call_region = get_nonN_region(opts.n_reg_file, opts.nsize, fa)
+
+    if opts.n_reg_file:
+        call_region = get_nonN_region(opts.n_reg_file, opts.nsize, fa)
+    else:
+        # The whole genome region without removing N regions.
+        call_region = {c: [[1, s]] for c, s in fa.items()}
 
     for chrom in chrom_order_list:
         for start_pos, end_pos in call_region[chrom]:
@@ -142,18 +148,17 @@ def main(opts):
 
 
 if __name__ == "__main__":
-
-    usage = "\nUsage: python %prog [options] -f <fasta_faifile> > Output"
+    usage = "\nUsage: python %prog [options] -f <fasta.fai file> [-n N region bed file] > Output"
     cmdparse = argparse.ArgumentParser(description=usage)
     cmdparse.add_argument("-f", "--fai", dest="ref_fai_file", required=True,
-                          help="The reference fasta fai file.")
-    cmdparse.add_argument("-n", "--nbed", dest="n_reg_file", required=True,
-                          help="The N-base region bed file.")
-    cmdparse.add_argument("-N", "--nbase", dest="nsize",
+                          help="The reference FASTA .fai file.")
+    cmdparse.add_argument("-n", "--nbed", dest="n_reg_file", required=False,
+                          help="The N region .bed file.")
+    cmdparse.add_argument("-N", "--nbase", dest="nsize", type=int, default=1000,
                           help="The biggest continue N size could be allowed "
-                               "in one region.", default=1000)
-    cmdparse.add_argument("-w", "--win", dest="win", type=int, help="The max "
-                          "window size.", default=5000000)
+                               "in one region. [1000]")
+    cmdparse.add_argument("-w", "--win", dest="win", type=int, default=5000000,
+                          help="The max window size. [5000000]")
     opt = cmdparse.parse_args()
 
     main(opt)
