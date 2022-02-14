@@ -34,3 +34,34 @@ def file_exists(fname):
         return fname and os.path.exists(fname) and os.path.getsize(fname) > 0
     except OSError:
         return False
+
+
+def which(program):
+    """Mimics behavior of UNIX which command.
+    """
+    # Add .exe program extension for windows support
+    if os.name == "nt" and not program.endswith(".exe"):
+        program += ".exe"
+
+    envdir_list = [os.curdir] + os.environ["PATH"].split(os.pathsep)
+    for envdir in envdir_list:
+        program_path = os.path.join(envdir, program)
+        if os.path.isfile(program_path) and os.access(program_path, os.X_OK):
+            return program_path
+
+
+# def get_encoder_name():
+#     """Return enconder default application for system, either avconv or ffmpeg
+#     """
+#     if which("avconv"):
+#         return "avconv"
+#     elif which("ffmpeg"):
+#         return "ffmpeg"
+#     else:
+#         # should raise exception
+#         warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
+#         return "ffmpeg"
+
+
+
+        
