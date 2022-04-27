@@ -5,7 +5,7 @@ Ilus
 genome sequencing, WGS）和 全外显子（Whole exom
 sequencing，WES）分析流程生成器.
 
-[English](./README_EN.md) | 简体中文
+**简体中文** | [English](./README_EN.md) 
 
 简介
 ----
