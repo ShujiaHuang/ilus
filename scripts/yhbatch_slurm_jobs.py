@@ -27,13 +27,13 @@ if __name__ == "__main__":
 
             commands.append(line.strip())
 
-    total_cmd = len(commands)
-    if args.number > total_cmd:
-        args.number = total_cmd
+    total_cmd_num = len(commands)
+    if args.number > total_cmd_num:
+        args.number = total_cmd_num
 
-    inter_step_size = int(total_cmd/args.number)
-    if inter_step_size * args.number < total_cmd:
-        inter_step_size += 1
+    cmd_num_perjob = total_cmd_num // args.number
+    if total_cmd_num % args.number > 0:
+        cmd_num_perjob += 1
 
     _, shell_fname = os.path.split(args.input)
     now_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
@@ -41,22 +41,27 @@ if __name__ == "__main__":
     if not os.path.exists(sub_shell_dir):
         os.makedirs(sub_shell_dir)
 
-    for i, k in enumerate(range(0, total_cmd, inter_step_size)):
+    part_num = cmd_num_perjob // args.t
+    if cmd_num_perjob % args.t > 0:
+        part_num += 1
+
+    for i, k in enumerate(range(0, total_cmd_num, cmd_num_perjob)):
         sub_shell_fname = os.path.join(sub_shell_dir, "work.%d.sh" % (i+1))
         with open(sub_shell_fname, "w") as OUT:
-            OUT.write("#!/bin/bash\n")
 
             n = 0
-            for j, cmd in enumerate(commands[k:k+inter_step_size]):
+            OUT.write("#!/bin/bash\n")
+            for j, cmd in enumerate(commands[k:k+cmd_num_perjob]):
                 OUT.write("%s &\n" % cmd if args.t > 1 else "%s\n" % cmd)
                 if (j + 1) % args.t == 0:
                     n += 1
                     if args.t > 1:
                         OUT.write("wait\n")
-                    OUT.write("echo \"----------- %d ----------\"\n" %n)
+                    OUT.write("echo \"----------- %d/%d ----------\"\n" % (n, part_num))
 
-            OUT.write("wait\n")
-            OUT.write("echo \"----------- %d ----------\"\n" % (n+1))
+            if (j + 1) % args.t > 0:
+                OUT.write("wait\n")
+                OUT.write("echo \"----------- %d/%d ----------\"\n" % (n+1, part_num))
 
         os.chmod(sub_shell_fname, stat.S_IRWXU)  # 0700
 
