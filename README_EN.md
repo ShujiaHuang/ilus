@@ -1,6 +1,10 @@
 Ilus
 ====
 
+[![DOI](https://zenodo.org/badge/254013599.svg)](https://zenodo.org/badge/latestdoi/254013599)
+
+
+
 **Ilus** is a lightweight, scalable, handy **semi-automated** variant calling pipeline generator for Whole-genome sequencing (WGS) and Whole exom sequencing (WES) analysis.
 
 **English** | [简体中文](./README.md)
