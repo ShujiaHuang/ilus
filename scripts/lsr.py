@@ -81,7 +81,7 @@ def main(opts):
                     reg.append([chrom, s, e])
 
             for c, s, e in reg:
-                print '%s\t%d\t%d' % (c, s, e)
+                print('%s\t%d\t%d' % (c, s, e))
 
 
 def get_fasta_size_from_faifile(infile):
@@ -240,7 +240,7 @@ if __name__ == '__main__':
     #if not opt.accbed_file: optp.error('Required [-b accessible bed file.\n]')
 
     main(opt)
-    print >> sys.stderr, '>> For the flowers bloom in the desert <<'
+    sys.stderr.write('>> For the flowers bloom in the desert <<')
 
 
 

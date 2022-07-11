@@ -25,7 +25,7 @@ sambamba:
 
 
 verifyBamID2:
-    # This is the VerifyBamID2: https://github.com/Griffan/VerifyBamID
+    # The URL link of VerifyBamID2: https://github.com/Griffan/VerifyBamID
     verifyBamID2: /path/to/BioSoftware/local/bin/verifyBamID2
     options: [
         # download from: https://github.com/Griffan/VerifyBamID/tree/master/resource 
@@ -46,9 +46,9 @@ gatk:
 
   CollectAlignmentSummaryMetrics_jave_options: ["-Xmx10G"]
 
-  # Default adapter sequence is BGISEQ-500/MGISEQ/DNBSEQ in ilus. If you use illumina (or other) sequencing system 
-  # you should change the value of this parameter. The most widely used adapter of Illumina is TruSeq adapters. If 
-  # your data is from the TruSeq library, you can replace the parameter with the two following sequences: 
+  # Default adapter sequence is BGISEQ-500/MGISEQ/DNBSEQ in ilus. If you use illumina (or other) sequencing platform 
+  # you should change the value of this parameter. The most widely used adapter in Illumina is TruSeq adapters. If 
+  # your data is from the TruSeq library, you can replace the value with the two following sequences: 
   # "--ADAPTER_SEQUENCE AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
   # "--ADAPTER_SEQUENCE AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
 
@@ -64,15 +64,17 @@ gatk:
 
   vqsr_options: [
     "-an DP -an QD -an FS -an SOR -an ReadPosRankSum -an MQRankSum -an InbreedingCoeff",
-    "-tranche 100.0 -tranche 99.9 -tranche 99.5 -tranche 99.0 -tranche 95.0 -tranche 90.0",
+    "-tranche 100.0 -tranche 99.9 -tranche 99.5 ",
+    "-tranche 99.0 -tranche 95.0 -tranche 90.0",
     "--max-gaussians 6"
   ]
 
   # Fro creating gvcf. The value could be a interval region file in bed format or 
   # could be chromosomes list here. I suggest you to use chromosome list here.
-  interval: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9",
-             "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
-             "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
+  interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",
+             "chr8",  "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14", 
+             "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", 
+             "chr22", "chrX",  "chrY",  "chrM"]
   
 
   # Specific variant calling intervals. 
@@ -81,11 +83,11 @@ gatk:
   #         chr1    10001   207666
   #         chr1    257667  297968
 
-  # These invertals could be any regions alone the genome as you wish or just set the same as ``interval`` parameter above.
+  # These invertals could be any regions alone the genome as you wish or just set the same as ``interval`` argument above.
   variant_calling_interval: ["./wgs_calling_regions.GRCh38.5M.interval.bed"]
-  # variant_calling_interval: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9",
+  # variant_calling_interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",  "chr8", "chr9",
   #                            "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
-  #                            "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
+  #                            "chr18", "chr19", "chr20", "chr21", "chr22", "chrX",  "chrY",  "chrM"]
   
 
   # GATK bundle
