@@ -82,8 +82,16 @@ def split_jobs(args):
     if cmd_num_perjob % args.t > 0:
         part_num += 1
 
+    last_job_n = cmd_num_perjob - (cmd_num_perjob * args.number - total_cmd_num)
+    last_part_num = part_num if last_job_n == cmd_num_perjob else last_job_n // args.t + 1
+
     for i, k in enumerate(range(0, total_cmd_num, cmd_num_perjob)):
         sub_shell_fname = os.path.join(sub_shell_dir, "work.%d.sh" % (i + 1))
+
+        # Last jobs shell
+        if (k + 1) + cmd_num_perjob >= total_cmd_num:
+            part_num = last_part_num
+
         with open(sub_shell_fname, "w") as OUT:
 
             n = 0
