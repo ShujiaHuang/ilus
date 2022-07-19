@@ -21,7 +21,7 @@ meta = Namespace(
     __URL__          = "https://github.com/ShujiaHuang/ilus",
     __LICENSE__      = "BSD (3-clause)",
     __DOWNLOAD_URL__ = "https://github.com/ShujiaHuang/ilus",
-    __VERSION__      = "1.1.1",
+    __VERSION__      = "1.2.1",
 )
 
 
