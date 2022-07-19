@@ -15,6 +15,7 @@ import yaml
 from datetime import datetime
 
 from ilus.pipeline.wgs import wgs, genotypeGVCFs, variantrecalibrator
+from ilus.utils import split_jobs, check_jobs_status
 
 
 def parse_commandline_args():
@@ -29,7 +30,7 @@ def parse_commandline_args():
     pipeline_cmd.add_argument("-C", "--conf", dest="sysconf", required=True,
                               help="YAML configuration file specifying details about system.")
     pipeline_cmd.add_argument("-L", "--fastqlist", dest="fastqlist", type=str, required=True,
-                              help="Alignment FASTQ Index File.")
+                              help="The input file list of alignment FASTQ Files.")
     pipeline_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
                               help="A directory for output results.")
 
@@ -80,6 +81,19 @@ def parse_commandline_args():
     vqsr_cmd.add_argument("-f", "--force", dest="overwrite", action="store_true",
                           help="Force overwrite existing shell scripts and folders.")
 
+    # Utility tools
+    split_job_cmd = commands.add_parser("split-jobs", help="Split the whole shell into multiple jobs.")
+    split_job_cmd.add_argument("-I", "--input", dest="input", required=True,
+                               help="Input shell file.")
+    split_job_cmd.add_argument("-n", "--number", dest="number", type=int, required=True,
+                               help="The number of sub shells.")
+    split_job_cmd.add_argument("-t", "--parallel", dest="t", type=int, required=True,
+                               help="The number of parallel tasks.")
+
+    check_job_cmd = commands.add_parser("check-jobs", help="Check the jobs have finished or not.")
+    check_job_cmd.add_argument("-I", "--input", dest="input", required=True,
+                               help="Input the log file of task.")
+
     return cmdparser.parse_args()
 
 
@@ -88,44 +102,51 @@ def main():
     runner = {
         "WGS": wgs,
         "genotype-joint-calling": genotypeGVCFs,
-        "VQSR": variantrecalibrator
+        "VQSR": variantrecalibrator,
+        "split-jobs": split_jobs,
+        "check-jobs": check_jobs_status,
     }
 
     kwargs = parse_commandline_args()
     if kwargs.command is None:
-        print("Please type: ilus -h or ilus --help to show the help message.")
+        sys.stderr.write("Please type: ilus -h or ilus --help to show the help message.\n")
         sys.exit(1)
 
-    # all information in one dict.
-    aione = {}
+    if kwargs.command in ["WGS", "genotype-joint-calling", "VQSR"]:
+        # all information in one dict.
+        aione = {}
+        # loaded global configuration file
+        with open(kwargs.sysconf) as C:
+            aione["config"] = yaml.safe_load(C)
 
-    # loaded global configuration file
-    with open(kwargs.sysconf) as C:
-        aione["config"] = yaml.safe_load(C)
+        # Normalize interval regions
+        if "variant_calling_interval" in aione["config"]["gatk"]:
+            intervals = []  # A 2-D array
+            if os.path.isfile(aione["config"]["gatk"]["variant_calling_interval"][0]):
+                with open(aione["config"]["gatk"]["variant_calling_interval"][0]) as I:
+                    """ Bed format:
+                    chr1	10001	207666
+                    chr1	257667	297968
+                    """
+                    for line in I:
+                        if line.startswith("#"):
+                            continue
+                        else:
+                            intervals.append(line.strip().split()[:3])
 
-    # Normalize interval regions
-    if "variant_calling_interval" in aione["config"]["gatk"]:
-        intervals = []  # A 2-D array
-        if os.path.isfile(aione["config"]["gatk"]["variant_calling_interval"][0]):
-            with open(aione["config"]["gatk"]["variant_calling_interval"][0]) as I:
-                """ Bed format:
-                chr1	10001	207666
-                chr1	257667	297968
-                """
-                for line in I:
-                    if line.startswith("#"):
-                        continue
-                    else:
-                        intervals.append(line.strip().split()[:3])
+                # Update by regular regions information
+                aione["config"]["gatk"]["variant_calling_interval"] = intervals
 
-            # Update by regular regions information
-            aione["config"]["gatk"]["variant_calling_interval"] = intervals
+        else:
+            sys.stderr.write("[Error] 'variant_calling_interval' parameter in configure "
+                             "file %s is required.\n" % kwargs.sysconf)
+            sys.exit(1)
 
+        runner[kwargs.command](kwargs, aione)
     else:
-        sys.stderr.write("[Error] 'variant_calling_interval' parameter in [\"gatk\"][\"variant_calling_interval\"] "
-                         "in configure file %s is required." % kwargs.sysconf)
-        sys.exit(1)
+        # Do not need configure data
+        runner[kwargs.command](kwargs)
 
-    runner[kwargs.command](kwargs, aione)
     elapsed_time = datetime.now() - START_TIME
-    print("\n** %s done, %d seconds elapsed **\n" % (sys.argv[1], elapsed_time.seconds))
+    sys.stderr.write("\n** %s done, %d seconds elapsed **\n" %
+                     (sys.argv[1], elapsed_time.seconds))
