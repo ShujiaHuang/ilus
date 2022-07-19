@@ -1,7 +1,6 @@
 """Useful utilities functions for building analysis pipeline
 """
 import os
-import time
 
 
 def safe_makedir(dname):
@@ -13,17 +12,15 @@ def safe_makedir(dname):
     num_tries = 0
     max_tries = 5
     while not os.path.exists(dname):
-        # we could get an error here if multiple processes are creating
+        # Could get an error here if multiple processes are creating
         # the directory at the same time. Grr, concurrency.
         try:
             os.makedirs(dname)
         except OSError:
             if num_tries > max_tries:
                 raise
-
             num_tries += 1
-            # time.sleep(2)  # take too much time!
-            
+
     return dname
 
 
@@ -49,7 +46,6 @@ def which(program):
         if os.path.isfile(program_path) and os.access(program_path, os.X_OK):
             return program_path
 
-
 # def get_encoder_name():
 #     """Return enconder default application for system, either avconv or ffmpeg
 #     """
@@ -61,7 +57,3 @@ def which(program):
 #         # should raise exception
 #         warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
 #         return "ffmpeg"
-
-
-
-        
