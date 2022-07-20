@@ -22,3 +22,4 @@ python ../scripts/create_wgs_calling_intervals.py -f GCA_000001405.15_GRCh38_no_
 python ../scripts/create_wgs_calling_intervals.py -f GCA_000001405.15_GRCh38_no_alt_analysis_set.fa.fai -n GCA_000001405.15_GRCh38_no_alt_analysis_set.N.interval_list -w 5000000 | head -820 > wgs_calling_regions.GRCh38.5M.interval.bed
 ilus WGS -c -C ilus_sys.yaml -L fastq.list -P align,BQSR,gvcf,VQSR -O ./
 ilus WGS -c -n my_wgs -C ilus_sys.yaml -L fastq.list -O ./output
+ilus split-jobs -I bigcs-II.step1.bwa.sh -n 53 -t 4
