@@ -54,10 +54,10 @@ def which(program):
     return
 
 
-def split_jobs(args):
+def split_jobs(input_shell_file, task_num, thread_num):
 
     commands = []
-    with open(args.input) as I:
+    with open(input_shell_file) as I:
         for line in I:
             if line.startswith("#"):
                 continue
@@ -65,25 +65,25 @@ def split_jobs(args):
             commands.append(line.strip())
 
     total_cmd_num = len(commands)
-    if args.number > total_cmd_num:
-        args.number = total_cmd_num
+    if task_num > total_cmd_num:
+        task_num = total_cmd_num
 
-    cmd_num_perjob = total_cmd_num // args.number
-    if total_cmd_num % args.number > 0:
+    cmd_num_perjob = total_cmd_num // task_num
+    if total_cmd_num % task_num > 0:
         cmd_num_perjob += 1
 
-    _, shell_fname = os.path.split(args.input)
+    _, shell_fname = os.path.split(input_shell_file)
     now_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     sub_shell_dir = os.path.abspath("{shell_fname}.{now_time}".format(**locals()))
     if not os.path.exists(sub_shell_dir):
         os.makedirs(sub_shell_dir)
 
-    part_num = cmd_num_perjob // args.t
-    if cmd_num_perjob % args.t > 0:
+    part_num = cmd_num_perjob // thread_num
+    if cmd_num_perjob % thread_num > 0:
         part_num += 1
 
-    last_job_n = cmd_num_perjob - (cmd_num_perjob * args.number - total_cmd_num)
-    last_part_num = part_num if last_job_n == cmd_num_perjob else last_job_n // args.t + 1
+    last_job_n = cmd_num_perjob - (cmd_num_perjob * task_num - total_cmd_num)
+    last_part_num = part_num if last_job_n == cmd_num_perjob else last_job_n // thread_num + 1
 
     for i, k in enumerate(range(0, total_cmd_num, cmd_num_perjob)):
         sub_shell_fname = os.path.join(sub_shell_dir, "work.%d.sh" % (i + 1))
@@ -97,21 +97,21 @@ def split_jobs(args):
             n = 0
             OUT.write("#!/bin/bash\n")
             for j, cmd in enumerate(commands[k:k + cmd_num_perjob]):
-                OUT.write("%s &\n" % cmd if args.t > 1 else "%s\n" % cmd)
-                if (j + 1) % args.t == 0:
+                OUT.write("%s &\n" % cmd if thread_num > 1 else "%s\n" % cmd)
+                if (j + 1) % thread_num == 0:
                     n += 1
-                    if args.t > 1:
+                    if thread_num > 1:
                         OUT.write("wait\n")
                     OUT.write("echo \"----------- %d/%d ----------\"\n" % (n, part_num))
 
-            if (j + 1) % args.t > 0:
+            if (j + 1) % thread_num > 0:
                 OUT.write("wait\n")
                 OUT.write("echo \"----------- %d/%d ----------\"\n" % (n + 1, part_num))
 
         os.chmod(sub_shell_fname, stat.S_IRWXU)  # 0700
 
 
-def check_jobs_status(args):
+def check_jobs_status(task_log_file):
 
     def check(input_fname):
         is_finish = False
@@ -130,7 +130,6 @@ def check_jobs_status(args):
     # Match anything looks like: "[xx] xxx done" or "[xx] xx xxx ... done"
     pattern = re.compile(r'^\[\S+\]\s+\S+.*?\s+done$')
 
-    task_log_file = args.input
     is_all_finish = True
     with open(task_log_file) as I:
         for line in I:

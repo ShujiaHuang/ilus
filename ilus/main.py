@@ -86,9 +86,9 @@ def parse_commandline_args():
     split_job_cmd.add_argument("-I", "--input", dest="input", required=True,
                                help="Input shell file.")
     split_job_cmd.add_argument("-n", "--number", dest="number", type=int, required=True,
-                               help="The number of sub shells.")
+                               help="The number of sub tasks (shells).")
     split_job_cmd.add_argument("-t", "--parallel", dest="t", type=int, required=True,
-                               help="The number of parallel tasks.")
+                               help="The number of parallel jobs.")
 
     check_job_cmd = commands.add_parser("check-jobs", help="Check the jobs have finished or not.")
     check_job_cmd.add_argument("-I", "--input", dest="input", required=True,
@@ -112,11 +112,11 @@ def main():
         sys.stderr.write("Please type: ilus -h or ilus --help to show the help message.\n")
         sys.exit(1)
 
-    if kwargs.command in ["WGS", "genotype-joint-calling", "VQSR"]:
-        # all information in one dict.
-        aione = {}
-        # loaded global configuration file
+    elif kwargs.command in ["WGS", "genotype-joint-calling", "VQSR"]:
+
+        aione = {}  # All information in one dict.
         with open(kwargs.sysconf) as C:
+            # loaded global configuration file
             aione["config"] = yaml.safe_load(C)
 
         # Normalize interval regions
@@ -143,9 +143,13 @@ def main():
             sys.exit(1)
 
         runner[kwargs.command](kwargs, aione)
-    else:
+    elif kwargs.command == "split-jobs":
         # Do not need configure data
-        runner[kwargs.command](kwargs)
+        split_jobs(kwargs.input, kwargs.number, kwargs.t)
+
+    elif kwargs.command == "check-jobs":
+        check_jobs_status(kwargs.input)
+
 
     elapsed_time = datetime.now() - START_TIME
     sys.stderr.write("\n** %s done, %d seconds elapsed **\n" %
