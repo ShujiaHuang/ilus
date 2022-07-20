@@ -102,9 +102,7 @@ def main():
     runner = {
         "WGS": wgs,
         "genotype-joint-calling": genotypeGVCFs,
-        "VQSR": variantrecalibrator,
-        "split-jobs": split_jobs,
-        "check-jobs": check_jobs_status,
+        "VQSR": variantrecalibrator
     }
 
     kwargs = parse_commandline_args()
@@ -112,8 +110,7 @@ def main():
         sys.stderr.write("Please type: ilus -h or ilus --help to show the help message.\n")
         sys.exit(1)
 
-    elif kwargs.command in ["WGS", "genotype-joint-calling", "VQSR"]:
-
+    elif kwargs.command in runner:
         aione = {}  # All information in one dict.
         with open(kwargs.sysconf) as C:
             # loaded global configuration file
@@ -150,6 +147,8 @@ def main():
     elif kwargs.command == "check-jobs":
         check_jobs_status(kwargs.input)
 
+    else:
+        raise ValueError("[ERROR] Invalid command: '%s'." % kwargs.command)
 
     elapsed_time = datetime.now() - START_TIME
     sys.stderr.write("\n** %s done, %d seconds elapsed **\n" %
