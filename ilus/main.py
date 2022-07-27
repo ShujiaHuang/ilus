@@ -18,10 +18,12 @@ from ilus.pipeline.wgs import wgs, genotypeGVCFs, variantrecalibrator
 from ilus.utils import split_jobs, check_jobs_status
 
 
+
 def parse_commandline_args():
     """Parse input commandline arguments, handling multiple cases.
     """
-    desc = "ilus: A WGS/WES analysis pipeline generator."
+    VERSION = "1.2.2"
+    desc = "ilus (Version = %s): A WGS/WES analysis pipeline generator." % VERSION
     cmdparser = argparse.ArgumentParser(description=desc)
     commands = cmdparser.add_subparsers(dest="command", title="ilus commands")
 

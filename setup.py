@@ -21,7 +21,7 @@ meta = Namespace(
     __URL__          = "https://github.com/ShujiaHuang/ilus",
     __LICENSE__      = "BSD (3-clause)",
     __DOWNLOAD_URL__ = "https://github.com/ShujiaHuang/ilus",
-    __VERSION__      = "1.2.1",
+    __VERSION__      = "1.2.2",
 )
 
 
@@ -44,6 +44,7 @@ if __name__ == "__main__":
           download_url=meta.__DOWNLOAD_URL__,
           packages=find_packages(),
           install_requires=[
+              'logbook',
               'PyYAML>=5.1.2',
           ],
           include_package_data=True,
@@ -58,7 +59,7 @@ if __name__ == "__main__":
              'Programming Language :: Python :: 3.7',
              'Programming Language :: Python :: 3.8',
              'Programming Language :: Python :: 3.9',
-             'License :: OSI Approved :: BSD License',
+             'License :: OSI Approved :: GPL3 License',
              'Topic :: Scientific/Engineering :: Bio-Informatics',
              'Operating System :: POSIX',
              'Operating System :: POSIX :: Linux',
