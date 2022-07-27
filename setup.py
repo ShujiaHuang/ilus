@@ -59,7 +59,7 @@ if __name__ == "__main__":
              'Programming Language :: Python :: 3.7',
              'Programming Language :: Python :: 3.8',
              'Programming Language :: Python :: 3.9',
-             'License :: OSI Approved :: GPL3 License',
+             'License :: OSI Approved :: BSD License',
              'Topic :: Scientific/Engineering :: Bio-Informatics',
              'Operating System :: POSIX',
              'Operating System :: POSIX :: Linux',
