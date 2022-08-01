@@ -113,8 +113,11 @@ def split_jobs(input_shell_file, task_num, thread_num):
 
 def check_jobs_status(task_log_file):
 
+    # Match anything looks like: "[xx] xxx done" or "[xx] xx xxx ... done"
+    pattern = re.compile(r'^\[\S+\].*?\s+done$')
+
     def check(input_fname):
-        is_finish = False
+        is_task_done = False
         if os.path.exists(input_fname):
             with open(input_fname) as I:
                 last_line = ""
@@ -123,14 +126,11 @@ def check_jobs_status(task_log_file):
 
                 match = pattern.match(last_line)
                 if match:
-                    is_finish = True
+                    is_task_done = True
 
-        return is_finish
+        return is_task_done
 
-    # Match anything looks like: "[xx] xxx done" or "[xx] xx xxx ... done"
-    pattern = re.compile(r'^\[\S+\]\s+\S+.*?\s+done$')
-
-    is_all_finish = True
+    is_all_done = True
     with open(task_log_file) as I:
         for line in I:
             # sample log_file task_shell_file"
@@ -138,11 +138,11 @@ def check_jobs_status(task_log_file):
                 continue
 
             sample, log_fname, task_shell = line.strip().split()
-            is_finish = check(log_fname)
+            is_task_done = check(log_fname)
 
-            if not is_finish:
-                is_all_finish = False
+            if not is_task_done:
+                is_all_done = False
                 print("[unfinish]\t%s\t%s" % (sample, task_shell))
 
-    if is_all_finish:
+    if is_all_done:
         sys.stderr.write("** All Jobs done **\n")
