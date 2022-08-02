@@ -13,4 +13,4 @@ if __name__ == "__main__":
                            help="The number of parallel tasks.")
 
     args = cmdparser.parse_args()
-    split_jobs(args)
+    split_jobs(args.input, args.number, args.t)

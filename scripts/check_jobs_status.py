@@ -11,4 +11,4 @@ if __name__ == "__main__":
                            help="Input the log file of task.")
 
     args = cmdparser.parse_args()
-    check_jobs_status(args)
+    check_jobs_status(args.input)

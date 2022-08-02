@@ -112,7 +112,6 @@ def split_jobs(input_shell_file, task_num, thread_num):
 
 
 def check_jobs_status(task_log_file):
-
     # Match anything looks like: "[xx] xxx done" or "[xx] xx xxx ... done"
     pattern = re.compile(r'^\[\S+\].*?\s+done$')
 
