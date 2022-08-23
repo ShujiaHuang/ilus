@@ -83,7 +83,7 @@ def split_jobs(input_shell_file, task_num, thread_num):
         part_num += 1
 
     last_job_n = cmd_num_perjob - (cmd_num_perjob * task_num - total_cmd_num)
-    last_part_num = part_num if last_job_n == cmd_num_perjob else last_job_n // thread_num + 1
+    last_part_num = part_num if (last_job_n == cmd_num_perjob) or (last_job_n < 0) else last_job_n // thread_num + 1    
 
     for i, k in enumerate(range(0, total_cmd_num, cmd_num_perjob)):
         sub_shell_fname = os.path.join(sub_shell_dir, "work.%d.sh" % (i + 1))
