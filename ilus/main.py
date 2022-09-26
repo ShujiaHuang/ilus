@@ -18,7 +18,6 @@ from ilus.pipeline.wgs import wgs, genotypeGVCFs, variantrecalibrator
 from ilus.utils import split_jobs, check_jobs_status
 
 
-
 def parse_commandline_args():
     """Parse input commandline arguments, handling multiple cases.
     """
@@ -87,6 +86,8 @@ def parse_commandline_args():
     split_job_cmd = commands.add_parser("split-jobs", help="Split the whole shell into multiple jobs.")
     split_job_cmd.add_argument("-I", "--input", dest="input", required=True,
                                help="Input shell file.")
+    split_job_cmd.add_argument("-p", "--prefix", dest="prefix", type=str, default="work",
+                               help="The prefix name of output sub-shell file. [work]")
     split_job_cmd.add_argument("-n", "--number", dest="number", type=int, required=True,
                                help="The number of sub tasks (shells).")
     split_job_cmd.add_argument("-t", "--parallel", dest="t", type=int, required=True,
@@ -144,7 +145,7 @@ def main():
         runner[kwargs.command](kwargs, aione)
     elif kwargs.command == "split-jobs":
         # Do not need configure data
-        split_jobs(kwargs.input, kwargs.number, kwargs.t)
+        split_jobs(kwargs.input, kwargs.number, kwargs.t, prefix=kwargs.prefix)
 
     elif kwargs.command == "check-jobs":
         check_jobs_status(kwargs.input)
