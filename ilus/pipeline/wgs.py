@@ -128,18 +128,35 @@ def genotypeGVCFs(kwargs, aione):
 
     aione["intervals"] = []
     aione["gvcf"] = {}  # will be called in ``gatk_genotypeGVCFs``
+    sample_map = {}  # Record sample_map for genomicsDBImport
     with open(kwargs.gvcflist) as I:
-        # Format in gvcfilist: [Interval  gvcf_file_path]
+        # Format in gvcfilist: [chromosome_id  sampleid  gvcf_file_path]
         for line in I:
             if line.startswith("#"):
                 continue
 
-            interval, gvcf = line.strip().split()
+            interval, sample, gvcf = line.strip().split()
             if interval not in aione["gvcf"]:
                 aione["intervals"].append(interval)
                 aione["gvcf"][interval] = []
-
             aione["gvcf"][interval].append(gvcf)
+
+            if interval not in sample_map:
+                sample_map[interval] = []
+
+            sample_map[interval].append("%s\t%s" % (sample, gvcf))
+
+    if aione["config"]["gatk"]["use_genomicsDBImport"]:
+        kwargs.outdir = safe_makedir(os.path.abspath(kwargs.outdir))
+
+        aione["sample_map"] = {}
+        for interval, value in sample_map.items():
+            # create sample_map file for next process
+            out_sample_map_fname = os.path.join(kwargs.outdir, "%s.gvcf.sample_map" % interval)
+            with open(out_sample_map_fname, "w") as OUT:
+                OUT.write("\n".join(value))
+
+            aione["sample_map"][interval] = out_sample_map_fname
 
     shell_fname, shell_log_folder = [kwargs.project_name + ".step5.genotype.sh", "05.genotype"] \
         if kwargs.as_pipe_shell_order else [kwargs.project_name + ".genotype.sh", "genotype"]

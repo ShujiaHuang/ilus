@@ -175,7 +175,7 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=T
                 cmd.append(bam.genomecoverage(aione["config"], out_bqsr_bam_fname, genome_cvg_fname))
 
             if is_calculate_contamination:
-                out_verifybamid_stat_prefix = os.path.join(dirname, os.path.splitext(f_name)[0]+".BQSR.verifyBamID2")
+                out_verifybamid_stat_prefix = os.path.join(dirname, os.path.splitext(f_name)[0] + ".BQSR.verifyBamID2")
                 cmd.append(bam.verifyBamID2(aione["config"], out_bqsr_bam_fname, out_verifybamid_stat_prefix))
 
             if kwargs.cram:
@@ -197,17 +197,15 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione, is_dry_run=False):
     """Create gvcf shell."""
 
     def _create_sub_shell(sample, sample_shell_dir, sample_output_dir, raw_interval=None):
-
         interval = raw_interval if raw_interval else "all"
 
         # in case the raw_interval is a full path file.
         interval, _ = os.path.splitext(os.path.split(interval)[-1])
         sample_shell_fname = os.path.join(sample_shell_dir, sample + ".%s.gvcf.sh" % interval)
         out_gvcf_fname = os.path.join(sample_output_dir, sample + ".%s.g.vcf.gz" % interval)
-
         if not is_dry_run and (not os.path.exists(sample_shell_fname) or kwargs.overwrite):
             if raw_interval:
-                cmd = [gatk.haplotypecaller_gvcf(aione["config"], sample_bqsr_bam, 
+                cmd = [gatk.haplotypecaller_gvcf(aione["config"], sample_bqsr_bam,
                                                  out_gvcf_fname, interval=raw_interval)]
             else:
                 cmd = [gatk.haplotypecaller_gvcf(aione["config"], sample_bqsr_bam, out_gvcf_fname)]
@@ -220,10 +218,12 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione, is_dry_run=False):
 
     shell_dirtory = os.path.join(kwargs.outdir, out_folder_name, "shell")
     output_dirtory = os.path.join(kwargs.outdir, out_folder_name, "output")
-
     if not is_dry_run:
         utils.safe_makedir(output_dirtory)
         utils.safe_makedir(shell_dirtory)
+
+    is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
+        if "use_genomicsDBImport" in aione["config"]["gatk"] else False
 
     gvcf_shell_files_list = []
     aione["gvcf"] = {}
@@ -231,7 +231,8 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione, is_dry_run=False):
     if "interval" not in aione["config"]["gatk"]:
         aione["config"]["gatk"]["interval"] = ["all"]
 
-    aione["intervals"] = []
+    aione["intervals"] = []  # chromosome id
+    sample_map = {}  # Record sample_map for genomicsDBImport
     for sample, sample_bqsr_bam in aione["sample_final_bqsr_bam"]:
         sample_shell_dir = os.path.join(shell_dirtory, sample)
         sample_output_dir = os.path.join(output_dirtory, sample)
@@ -241,7 +242,6 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione, is_dry_run=False):
             utils.safe_makedir(sample_output_dir)
 
         for interval in aione["config"]["gatk"]["interval"]:
-
             if interval == "all":
                 # The whole genome
                 sample_shell_fname, out_gvcf_fname = _create_sub_shell(sample, sample_shell_dir, sample_output_dir)
@@ -259,12 +259,30 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione, is_dry_run=False):
             gvcf_shell_files_list.append([sample + ".%s" % interval, sample_shell_fname])
             aione["gvcf"][interval].append(out_gvcf_fname)
 
+            if is_use_gDBI and (interval not in sample_map):
+                sample_map[interval] = []
+            elif is_use_gDBI:
+                sample_map[interval].append("%s\t%s" % (sample, out_gvcf_fname))
+
+    if is_use_gDBI:
+        aione["sample_map"] = {}
+        for interval, value in sample_map.items():
+            # create sample_map file for next process
+            out_sample_map_fname = os.path.join(output_dirtory, "%s.gvcf.sample_map" % interval)
+            with open(out_sample_map_fname, "w") as OUT:
+                OUT.write("\n".join(value))
+
+            aione["sample_map"][interval] = out_sample_map_fname
+
     return gvcf_shell_files_list
 
 
 def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
     shell_dirtory = os.path.join(kwargs.outdir, out_folder_name, "shell")
     output_dirtory = os.path.join(kwargs.outdir, out_folder_name, "output")
+
+    is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
+        if "use_genomicsDBImport" in aione["config"]["gatk"] else False
 
     if not is_dry_run:
         utils.safe_makedir(output_dirtory)
@@ -279,15 +297,20 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
         genotype_vcf_fname = os.path.join(output_dirtory, "%s.%s.vcf.gz" % (kwargs.project_name, interval_n))
         sub_shell_fname = os.path.join(shell_dirtory, "%s.%s.genotype.sh" % (kwargs.project_name, interval_n))
 
-        interval_id = interval[0] if type(interval) is list else interval
+        interval_id = interval[0] if type(interval) is list else interval   # get chromosome id
         if interval_id in aione["gvcf"]:
-            sample_gvcf_list = aione["gvcf"][interval_id]  # The chromosome id
+            # load gvcf .sample_map file if using genomicsDBImport module to combine all the gvcf
+            sample_gvcf_list = [aione["sample_map"][interval_id]] if is_use_gDBI else aione["gvcf"][interval_id]
         else:
-            sys.stderr.write("[Error] Interval error when joint-calling by genotypeGVCFs: %s " % interval)
+            continue
+
+        if not sample_gvcf_list:
+            sys.stderr.write("[Error] Interval parameters in configuration file may be different "
+                             "from that input gvcf file list when joint-calling by genotypeGVCFs.")
             sys.exit(1)
 
-        calling_interval = "%s:%s-%s" % (interval[0],interval[1],interval[2]) if type(interval) is list else interval
-        if not is_dry_run and (not os.path.exists(sub_shell_fname) or kwargs.overwrite):
+        calling_interval = "%s:%s-%s" % (interval[0], interval[1], interval[2]) if type(interval) is list else interval
+        if (not is_dry_run) and (not os.path.exists(sub_shell_fname) or kwargs.overwrite):
             cmd = [gatk.genotypegvcfs(aione["config"],
                                       sample_gvcf_list,
                                       genotype_vcf_fname,

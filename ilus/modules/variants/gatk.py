@@ -69,7 +69,6 @@ def haplotypecaller_gvcf(config, input_bam, output_gvcf_fname, interval=None):
 
 
 def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
-
     gatk = config["gatk"]["gatk"]
     java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["genotype_java_options"]) \
         if "genotype_java_options" in config["gatk"] \
@@ -88,55 +87,41 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
 
     # The prefix of file name of combine gvcf set to be the same with input ``fname``
     combine_gvcf_fname = os.path.join(directory, fname.replace(".vcf", ".g.vcf"))
-
-    gvcfs = " ".join(["-V %s" % s for s in input_sample_gvcfs])
     use_gDBI = config["gatk"]["use_genomicsDBImport"] if "use_genomicsDBImport" in config["gatk"] else False
-
-    genotype_cmd = []
-    if len(input_sample_gvcfs) > 1:
-        if use_gDBI:
-            # use GenomicsDBImport
-            # Changed the name for genomicsDBImport directory
-            combine_gvcf_fname = combine_gvcf_fname.split(".g.vcf")[0] + ".gvcfs_db"
-            genomicsDBImport_cmd = ("rm -rf {combine_gvcf_fname} && "
-                                    "time {gatk} {java_options} GenomicsDBImport {genomicsDBImport_options} "
-                                    "-R {reference} {gvcfs} "
-                                    "--genomicsdb-workspace-path {combine_gvcf_fname}").format(**locals())
-
-            if interval:
-                genomicsDBImport_cmd += " -L %s" % interval
-
-            genotype_cmd = [genomicsDBImport_cmd]
-
-        else:
-            combine_gvcf_cmd = ("time {gatk} {java_options} CombineGVCFs "
-                                "-R {reference} {gvcfs} "
-                                "-O {combine_gvcf_fname}").format(**locals())
-
-            if interval:
-                combine_gvcf_cmd += " -L %s" % interval
-
-            genotype_cmd = [combine_gvcf_cmd]
-    else:
-        use_gDBI = False
-        combine_gvcf_fname = input_sample_gvcfs[0]
-
-    variants_calling_interval = interval
     if use_gDBI:
-        genotype_cmd.append(("time {gatk} {java_options} GenotypeGVCFs "
-                             "-R {reference} {genotypeGVCFs_options} "
-                             "-V gendb://{combine_gvcf_fname} "
-                             "-L {variants_calling_interval} "
-                             "-O {output_vcf_fname}").format(**locals()))
-    else:
-        genotype_cmd.append(("time {gatk} {java_options} GenotypeGVCFs "
-                             "-R {reference} {genotypeGVCFs_options} "
-                             "-V {combine_gvcf_fname} "
-                             "-L {variants_calling_interval} "
-                             "-O {output_vcf_fname}").format(**locals()))
+        # use GenomicsDBImport
+        sample_name_map = input_sample_gvcfs[0]  # Only one file
 
-    genotype_cmd.append("rm -rf %s %s.tbi" % (combine_gvcf_fname, combine_gvcf_fname))
-    return " && ".join(genotype_cmd)
+        # Changed the name for genomicsDBImport directory
+        combine_gvcf_fname = combine_gvcf_fname.split(".g.vcf")[0] + ".gvcfs_db"
+        combine_gvcf_cmd = ("rm -rf {combine_gvcf_fname} && "
+                            "time {gatk} {java_options} GenomicsDBImport {genomicsDBImport_options} "
+                            "-R {reference} "
+                            "--sample-name-map {sample_name_map} "
+                            "--genomicsdb-workspace-path {combine_gvcf_fname}").format(**locals())
+    else:
+        gvcfs = " ".join(["-V %s" % s for s in input_sample_gvcfs])
+        combine_gvcf_cmd = ("time {gatk} {java_options} CombineGVCFs "
+                            "-R {reference} {gvcfs} "
+                            "-O {combine_gvcf_fname}").format(**locals())
+    if interval:
+        combine_gvcf_cmd += " -L %s" % interval
+
+    if use_gDBI:
+        genotype_cmd = ("time {gatk} {java_options} GenotypeGVCFs "
+                        "-R {reference} {genotypeGVCFs_options} "
+                        "-V gendb://{combine_gvcf_fname} "
+                        "-O {output_vcf_fname}").format(**locals())
+    else:
+        genotype_cmd = ("time {gatk} {java_options} GenotypeGVCFs "
+                        "-R {reference} {genotypeGVCFs_options} "
+                        "-V {combine_gvcf_fname} "
+                        "-O {output_vcf_fname}").format(**locals())
+    if interval:
+        genotype_cmd += " -L %s" % interval
+
+    delete_cmd = "rm -rf %s %s.tbi" % (combine_gvcf_fname, combine_gvcf_fname)
+    return " && ".join([combine_gvcf_cmd, genotype_cmd, delete_cmd])
 
 
 def variantrecalibrator(config, input_vcf, output_vcf_fname):
