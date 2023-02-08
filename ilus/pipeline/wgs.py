@@ -135,12 +135,18 @@ def genotypeGVCFs(kwargs, aione):
             if line.startswith("#"):
                 continue
 
-            interval, sample, gvcf = line.strip().split()
+            try:
+                interval, sample, gvcf = line.strip().split()
+            except ValueError:
+                raise ValueError("[ERROR] format error in '%s'. \nExpected: 3 columns "
+                                 "(column 1: chromosome ID, column 2: sample ID, column 3: gvcf file path), "
+                                 "got '%s')." % (kwargs.gvcflist, line.strip()))
+
             if interval not in aione["gvcf"]:
                 aione["intervals"].append(interval)
                 aione["gvcf"][interval] = []
-            aione["gvcf"][interval].append(gvcf)
 
+            aione["gvcf"][interval].append(gvcf)
             if interval not in sample_map:
                 sample_map[interval] = []
 
