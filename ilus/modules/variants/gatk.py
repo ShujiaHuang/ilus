@@ -77,6 +77,9 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
     genotypeGVCFs_options = " ".join(config["gatk"]["genotypeGVCFs_options"]) \
         if "genotypeGVCFs_options" in config["gatk"] else ""
 
+    if (("--overwrite-existing-genomicsdb-workspace false" not in config["gatk"]["genomicsDBImport_options"]) and
+            ("--overwrite-existing-genomicsdb-workspace true" not in config["gatk"]["genomicsDBImport_options"])):
+        config["gatk"]["genomicsDBImport_options"].append("--overwrite-existing-genomicsdb-workspace true")
     genomicsDBImport_options = "%s" % " ".join(config["gatk"]["genomicsDBImport_options"]) \
         if "genomicsDBImport_options" in config["gatk"] else ""
 
@@ -88,14 +91,15 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
     # The prefix of file name of combine gvcf set to be the same with input ``fname``
     combine_gvcf_fname = os.path.join(directory, fname.replace(".vcf", ".g.vcf"))
     use_gDBI = config["gatk"]["use_genomicsDBImport"] if "use_genomicsDBImport" in config["gatk"] else False
+
+    # Create command line for GenomicsDBImport or CombineGVCFs
     if use_gDBI:
         # use GenomicsDBImport
         sample_name_map = input_sample_gvcfs[0]  # Only one file
 
         # Changed the name for genomicsDBImport directory
         combine_gvcf_fname = combine_gvcf_fname.split(".g.vcf")[0] + ".gvcfs_db"
-        combine_gvcf_cmd = ("rm -rf {combine_gvcf_fname} && "
-                            "time {gatk} {java_options} GenomicsDBImport {genomicsDBImport_options} "
+        combine_gvcf_cmd = ("time {gatk} {java_options} GenomicsDBImport {genomicsDBImport_options} "
                             "-R {reference} "
                             "--sample-name-map {sample_name_map} "
                             "--genomicsdb-workspace-path {combine_gvcf_fname}").format(**locals())
@@ -107,6 +111,7 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
     if interval:
         combine_gvcf_cmd += " -L %s" % interval
 
+    # Creat command line for genotypeGVCF
     if use_gDBI:
         genotype_cmd = ("time {gatk} {java_options} GenotypeGVCFs "
                         "-R {reference} {genotypeGVCFs_options} "
@@ -120,6 +125,7 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
     if interval:
         genotype_cmd += " -L %s" % interval
 
+    # delete the combine GVCF file or genomicsdb workspace.
     delete_cmd = "rm -rf %s %s.tbi" % (combine_gvcf_fname, combine_gvcf_fname)
     return " && ".join([combine_gvcf_cmd, genotype_cmd, delete_cmd])
 
