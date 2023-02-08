@@ -154,7 +154,7 @@ def genotypeGVCFs(kwargs, aione):
 
     if aione["config"]["gatk"]["use_genomicsDBImport"]:
         kwargs.outdir = safe_makedir(os.path.abspath(kwargs.outdir))
-
+        
         aione["sample_map"] = {}
         for interval, value in sample_map.items():
             # create sample_map file for next process
