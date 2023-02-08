@@ -115,7 +115,7 @@ def check_jobs_status(task_log_file):
     pattern = re.compile(r'^\[\S+\].*?\s+done$')
 
     def check(input_fname):
-        is_task_done = False
+        task_done = False
         if os.path.exists(input_fname):
             with open(input_fname) as I:
                 last_line = ""
@@ -124,9 +124,9 @@ def check_jobs_status(task_log_file):
 
                 match = pattern.match(last_line)
                 if match:
-                    is_task_done = True
+                    task_done = True
 
-        return is_task_done
+        return task_done
 
     is_all_done = True
     with open(task_log_file) as I:
