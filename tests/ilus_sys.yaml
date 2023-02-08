@@ -63,7 +63,7 @@ gatk:
                              "--batch-size 100",
                              "--reader-threads 12",
                              "--overwrite-existing-genomicsdb-workspace true"]
-  use_genomicsDBImport: true  # Do not use genomicsDBImport to combine GVCFs by default
+  use_genomicsDBImport: true  # Use genomicsDBImport to combine GVCFs by default
 
   vqsr_options: [
     "-an DP -an QD -an FS -an SOR -an ReadPosRankSum -an MQRankSum -an InbreedingCoeff",
