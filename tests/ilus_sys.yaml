@@ -59,7 +59,10 @@ gatk:
 
   hc_gvcf_options: [""]
   genotypeGVCFs_options: [""]
-  genomicsDBImport_options: ["--tmp-dir /your_path/cache", "--batch-size 100", "--reader-threads 12"]
+  genomicsDBImport_options: ["--tmp-dir /your_path/cache",
+                             "--batch-size 100",
+                             "--reader-threads 12",
+                             "--overwrite-existing-genomicsdb-workspace true"]
   use_genomicsDBImport: true  # Do not use genomicsDBImport to combine GVCFs by default
 
   vqsr_options: [
