@@ -77,9 +77,11 @@ def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
     genotypeGVCFs_options = " ".join(config["gatk"]["genotypeGVCFs_options"]) \
         if "genotypeGVCFs_options" in config["gatk"] else ""
 
+    # set overwite existing genomicsdb workspace by default
     if (("--overwrite-existing-genomicsdb-workspace false" not in config["gatk"]["genomicsDBImport_options"]) and
             ("--overwrite-existing-genomicsdb-workspace true" not in config["gatk"]["genomicsDBImport_options"])):
         config["gatk"]["genomicsDBImport_options"].append("--overwrite-existing-genomicsdb-workspace true")
+
     genomicsDBImport_options = "%s" % " ".join(config["gatk"]["genomicsDBImport_options"]) \
         if "genomicsDBImport_options" in config["gatk"] else ""
 

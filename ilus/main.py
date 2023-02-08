@@ -136,7 +136,6 @@ def main():
 
                 # Update by regular regions information
                 aione["config"]["gatk"]["variant_calling_interval"] = intervals
-
         else:
             sys.stderr.write("[Error] 'variant_calling_interval' parameter in configure "
                              "file %s is required.\n" % kwargs.sysconf)
@@ -144,7 +143,6 @@ def main():
 
         runner[kwargs.command](kwargs, aione)
     elif kwargs.command == "split-jobs":
-        # Do not need configure data
         split_jobs(kwargs.input, kwargs.number, kwargs.t, prefix=kwargs.prefix)
 
     elif kwargs.command == "check-jobs":
