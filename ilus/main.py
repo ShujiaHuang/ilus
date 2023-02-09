@@ -11,19 +11,21 @@ import argparse
 import os
 import sys
 import yaml
-
 from datetime import datetime
 
 from ilus.pipeline.wgs import wgs, genotypeGVCFs, variantrecalibrator
 from ilus.utils import split_jobs, check_jobs_status
 
+VERSION = "1.2.2"
+
 
 def parse_commandline_args():
     """Parse input commandline arguments, handling multiple cases.
     """
-    VERSION = "1.2.2"
     desc = "ilus (Version = %s): A WGS/WES analysis pipeline generator." % VERSION
     cmdparser = argparse.ArgumentParser(description=desc)
+    cmdparser.add_argument("-v", "--version", action="store_true", help="show the version of ilus.")
+
     commands = cmdparser.add_subparsers(dest="command", title="ilus commands")
 
     # The standard pipeline for WGS.
@@ -109,6 +111,10 @@ def main():
     }
 
     kwargs = parse_commandline_args()
+    if kwargs.version:
+        print("ilus " + VERSION, file=sys.stderr)
+        sys.exit(0)
+
     if kwargs.command is None:
         sys.stderr.write("Please type: ilus -h or ilus --help to show the help message.\n")
         sys.exit(1)
