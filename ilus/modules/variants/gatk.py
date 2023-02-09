@@ -68,68 +68,75 @@ def haplotypecaller_gvcf(config, input_bam, output_gvcf_fname, interval=None):
     return cmd
 
 
-def genotypegvcfs(config, input_sample_gvcfs, output_vcf_fname, interval=None):
+def combineGVCFs(config, input_sample_gvcfs, output_combineGVCF_fname, interval=None):
+    """Combine GVCFs by GATK genomicsDBImport or CombineGVCFs module.
+    """
     gatk = config["gatk"]["gatk"]
-    java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["genotype_java_options"]) \
-        if "genotype_java_options" in config["gatk"] \
-           and len(config["gatk"]["genotype_java_options"]) else ""
-
-    genotypeGVCFs_options = " ".join(config["gatk"]["genotypeGVCFs_options"]) \
-        if "genotypeGVCFs_options" in config["gatk"] else ""
+    java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["combineGVCFs_java_options"]) \
+        if "combineGVCFs_java_options" in config["gatk"] \
+           and len(config["gatk"]["combineGVCFs_java_options"]) else ""
 
     # set overwite existing genomicsdb workspace by default
-    if (("--overwrite-existing-genomicsdb-workspace false" not in config["gatk"]["genomicsDBImport_options"]) and
-            ("--overwrite-existing-genomicsdb-workspace true" not in config["gatk"]["genomicsDBImport_options"])):
+    if "genomicsDBImport_options" not in config["gatk"]:
+        config["gatk"]["genomicsDBImport_options"] = ["--overwrite-existing-genomicsdb-workspace true"]
+
+    elif (("--overwrite-existing-genomicsdb-workspace false" not in config["gatk"]["genomicsDBImport_options"]) and
+          ("--overwrite-existing-genomicsdb-workspace true" not in config["gatk"]["genomicsDBImport_options"])):
         config["gatk"]["genomicsDBImport_options"].append("--overwrite-existing-genomicsdb-workspace true")
 
-    genomicsDBImport_options = "%s" % " ".join(config["gatk"]["genomicsDBImport_options"]) \
-        if "genomicsDBImport_options" in config["gatk"] else ""
-
+    genomicsDBImport_options = "%s" % " ".join(config["gatk"]["genomicsDBImport_options"])
     reference = config["resources"]["reference"]  # reference fasta
-
-    # create a combine gvcf
-    directory, fname = os.path.split(output_vcf_fname)
-
-    # The prefix of file name of combine gvcf set to be the same with input ``fname``
-    combine_gvcf_fname = os.path.join(directory, fname.replace(".vcf", ".g.vcf"))
     use_gDBI = config["gatk"]["use_genomicsDBImport"] if "use_genomicsDBImport" in config["gatk"] else False
 
     # Create command line for GenomicsDBImport or CombineGVCFs
     if use_gDBI:
         # use GenomicsDBImport
         sample_name_map = input_sample_gvcfs[0]  # Only one file
-
-        # Changed the name for genomicsDBImport directory
-        combine_gvcf_fname = combine_gvcf_fname.split(".g.vcf")[0] + ".gvcfs_db"
         combine_gvcf_cmd = ("time {gatk} {java_options} GenomicsDBImport {genomicsDBImport_options} "
                             "-R {reference} "
                             "--sample-name-map {sample_name_map} "
-                            "--genomicsdb-workspace-path {combine_gvcf_fname}").format(**locals())
+                            "--genomicsdb-workspace-path {output_combineGVCF_fname}").format(**locals())
     else:
         gvcfs = " ".join(["-V %s" % s for s in input_sample_gvcfs])
         combine_gvcf_cmd = ("time {gatk} {java_options} CombineGVCFs "
                             "-R {reference} {gvcfs} "
-                            "-O {combine_gvcf_fname}").format(**locals())
+                            "-O {output_combineGVCF_fname}").format(**locals())
     if interval:
         combine_gvcf_cmd += " -L %s" % interval
+
+    return combine_gvcf_cmd
+
+
+def genotypegvcfs(config, input_combine_gvcf_fname, output_vcf_fname, interval=None):
+    gatk = config["gatk"]["gatk"]
+    java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["genotype_java_options"]) \
+        if "genotype_java_options" in config["gatk"] \
+           and len(config["gatk"]["genotype_java_options"]) else ""
+
+    reference = config["resources"]["reference"]  # reference fasta
+    use_gDBI = config["gatk"]["use_genomicsDBImport"] if "use_genomicsDBImport" in config["gatk"] else False
+
+    genotypeGVCFs_options = " ".join(config["gatk"]["genotypeGVCFs_options"]) \
+        if "genotypeGVCFs_options" in config["gatk"] else ""
 
     # Creat command line for genotypeGVCF
     if use_gDBI:
         genotype_cmd = ("time {gatk} {java_options} GenotypeGVCFs "
                         "-R {reference} {genotypeGVCFs_options} "
-                        "-V gendb://{combine_gvcf_fname} "
+                        "-V gendb://{input_combine_gvcf_fname} "
                         "-O {output_vcf_fname}").format(**locals())
     else:
         genotype_cmd = ("time {gatk} {java_options} GenotypeGVCFs "
                         "-R {reference} {genotypeGVCFs_options} "
-                        "-V {combine_gvcf_fname} "
+                        "-V {input_combine_gvcf_fname} "
                         "-O {output_vcf_fname}").format(**locals())
     if interval:
         genotype_cmd += " -L %s" % interval
 
-    # delete the combine GVCF file or genomicsdb workspace.
-    delete_cmd = "rm -rf %s %s.tbi" % (combine_gvcf_fname, combine_gvcf_fname)
-    return " && ".join([combine_gvcf_cmd, genotype_cmd, delete_cmd])
+    # delete the genomicsdb workspace or combine GVCF file.
+    delete_cmd = "rm -rf %s" % input_combine_gvcf_fname \
+        if use_gDBI else "rm -rf %s %s.tbi" % (input_combine_gvcf_fname, input_combine_gvcf_fname)
+    return " && ".join([genotype_cmd, delete_cmd])
 
 
 def variantrecalibrator(config, input_vcf, output_vcf_fname):
