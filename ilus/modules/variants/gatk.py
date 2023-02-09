@@ -3,7 +3,6 @@
 Author: Shujia Huang
 Date: 2020-04-19 15:19:56
 """
-import os
 
 
 def markduplicates(config, input_bam, output_markdup_bam, out_metrics_fname):
@@ -107,7 +106,7 @@ def combineGVCFs(config, input_sample_gvcfs, output_combineGVCF_fname, interval=
     return combine_gvcf_cmd
 
 
-def genotypegvcfs(config, input_combine_gvcf_fname, output_vcf_fname, interval=None):
+def genotypeGVCFs(config, input_combine_gvcf_fname, output_vcf_fname, interval=None):
     gatk = config["gatk"]["gatk"]
     java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["genotype_java_options"]) \
         if "genotype_java_options" in config["gatk"] \
@@ -133,10 +132,7 @@ def genotypegvcfs(config, input_combine_gvcf_fname, output_vcf_fname, interval=N
     if interval:
         genotype_cmd += " -L %s" % interval
 
-    # delete the genomicsdb workspace or combine GVCF file.
-    delete_cmd = "rm -rf %s" % input_combine_gvcf_fname \
-        if use_gDBI else "rm -rf %s %s.tbi" % (input_combine_gvcf_fname, input_combine_gvcf_fname)
-    return " && ".join([genotype_cmd, delete_cmd])
+    return genotype_cmd
 
 
 def variantrecalibrator(config, input_vcf, output_vcf_fname):
