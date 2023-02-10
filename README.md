@@ -14,10 +14,23 @@ Introduction
 
 **ilus** is a pipeline generator, which used to generate WGS/WES analysis pipeline，but **ilus** can't excute the jobs, which means users needs to submit the jobs by hands, and the processing don't rely on **ilus** any more，that's why we called it as a semi-automated tools.
 
+
 **ilus** has 3 main modelues：
 
 -   First、`WGS` analysis module. This module based on [GATK Best Practice](https://gatk.broadinstitute.org/hc/en-us/sections/360007226651-Best-Practices-Workflows)，use 
 `bwa-mem + GATK` , the most mainstream way to build an analysis process. It integrates 5 complete processes, including alignment, sorting, and multi-lane merging of the same sample, Markduplicates, HaplotypeCaller gvcf, Joint-calling ,and Variant quality  score recalibrator (VQSR). This module also works for WES analysis, Just set the configuration file `variant_calling_interval`  parameter to the exon capture interval of WES (detailed below).
+
+By default, the pipeline currently performs the follwing:
+
+    - Map reads to reference by `bwa mem`;
+    - Mark duplicates by `GATK MarkDuplicates`;
+    - Base quality score recalibration by `GATK BaseRecalibrator` and `GATK ApplyBQSR`;
+    - Preprocessing quality control by `samtools stats`;
+    - Calculatiing the base coverage by `bedtools cvg`;
+    - Variant calling by `GATK HaplotypeCaller`;
+    - Variants join-calling by `GATK GenotypeGVCFs`;
+    - Variant quality recalibration by `GATK VariantRecalibrator` and `GATK ApplyVQSR`;
+    - Annotation by `ensembl VEP`.
 
 -   Second, `genotype-joint-calling` module. This module is separate from **ilus WGS** ，in order to call genotype  from **gvcf** directly. Or when you need to complete the WGS/WES data analysis in multiple batches, you can generate **gvcf** in batches, and finally organize a total **gvcf** file list, and then use this function to complete the subsequent steps. this can increase the flexibility of the running process.
 

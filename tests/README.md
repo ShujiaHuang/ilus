@@ -1,5 +1,15 @@
 ```bash
-ilus WGS -c -C ilus_sys.yaml -L fastq.list -O ./
+ilus WGS -c -C ilus_sys.yaml -L fastq.list -O ./tmp
+```
+```bash
+ilus WGS -c -C ilus_sys.yaml -L fastq.list -O ./tmp -dr
+```
+
+```bash
+ilus WGS -P gvcf,genotype -c -C ilus_sys.yaml -L fastq.list -O ./tmp
+
+ilus WGS -P gvcf -c -C ilus_sys.yaml -L fastq.list -O ./tmp
+ilus WGS -P genotype -c -C ilus_sys.yaml -L fastq.list -O ./tmp -f 
 ```
 
 ```bash

@@ -30,6 +30,8 @@ def parse_commandline_args():
 
     # The standard pipeline for WGS.
     pipeline_cmd = commands.add_parser("WGS", help="Creating pipeline for WGS(from fastq to genotype VCF)")
+    pipeline_cmd.add_argument("-n", "--name", dest="project_name", type=str, default="test",
+                              help="Name of the project. Default value: test")
     pipeline_cmd.add_argument("-C", "--conf", dest="sysconf", required=True,
                               help="YAML configuration file specifying details about system.")
     pipeline_cmd.add_argument("-L", "--fastqlist", dest="fastqlist", type=str, required=True,
@@ -37,18 +39,20 @@ def parse_commandline_args():
     pipeline_cmd.add_argument("-O", "--outdir", dest="outdir", required=True,
                               help="A directory for output results.")
 
-    pipeline_cmd.add_argument("-P", "--Process", dest="wgs_processes", type=str,
-                              help="Specific one or more processes (separated by comma) of WGS pipeline. "
-                                   "Defualt value: align,markdup,BQSR,gvcf,genotype,VQSR. "
-                                   "Possible values: {align,markdup,BQSR,gvcf,genotype,VQSR}",
-                              default="align,markdup,BQSR,gvcf,genotype,VQSR")
-
-    pipeline_cmd.add_argument("-n", "--name", dest="project_name", type=str, default="test",
-                              help="Name of the project. Default value: test")
-    pipeline_cmd.add_argument("-f", "--force_overwrite", dest="overwrite", action="store_true",
-                              help="Force overwrite existing shell scripts and folders.")
     pipeline_cmd.add_argument("-c", "--cram", dest="cram", action="store_true",
                               help="Covert BAM to CRAM after BQSR and save alignment file storage.")
+    pipeline_cmd.add_argument("-P", "--Process", dest="wgs_processes", type=str,
+                              help="Specific one or more processes (separated by comma) of WGS pipeline. "
+                                   "Defualt value: align,markdup,BQSR,gvcf,combineGVCFs,genotype,VQSR. "
+                                   "Possible values: {align,markdup,BQSR,gvcf,combineGVCFs,genotype,VQSR}",
+                              default="align,markdup,BQSR,gvcf,combineGVCFs,genotype,VQSR")
+
+    pipeline_cmd.add_argument("-f", "--force_overwrite", dest="overwrite", action="store_true",
+                              help="Force overwrite existing shell scripts and folders.")
+
+    # Todo: Write a dry run function for testing the pipeline without truely run the pipeline.
+    pipeline_cmd.add_argument("-dr", "--dry-run", dest="dry_run", action="store_true",
+                              help="Dry run for testing the pipeline.")
 
     # Genotype from GVCFs
     genotype_cmd = commands.add_parser("genotype-joint-calling", help="Genotype from GVCFs.")

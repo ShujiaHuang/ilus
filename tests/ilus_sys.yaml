@@ -17,11 +17,12 @@ bedtools:
     bedtools: /path/to/BioSoftware/local/bin/bedtools
     genomecov_options: ["-bga -split"]
 
-sambamba:
-  sambamba: /path/to/BioSoftware/local/bin/sambamba
-  sort_options: ["-t 8"]
-  merge_options: ["-t 8"]
-  markdup_options: []
+# Remove sambamba from ilus
+#sambamba:
+#  sambamba: /path/to/BioSoftware/local/bin/sambamba
+#  sort_options: ["-t 8"]
+#  merge_options: ["-t 8"]
+#  markdup_options: []
 
 
 verifyBamID2:
