@@ -304,10 +304,11 @@ def _yield_gatk_combineGVCFs(project_name, variant_calling_intervals, output_dir
 
         if not sample_gvcf_list:
             sys.stderr.write("[Error] Interval parameters in configuration file may be different "
-                             "from that input gvcf file list when joint-calling by genotypeGVCFs.")
+                             "from that input gvcf file list in ``gatk_combineGVCFs`` function.")
             sys.exit(1)
 
         interval_n = "_".join(interval) if type(interval) is list else interval.replace(":", "_")  # chr:s -> chr_s
+
         sub_shell_fname = os.path.join(shell_dirtory, "%s.%s.combineGVCFs.sh" % (project_name, interval_n))
         combineGVCF_fname = os.path.join(output_dirtory, "%s.%s.genomics_db" % (project_name, interval_n)) \
             if is_use_gDBI else os.path.join(output_dirtory, "%s.%s.g.vcf.gz" % (project_name, interval_n))
@@ -412,7 +413,7 @@ def gatk_combineGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
 
 def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
     """Create shell for genotypeGVCFs.
-        """
+    """
     output_dirtory, shell_dirtory = _md(kwargs.outdir, out_folder_name, is_dry_run=is_dry_run)
     is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
         if "use_genomicsDBImport" in aione["config"]["gatk"] else False
@@ -423,10 +424,12 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
     variant_calling_intervals = aione["config"]["gatk"]["variant_calling_interval"]
     for interval in variant_calling_intervals:
         interval_n = "_".join(interval) if type(interval) is list else interval.replace(":", "_")  # chr:s -> chr_s
+
+        if interval_n not in aione["combineGVCFs"]:
+            continue
+
         sub_shell_fname = os.path.join(shell_dirtory, "%s.%s.genotype.sh" % (kwargs.project_name, interval_n))
         genotype_vcf_fname = os.path.join(output_dirtory, "%s.%s.vcf.gz" % (kwargs.project_name, interval_n))
-        combineGVCF_fname = aione["combineGVCFs"][interval_n]
-
         genotype_vcf_shell_files_list.append([kwargs.project_name + "." + interval_n, sub_shell_fname])
         aione["genotype_vcf_list"].append(genotype_vcf_fname)
 
@@ -434,6 +437,7 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
             if type(interval) is list else interval
 
         # Create commandline for genotype joint-calling process
+        combineGVCF_fname = aione["combineGVCFs"][interval_n]
         genotype_cmd = gatk.genotypeGVCFs(aione["config"],
                                           combineGVCF_fname,
                                           genotype_vcf_fname,
@@ -442,11 +446,17 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
         # delete the genomicsdb workspace (or the combine GVCF file).
         delete_cmd = "rm -rf %s" % combineGVCF_fname \
             if is_use_gDBI else "rm -rf %s %s.tbi" % (combineGVCF_fname, combineGVCF_fname)
+
         echo_mark_done = "echo \"[Genotype] %s done\"" % calling_interval
         cmd = [genotype_cmd, delete_cmd, echo_mark_done]
 
         if (not is_dry_run) and (not os.path.exists(sub_shell_fname) or kwargs.overwrite):
             _create_cmd_file(sub_shell_fname, cmd)
+
+    if not genotype_vcf_shell_files_list:
+        sys.stderr.write("[Error] Interval parameters in configuration file may be different "
+                         "from that input gvcf file list when calls ``gatk_genotypeGVCFs``.")
+        sys.exit(1)
 
     return genotype_vcf_shell_files_list
 

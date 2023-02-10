@@ -120,7 +120,9 @@ def wgs(kwargs, aione):
 def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
     # [Important] abspath will remove the last '/' in the path. e.g.: '/a/' -> '/a'
     kwargs.outdir = safe_makedir(os.path.abspath(kwargs.outdir))  # return abspath
-    root_path, output_result_folder = os.path.split(kwargs.outdir)
+    root_path, output_folder_name = os.path.split(kwargs.outdir)
+
+    tmp_dir = kwargs.outdir
     kwargs.outdir = root_path
 
     shell_dirtory = os.path.join(root_path, "00.shell" if kwargs.as_pipe_shell_order else "shell")
@@ -129,9 +131,10 @@ def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
 
     _make_process_shell(output_shell_fname=os.path.join(shell_dirtory, shell_fname),
                         shell_log_directory=os.path.join(shell_dirtory, "loginfo", shell_log_folder),
-                        process_shells=function_name(kwargs, output_result_folder, aione),
+                        process_shells=function_name(kwargs, output_folder_name, aione),
                         is_overwrite=kwargs.overwrite)
 
+    kwargs.outdir = tmp_dir  # set back
     return
 
 
@@ -165,8 +168,6 @@ def genotypeGVCFs(kwargs, aione):
             sample_map[interval].append("%s\t%s" % (sample, gvcf))
 
     if aione["config"]["gatk"]["use_genomicsDBImport"]:
-        # create sample_map file for genomicsDBImport
-
         # [Important] return abspath and abspath will remove the last '/' in the path. e.g.: '/a/' -> '/a'
         kwargs.outdir = safe_makedir(os.path.abspath(kwargs.outdir))
         aione["sample_map"] = {}
@@ -176,10 +177,18 @@ def genotypeGVCFs(kwargs, aione):
             with open(out_sample_map_fname, "w") as OUT:
                 OUT.write("\n".join(value))
 
-    shell_fname, shell_log_folder = [kwargs.project_name + ".step5.genotype.sh", "05.genotype"] \
-        if kwargs.as_pipe_shell_order else [kwargs.project_name + ".genotype.sh", "genotype"]
+    # create shell scripts for genomicsDBImport or CombineGVCFs before the genotype joint-calling process
+    combineGVCF_shell_fname, combineGVCF_shell_log_folder = [
+        kwargs.project_name + ".step5.combineGVCFs.sh", "05.combineGVCFs"] \
+        if kwargs.as_pipe_shell_order else [kwargs.project_name + ".combineGVCFs.sh", "combineGVCFs"]
+    _f(kwargs, aione, combineGVCF_shell_fname, combineGVCF_shell_log_folder, gatk_combineGVCFs)
 
-    _f(kwargs, aione, shell_fname, shell_log_folder, gatk_genotypeGVCFs)
+    # create shell scripts for genotype joint-calling
+    genotype_shell_fname, genotype_shell_log_folder = [
+        kwargs.project_name + ".step6.genotype.sh", "06.genotype"] \
+        if kwargs.as_pipe_shell_order else [kwargs.project_name + ".genotype.sh", "genotype"]
+    _f(kwargs, aione, genotype_shell_fname, genotype_shell_log_folder, gatk_genotypeGVCFs)
+
     return aione
 
 
