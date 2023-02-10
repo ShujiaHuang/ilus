@@ -41,7 +41,8 @@ gatk:
   markdup_java_options: ["-Xmx10G", "-Djava.io.tmpdir=/your_path/cache"]
   bqsr_java_options: ["-Xmx8G", "-Djava.io.tmpdir=/your_path/cache"]
   hc_gvcf_java_options: ["-Xmx4G"]
-  genotype_java_options: ["-Xmx8G"]
+  combineGVCFs_java_options: ["-Xmx32G"]  # java options for GATK genomicsDBImport or CombineGVCFs
+  genotype_java_options: ["-Xmx10G"]  # java options for GATK GenotypeGVCFs
   vqsr_java_options: ["-Xmx10G"]
 
   CollectAlignmentSummaryMetrics_jave_options: ["-Xmx10G"]
@@ -51,20 +52,20 @@ gatk:
   # your data is from the TruSeq library, you can replace the value with the two following sequences: 
   # "--ADAPTER_SEQUENCE AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
   # "--ADAPTER_SEQUENCE AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
-
   CollectAlignmentSummaryMetrics_options: [
     "--ADAPTER_SEQUENCE AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA",
     "--ADAPTER_SEQUENCE AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG"
   ]
 
   hc_gvcf_options: [""]
-  genotypeGVCFs_options: [""]
+
+  use_genomicsDBImport: true  # Use genomicsDBImport to combine GVCFs by default
   genomicsDBImport_options: ["--tmp-dir /your_path/cache",
                              "--batch-size 100",
                              "--reader-threads 12",
                              "--overwrite-existing-genomicsdb-workspace true"]
-  use_genomicsDBImport: true  # Use genomicsDBImport to combine GVCFs by default
 
+  genotypeGVCFs_options: [""]
   vqsr_options: [
     "-an DP -an QD -an FS -an SOR -an ReadPosRankSum -an MQRankSum -an InbreedingCoeff",
     "-tranche 100.0 -tranche 99.9 -tranche 99.5 ",
@@ -94,14 +95,14 @@ gatk:
 
   # GATK bundle
   bundle:
-    hapmap: /path/to/BioDatahub/gatk/bundle/hg38/hapmap_3.3.hg38.vcf.gz
-    omni: /path/to/BioDatahub/gatk/bundle/hg38/1000G_omni2.5.hg38.vcf.gz
-    1000G: /path/to/BioDatahub/gatk/bundle/hg38/1000G_phase1.snps.high_confidence.hg38.vcf.gz
-    mills: /path/to/BioDatahub/gatk/bundle/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
-    1000G_known_indel: /path/to/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.known_indels.vcf.gz
-    dbsnp: /path/to/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
+    hapmap: /path/to/gatk/bundle/hg38/hapmap_3.3.hg38.vcf.gz
+    omni: /path/to/gatk/bundle/hg38/1000G_omni2.5.hg38.vcf.gz
+    1000G: /path/to/gatk/bundle/hg38/1000G_phase1.snps.high_confidence.hg38.vcf.gz
+    mills: /path/to/gatk/bundle/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+    1000G_known_indel: /path/to/gatk/bundle/hg38/Homo_sapiens_assembly38.known_indels.vcf.gz
+    dbsnp: /path/to/gatk/bundle/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
 
 # Define resources to be used for individual programs on multicore machines.
 # These can be defined specifically for memory and processor availability.
 resources:
-  reference: /path/to/BioDatahub/human_reference/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa
+  reference: /path/to/human_reference/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa
