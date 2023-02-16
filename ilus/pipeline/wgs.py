@@ -71,7 +71,8 @@ def wgs(kwargs, aione):
         "gvcf": [gatk_haplotypecaller_gvcf, kwargs.project_name + ".step4.gvcf.sh", "04.gvcf", "02.gvcf"],
 
         # combineGVCFs
-        "combineGVCFs": [gatk_combineGVCFs, kwargs.project_name + ".step5.combineGVCFs.sh", "05.combineGVCFs", "03.genotype"],
+        "combineGVCFs": [gatk_combineGVCFs, kwargs.project_name + ".step5.combineGVCFs.sh", "05.combineGVCFs",
+                         "03.genotype"],
 
         # GenotypeGVCF
         "genotype": [gatk_genotypeGVCFs, kwargs.project_name + ".step6.genotype.sh", "06.genotype", "03.genotype"],
@@ -143,7 +144,7 @@ def genotypeGVCFs(kwargs, aione):
 
     aione["intervals"] = []
     aione["gvcf"] = {}  # will be called in ``gatk_genotypeGVCFs``
-    sample_map = {}     # Record sample_map for genomicsDBImport
+    sample_map = {}  # Record sample_map for genomicsDBImport
     with open(kwargs.gvcflist) as I:
         # Format in gvcfilist: [chromosome_id  sampleid  gvcf_file_path]
         for line in I:
@@ -153,9 +154,11 @@ def genotypeGVCFs(kwargs, aione):
             try:
                 interval, sample, gvcf = line.strip().split()
             except ValueError:
-                raise ValueError("[ERROR] format error in '%s'. \nExpected: 3 columns "
-                                 "(column 1: chromosome ID, column 2: sample ID, column 3: gvcf file path), "
-                                 "got '%s')." % (kwargs.gvcflist, line.strip()))
+                raise ValueError("Input format error in '%s'. Expected: 3 columns \n\n"
+                                 "-- column 1: chromosome ID \n"
+                                 "-- column 2: sample ID\n"
+                                 "-- column 3: gvcf file path)\n\n"
+                                 "got error here: '%s')." % (kwargs.gvcflist, line.strip()))
 
             if interval not in aione["gvcf"]:
                 aione["intervals"].append(interval)
@@ -181,6 +184,7 @@ def genotypeGVCFs(kwargs, aione):
     combineGVCF_shell_fname, combineGVCF_shell_log_folder = [
         kwargs.project_name + ".step5.combineGVCFs.sh", "05.combineGVCFs"] \
         if kwargs.as_pipe_shell_order else [kwargs.project_name + ".combineGVCFs.sh", "combineGVCFs"]
+
     _f(kwargs, aione, combineGVCF_shell_fname, combineGVCF_shell_log_folder, gatk_combineGVCFs)
 
     # create shell scripts for genotype joint-calling
