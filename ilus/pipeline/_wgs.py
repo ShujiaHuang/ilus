@@ -16,18 +16,22 @@ from ilus.launch.runfunction import bwamem, gatk_markduplicates, gatk_baserecali
 def _create_a_total_shell_file(shell_list, out_shell_filename, sub_shell_log_dir, o_log_file, e_log_file):
     """Creat all the executable in a big shell script which gather all scripts from ``shell_list``.
 
-    ``shell_list`` is a 2-D array: [[mark, shell_file], ...].
+        ``shell_list`` is a 2-D array: [[mark, shell_file], ...].
     """
     sub_shell_log_dir = sub_shell_log_dir.rstrip("/")
-    with open(out_shell_filename, "w") as OUT, open(o_log_file, "w") as O_LOG, open(e_log_file, "w") as E_LOG:
-        OUT.write("#!/bin/bash\n")
-        for marker, sub_shell in shell_list:
-            OUT.write("{sub_shell} 2> {sub_shell_log_dir}/{marker}.e.log > "
-                      "{sub_shell_log_dir}/{marker}.o.log\n".format(**locals()))
+    o_log_template = "{marker}\t{sub_shell_log_dir}/{marker}.o.log\t{sub_shell}\n"
+    e_log_template = "{marker}\t{sub_shell_log_dir}/{marker}.e.log\t{sub_shell}\n"
+    shell_template = "{sub_shell} 2> {sub_shell_log_dir}/{marker}.e.log > {sub_shell_log_dir}/{marker}.o.log\n"
 
+    with open(out_shell_filename, "w") as out_file, open(o_log_file, "w") as o_log, open(e_log_file, "w") as e_log:
+        out_file.write("#!/bin/bash\n")
+        for marker, sub_shell in shell_list:
             # record all the path of log files into a single file
-            O_LOG.write("{marker}\t{sub_shell_log_dir}/{marker}.o.log\t{sub_shell}\n".format(**locals()))
-            E_LOG.write("{marker}\t{sub_shell_log_dir}/{marker}.e.log\t{sub_shell}\n".format(**locals()))
+            o_log.write(o_log_template.format(marker=marker, sub_shell_log_dir=sub_shell_log_dir, sub_shell=sub_shell))
+            e_log.write(e_log_template.format(marker=marker, sub_shell_log_dir=sub_shell_log_dir, sub_shell=sub_shell))
+
+            out_file.write(
+                shell_template.format(marker=marker, sub_shell=sub_shell, sub_shell_log_dir=sub_shell_log_dir))
 
     os.chmod(out_shell_filename, stat.S_IRWXU)  # 0700
     return
@@ -192,6 +196,7 @@ def genotypeGVCFs(kwargs, aione):
     genotype_shell_fname, genotype_shell_log_folder = [
         kwargs.project_name + ".step6.genotype.sh", "06.genotype"] \
         if kwargs.as_pipe_shell_order else [kwargs.project_name + ".genotype.sh", "genotype"]
+
     _f(kwargs, aione, genotype_shell_fname, genotype_shell_log_folder, gatk_genotypeGVCFs)
 
     return aione
