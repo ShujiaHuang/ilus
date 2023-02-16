@@ -18,6 +18,7 @@ from ilus.pipeline import WGS, genotypeGVCFs, variantrecalibrator, \
     create_vqsr_command
 from ilus.utils import split_jobs, check_jobs_status
 
+PROG_NAME = "ilus"
 VERSION = "1.3.0"
 
 
@@ -69,12 +70,16 @@ def create_utility_module_command(commands):
 def parse_commandline_args():
     """Parse input commandline arguments, handling multiple cases.
     """
-    desc = f"ilus (Version = {VERSION}): A WGS/WES analysis pipeline generator."
-    cmdparser = argparse.ArgumentParser(description=desc)
+    cmdparser = argparse.ArgumentParser(
+        prog=PROG_NAME,
+        description=f"{PROG_NAME} (Version = {VERSION}): A WGS/WES analysis pipeline generator.",
+        epilog="That's how you could use %(prog)s"
+    )
+
     cmdparser.add_argument(
         "-v", "--version",
         action="store_true",
-        help="show the version of ilus and exit."
+        help=f"show the version of {PROG_NAME} and exit."
     )
 
     commands = cmdparser.add_subparsers(dest="command", title="ilus commands")
