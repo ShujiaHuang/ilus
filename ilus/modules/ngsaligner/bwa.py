@@ -23,17 +23,17 @@ def _get_bwa_mem_cmd(fastq1, fastq2, ref_index, rg_info, outfile_prefix, config)
     samtools_options = " ".join([str(x) for x in config["samtools"].get("sort_options", [])])
 
     # skip seeds with more than INT occurrences
-    bwa_cmd = ("time {bwa} mem {bwa_options} -R {rg_info} {ref_index} "
-               "{fastq1} {fastq2} | {samtools} view -bS > {outfile_prefix}.bam && "
-               "{samtools} sort {samtools_options} -o {outfile_prefix}.sorted.bam {outfile_prefix}.bam "
-               "&& rm -rf {outfile_prefix}.bam").format(**locals())
+    bwa_cmd = (f"time {bwa} mem {bwa_options} -R {rg_info} {ref_index} "
+               f"{fastq1} {fastq2} | {samtools} view -bS > {outfile_prefix}.bam && "
+               f"{samtools} sort {samtools_options} -o {outfile_prefix}.sorted.bam {outfile_prefix}.bam "
+               f"&& rm -rf {outfile_prefix}.bam")
 
-    return "{outfile_prefix}.sorted.bam".format(**locals()), bwa_cmd
+    return f"{outfile_prefix}.sorted.bam", bwa_cmd
 
 
 def bam_to_cram(config, input_bam_fname, output_cram_fname):
     samtools = config["samtools"]["samtools"]
     reference = config["resources"]["reference"]  # reference fasta
 
-    return ("time {samtools} view -CS -T {reference} {input_bam_fname} > {output_cram_fname} && "
-            "{samtools} index {output_cram_fname}").format(**locals())
+    return (f"time {samtools} view -CS -T {reference} {input_bam_fname} > "
+            f"{output_cram_fname} && {samtools} index {output_cram_fname}")

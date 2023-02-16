@@ -11,10 +11,10 @@ def markduplicates(config, input_bam, output_markdup_bam, out_metrics_fname):
         if "markdup_java_options" in config["gatk"] \
            and len(config["gatk"]["markdup_java_options"]) else ""
 
-    return ("time {gatk} {java_options} MarkDuplicates "
-            "-I {input_bam} "
-            "-M {out_metrics_fname} "
-            "-O {output_markdup_bam}").format(**locals())
+    return (f"time {gatk} {java_options} MarkDuplicates "
+            f"-I {input_bam} "
+            f"-M {out_metrics_fname} "
+            f"-O {output_markdup_bam}")
 
 
 def baserecalibrator(config, input_bam, output_bqsr_bam, out_bqsr_recal_table):
@@ -29,20 +29,20 @@ def baserecalibrator(config, input_bam, output_bqsr_bam, out_bqsr_recal_table):
     known_site_dbsnp = config["gatk"]["bundle"]["dbsnp"]
 
     # create recalibrate table file for BQSR
-    recal_data_cmd = ("time {gatk} {java_options} BaseRecalibrator "
-                      "-R {reference} "
-                      "--known-sites {known_site_1000G_indel} "
-                      "--known-sites {known_site_mills_gold_indels} "
-                      "--known-sites {known_site_dbsnp} "
-                      "-I {input_bam} "
-                      "-O {out_bqsr_recal_table}").format(**locals())
+    recal_data_cmd = (f"time {gatk} {java_options} BaseRecalibrator "
+                      f"-R {reference} "
+                      f"--known-sites {known_site_1000G_indel} "
+                      f"--known-sites {known_site_mills_gold_indels} "
+                      f"--known-sites {known_site_dbsnp} "
+                      f"-I {input_bam} "
+                      f"-O {out_bqsr_recal_table}")
 
     # ApplyBQSR
-    apply_bqsr_cmd = ("time {gatk} {java_options} ApplyBQSR "
-                      "-R {reference} "
-                      "--bqsr-recal-file {out_bqsr_recal_table} "
-                      "-I {input_bam} "
-                      "-O {output_bqsr_bam}").format(**locals())
+    apply_bqsr_cmd = (f"time {gatk} {java_options} ApplyBQSR "
+                      f"-R {reference} "
+                      f"--bqsr-recal-file {out_bqsr_recal_table} "
+                      f"-I {input_bam} "
+                      f"-O {output_bqsr_bam}")
 
     return recal_data_cmd + " && " + apply_bqsr_cmd
 
@@ -55,14 +55,14 @@ def haplotypecaller_gvcf(config, input_bam, output_gvcf_fname, interval=None):
     hc_options = " ".join(config["gatk"]["hc_gvcf_options"]) if "hc_gvcf_options" in config["gatk"] else ""
 
     reference = config["resources"]["reference"]  # reference fasta
-    cmd = ("time {gatk} {java_options} HaplotypeCaller "
-           "-R {reference} {hc_options} "
-           "--emit-ref-confidence GVCF "
-           "-I {input_bam} "
-           "-O {output_gvcf_fname}").format(**locals())
+    cmd = (f"time {gatk} {java_options} HaplotypeCaller "
+           f"-R {reference} {hc_options} "
+           f"--emit-ref-confidence GVCF "
+           f"-I {input_bam} "
+           f"-O {output_gvcf_fname}")
 
     if interval:
-        cmd += " -L %s" % interval
+        cmd += f" -L {interval}"
 
     return cmd
 
@@ -91,17 +91,17 @@ def combineGVCFs(config, input_sample_gvcfs, output_combineGVCF_fname, interval=
     if use_gDBI:
         # use GenomicsDBImport
         sample_name_map = input_sample_gvcfs[0]  # Only one file
-        combine_gvcf_cmd = ("time {gatk} {java_options} GenomicsDBImport {genomicsDBImport_options} "
-                            "-R {reference} "
-                            "--sample-name-map {sample_name_map} "
-                            "--genomicsdb-workspace-path {output_combineGVCF_fname}").format(**locals())
+        combine_gvcf_cmd = (f"time {gatk} {java_options} GenomicsDBImport {genomicsDBImport_options} "
+                            f"-R {reference} "
+                            f"--sample-name-map {sample_name_map} "
+                            f"--genomicsdb-workspace-path {output_combineGVCF_fname}")
     else:
         gvcfs = " ".join(["-V %s" % s for s in input_sample_gvcfs])
-        combine_gvcf_cmd = ("time {gatk} {java_options} CombineGVCFs "
-                            "-R {reference} {gvcfs} "
-                            "-O {output_combineGVCF_fname}").format(**locals())
+        combine_gvcf_cmd = (f"time {gatk} {java_options} CombineGVCFs "
+                            f"-R {reference} {gvcfs} "
+                            f"-O {output_combineGVCF_fname}")
     if interval:
-        combine_gvcf_cmd += " -L %s" % interval
+        combine_gvcf_cmd += f" -L {interval}"
 
     return combine_gvcf_cmd
 
@@ -120,17 +120,17 @@ def genotypeGVCFs(config, input_combine_gvcf_fname, output_vcf_fname, interval=N
 
     # Creat command line for genotypeGVCF
     if use_gDBI:
-        genotype_cmd = ("time {gatk} {java_options} GenotypeGVCFs "
-                        "-R {reference} {genotypeGVCFs_options} "
-                        "-V gendb://{input_combine_gvcf_fname} "
-                        "-O {output_vcf_fname}").format(**locals())
+        genotype_cmd = (f"time {gatk} {java_options} GenotypeGVCFs "
+                        f"-R {reference} {genotypeGVCFs_options} "
+                        f"-V gendb://{input_combine_gvcf_fname} "
+                        f"-O {output_vcf_fname}")
     else:
-        genotype_cmd = ("time {gatk} {java_options} GenotypeGVCFs "
-                        "-R {reference} {genotypeGVCFs_options} "
-                        "-V {input_combine_gvcf_fname} "
-                        "-O {output_vcf_fname}").format(**locals())
+        genotype_cmd = (f"time {gatk} {java_options} GenotypeGVCFs "
+                        f"-R {reference} {genotypeGVCFs_options} "
+                        f"-V {input_combine_gvcf_fname} "
+                        f"-O {output_vcf_fname}")
     if interval:
-        genotype_cmd += " -L %s" % interval
+        genotype_cmd += f" -L {interval}"
 
     return genotype_cmd
 
@@ -155,45 +155,45 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
     resource_mills_gold_indels = config["gatk"]["bundle"]["mills"]
 
     # SNP VQSR
-    snp_vqsr_cmd = ("time {gatk} {java_options} VariantRecalibrator "
-                    "-R {reference} "
-                    "-V {input_vcf} "
-                    "--resource:hapmap,known=false,training=true,truth=true,prior=15.0 {resource_hapmap} "
-                    "--resource:omini,known=false,training=true,truth=false,prior=12.0 {resource_omni} "
-                    "--resource:1000G,known=false,training=true,truth=false,prior=10.0 {resource_1000G} "
-                    "--resource:dbsnp,known=true,training=false,truth=false,prior=5.0 {resource_dbsnp} "
-                    "{vqsr_options} "
-                    "-mode SNP "
-                    "--tranches-file {out_prefix}.SNPs.tranches "
-                    "-O {out_prefix}.SNPs.recal").format(**locals())
+    snp_vqsr_cmd = (f"time {gatk} {java_options} VariantRecalibrator "
+                    f"-R {reference} "
+                    f"-V {input_vcf} "
+                    f"--resource:hapmap,known=false,training=true,truth=true,prior=15.0 {resource_hapmap} "
+                    f"--resource:omini,known=false,training=true,truth=false,prior=12.0 {resource_omni} "
+                    f"--resource:1000G,known=false,training=true,truth=false,prior=10.0 {resource_1000G} "
+                    f"--resource:dbsnp,known=true,training=false,truth=false,prior=5.0 {resource_dbsnp} "
+                    f"{vqsr_options} "
+                    f"-mode SNP "
+                    f"--tranches-file {out_prefix}.SNPs.tranches "
+                    f"-O {out_prefix}.SNPs.recal")
 
-    apply_snp_vqsr_cmd = ("time {gatk} {java_options} ApplyVQSR "
-                          "-R {reference} "
-                          "-V {input_vcf} "
-                          "--tranches-file {out_prefix}.SNPs.tranches "
-                          "--recal-file {out_prefix}.SNPs.recal "
-                          "--truth-sensitivity-filter-level 99.0 "
-                          "-mode SNP "
-                          "-O {out_snp_vqsr_fname}").format(**locals())
+    apply_snp_vqsr_cmd = (f"time {gatk} {java_options} ApplyVQSR "
+                          f"-R {reference} "
+                          f"-V {input_vcf} "
+                          f"--tranches-file {out_prefix}.SNPs.tranches "
+                          f"--recal-file {out_prefix}.SNPs.recal "
+                          f"--truth-sensitivity-filter-level 99.0 "
+                          f"-mode SNP "
+                          f"-O {out_snp_vqsr_fname}")
 
     # Indel VQSR after SNP
-    indel_vqsr_cmd = ("time {gatk} {java_options} VariantRecalibrator "
-                      "-R {reference} "
-                      "-V {out_snp_vqsr_fname} "
-                      "--resource:mills,known=true,training=true,truth=true,prior=12.0 {resource_mills_gold_indels} "
-                      "--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 {resource_dbsnp} "
-                      "{vqsr_options} "
-                      "--tranches-file {out_prefix}.INDELs.tranches "
-                      "-mode INDEL "
-                      "-O {out_prefix}.INDELs.recal").format(**locals())
-    apply_indel_vqsr_cmd = ("time {gatk} {java_options} ApplyVQSR "
-                            "-R {reference} "
-                            "-V {out_snp_vqsr_fname} "
-                            "--truth-sensitivity-filter-level 99.0 "
-                            "--tranches-file {out_prefix}.INDELs.tranches "
-                            "--recal-file {out_prefix}.INDELs.recal "
-                            "-mode INDEL "
-                            "-O {output_vcf_fname} && rm -f {out_snp_vqsr_fname}").format(**locals())
+    indel_vqsr_cmd = (f"time {gatk} {java_options} VariantRecalibrator "
+                      f"-R {reference} "
+                      f"-V {out_snp_vqsr_fname} "
+                      f"--resource:mills,known=true,training=true,truth=true,prior=12.0 {resource_mills_gold_indels} "
+                      f"--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 {resource_dbsnp} "
+                      f"{vqsr_options} "
+                      f"--tranches-file {out_prefix}.INDELs.tranches "
+                      f"-mode INDEL "
+                      f"-O {out_prefix}.INDELs.recal")
+    apply_indel_vqsr_cmd = (f"time {gatk} {java_options} ApplyVQSR "
+                            f"-R {reference} "
+                            f"-V {out_snp_vqsr_fname} "
+                            f"--truth-sensitivity-filter-level 99.0 "
+                            f"--tranches-file {out_prefix}.INDELs.tranches "
+                            f"--recal-file {out_prefix}.INDELs.recal "
+                            f"-mode INDEL "
+                            f"-O {output_vcf_fname} && rm -f {out_snp_vqsr_fname}")
 
     return " && ".join([snp_vqsr_cmd, apply_snp_vqsr_cmd, indel_vqsr_cmd, apply_indel_vqsr_cmd])
 
@@ -210,10 +210,10 @@ def collect_alignment_summary_metrics(config, input_bam, output_fname):
         if "CollectAlignmentSummaryMetrics_options" in config["gatk"] \
            and len(config["gatk"]["CollectAlignmentSummaryMetrics_options"]) else ""
 
-    cmd = ("time {gatk} {java_options} CollectAlignmentSummaryMetrics {metric_options} "
-           "-R {reference} "
-           "-I {input_bam} "
-           "-O {output_fname}").format(**locals())
+    cmd = (f"time {gatk} {java_options} CollectAlignmentSummaryMetrics {metric_options} "
+           f"-R {reference} "
+           f"-I {input_bam} "
+           f"-O {output_fname}")
 
     return cmd
 
@@ -226,7 +226,7 @@ def mergevcfs(config, input_vcfs, output_fname):
         if "mergevcfs_java_options" in config["gatk"] \
            and len(config["gatk"]["mergevcfs_java_options"]) else ""
 
-    cmd = [("time {gatk} {java_options} MergeVcfs "
-            "-O {output_fname}").format(locals())] + ["-I %s" % f for f in input_vcfs]
+    cmd = [(f"time {gatk} {java_options} MergeVcfs -O {output_fname}")] + \
+          ["-I %s" % f for f in input_vcfs]
 
     return " ".join(cmd)
