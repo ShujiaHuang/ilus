@@ -99,61 +99,75 @@ def parse_commandline_args():
     return cmdparser.parse_args()
 
 
-def main():
-    START_TIME = datetime.now()
+def load_config(config_file):
+    with open(config_file) as f:
+        return yaml.safe_load(f)
+
+
+def get_intervals(interval_file):
+    if not os.path.isfile(interval_file):
+        raise ValueError(f"Invalid interval file: {interval_file}")
+
+    with open(interval_file) as f:
+        """Bed format:
+        chr1	10001	207666
+        chr1	257667	297968
+        """
+        return [line.strip().split()[:3] for line in f if not line.startswith("#")]
+
+
+def run_command(args):
+    if args.version:
+        print("ilus " + VERSION, file=sys.stderr)
+        return
+
+    if args.command == "split-jobs":
+        split_jobs(args.input, args.number, args.t, prefix=args.prefix)
+        return
+
+    if args.command == "check-jobs":
+        check_jobs_status(args.input)
+        return
+
     runner = {
         "WGS": WGS,
         "genotype-joint-calling": genotypeGVCFs,
-        "VQSR": variantrecalibrator
+        "VQSR": variantrecalibrator,
     }
 
-    kwargs = parse_commandline_args()
-    if kwargs.version:
-        print("ilus " + VERSION, file=sys.stderr)
-        sys.exit(0)
+    if args.command not in runner:
+        raise ValueError(f"Invalid command: {args.command}")
 
-    if kwargs.command is None:
-        sys.stderr.write("Please type: ilus -h or ilus --help to show the help message.\n")
-        sys.exit(1)
+    # loaded global configuration file
+    config = load_config(args.sysconf)
 
-    elif kwargs.command in runner:
-        aione = {}  # All information in one dict.
-        with open(kwargs.sysconf) as C:
-            # loaded global configuration file
-            aione["config"] = yaml.safe_load(C)
+    if "variant_calling_interval" in config["gatk"]:
+        if type(config["gatk"]["variant_calling_interval"]) is str:
+            # A file for recording interval
+            interval_file = config["gatk"]["variant_calling_interval"]
+            config["gatk"]["variant_calling_interval"] = get_intervals(interval_file)
 
-        # Normalize interval regions
-        if "variant_calling_interval" in aione["config"]["gatk"]:
-            intervals = []  # A 2-D array
-            if os.path.isfile(aione["config"]["gatk"]["variant_calling_interval"][0]):
-                with open(aione["config"]["gatk"]["variant_calling_interval"][0]) as I:
-                    """ Bed format:
-                    chr1	10001	207666
-                    chr1	257667	297968
-                    """
-                    for line in I:
-                        if line.startswith("#"):
-                            continue
-                        else:
-                            intervals.append(line.strip().split()[:3])
-
-                # Update by regular regions information
-                aione["config"]["gatk"]["variant_calling_interval"] = intervals
-        else:
-            sys.stderr.write("[Error] 'variant_calling_interval' parameter in configure "
-                             "file %s is required.\n" % kwargs.sysconf)
-            sys.exit(1)
-
-        runner[kwargs.command](kwargs, aione)
-    elif kwargs.command == "split-jobs":
-        split_jobs(kwargs.input, kwargs.number, kwargs.t, prefix=kwargs.prefix)
-
-    elif kwargs.command == "check-jobs":
-        check_jobs_status(kwargs.input)
+        elif type(config["gatk"]["variant_calling_interval"]) is not list:
+            raise ValueError(f"'variant_calling_interval' parameter could only be a file path or a "
+                             f"list of chromosome id in the configure file: {args.sysconf}.\n")
 
     else:
-        raise ValueError("[ERROR] Invalid command: '%s'." % kwargs.command)
+        raise ValueError(f"'variant_calling_interval' parameter is required "
+                         f"in the configure file: {args.sysconf}.\n")
+
+    # recording all information into one single dict.
+    aione = {"config": config}
+    runner[args.command](args, aione)
+
+    return
+
+
+def main():
+    START_TIME = datetime.now()
+
+    run_command(parse_commandline_args())
 
     elapsed_time = datetime.now() - START_TIME
-    sys.stderr.write("\n** %s done, %d seconds elapsed **\n" %
-                     (sys.argv[1], elapsed_time.seconds))
+    print(f"\n** {sys.argv[1]} done, {elapsed_time.seconds} seconds elapsed. **\n")
+
+    return
