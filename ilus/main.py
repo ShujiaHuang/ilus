@@ -119,7 +119,11 @@ def get_intervals(interval_file):
 def run_command(args):
     if args.version:
         print("ilus " + VERSION, file=sys.stderr)
-        return
+        sys.exit(0)
+
+    if args.command is None:
+        print("Please type: ilus -h or ilus --help to show the help message.\n", file=sys.stderr)
+        sys.exit(1)
 
     if args.command == "split-jobs":
         split_jobs(args.input, args.number, args.t, prefix=args.prefix)
