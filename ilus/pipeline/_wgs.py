@@ -54,8 +54,9 @@ def _make_process_shell(output_shell_fname,
     return
 
 
-def wgs(kwargs, aione):
-    # All the WGS processes.
+def WGS(kwargs, aione):
+    """Create the WGS data analysis pipeline."""
+
     runner_module = {
         # [func, shell_file, shell_log_folder, output_folder]
         # create bwa/sort/merge process
@@ -206,7 +207,7 @@ def variantrecalibrator(kwargs, aione):
 
             aione["genotype_vcf_list"].append(line.strip().split()[0])
 
-    shell_fname, shell_log_folder = [kwargs.project_name + ".step6.VQSR.sh", "06.VQSR"] \
+    shell_fname, shell_log_folder = [kwargs.project_name + ".step7.VQSR.sh", "07.VQSR"] \
         if kwargs.as_pipe_shell_order else [kwargs.project_name + ".vqsr.sh", "genotype"]
 
     _f(kwargs, aione, shell_fname, shell_log_folder, gatk_variantrecalibrator)
