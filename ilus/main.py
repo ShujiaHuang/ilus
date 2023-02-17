@@ -13,6 +13,7 @@ import sys
 import yaml
 from datetime import datetime
 
+# Import specific functions of ilus
 from ilus.pipeline import WGS, genotypeGVCFs, variantrecalibrator, \
     create_wgs_pipeline_command, create_genotype_joint_calling_command, \
     create_vqsr_command
@@ -118,11 +119,12 @@ def get_intervals(interval_file):
 
 def run_command(args):
     if args.version:
-        print("ilus " + VERSION, file=sys.stderr)
+        print(f"{PROG_NAME} {VERSION}", file=sys.stderr)
         sys.exit(0)
 
     if args.command is None:
-        print("Please type: ilus -h or ilus --help to show the help message.\n", file=sys.stderr)
+        print(f"Please type: {PROG_NAME} -h or {PROG_NAME} --help to show the help message.\n",
+              file=sys.stderr)
         sys.exit(1)
 
     if args.command == "split-jobs":
@@ -169,9 +171,10 @@ def run_command(args):
 def main():
     START_TIME = datetime.now()
 
-    run_command(parse_commandline_args())
+    args = parse_commandline_args()
+    run_command(args)
 
     elapsed_time = datetime.now() - START_TIME
-    print(f"\n** {sys.argv[1]} done, {elapsed_time.seconds} seconds elapsed. **\n")
+    print(f"\n** Creating pipeline for '{args.command}' done, {elapsed_time.seconds} seconds elapsed. **\n")
 
     return
