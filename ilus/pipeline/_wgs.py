@@ -62,15 +62,19 @@ def _make_process_shell(output_shell_fname: str,
     e_log_file = shell_log_directory.rstrip("/") + ".e.log.list"
 
     if not is_overwrite and os.path.exists(output_shell_fname):
-        sys.stderr.write("%s is already exist. Please set -f parameter if "
-                         "you want to overwrite.\n" % output_shell_fname)
+        sys.stderr.write(f"{output_shell_fname} is already exist. Please set -f parameter if "
+                         f"you want to overwrite.\n")
         return
 
-    _create_a_total_shell_file(process_shells, output_shell_fname, shell_log_directory, o_log_file, e_log_file)
+    _create_a_total_shell_file(process_shells,
+                               output_shell_fname,
+                               shell_log_directory,
+                               o_log_file,
+                               e_log_file)
     return
 
 
-def WGS(kwargs, aione):
+def WGS(kwargs, aione) -> dict:
     """Create the WGS data analysis pipeline."""
 
     runner_module = {
