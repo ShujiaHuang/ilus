@@ -7,13 +7,25 @@ Date: 2020-04-19
 import os
 import stat
 import sys
+from typing import List, Tuple
 
 from ilus.utils import safe_makedir
-from ilus.launch.runfunction import bwamem, gatk_markduplicates, gatk_baserecalibrator, \
-    gatk_haplotypecaller_gvcf, gatk_combineGVCFs, gatk_genotypeGVCFs, gatk_variantrecalibrator
+from ilus.launch.runfunction import (
+    bwamem,
+    gatk_markduplicates,
+    gatk_baserecalibrator,
+    gatk_haplotypecaller_gvcf,
+    gatk_combineGVCFs,
+    gatk_genotypeGVCFs,
+    gatk_variantrecalibrator
+)
 
 
-def _create_a_total_shell_file(shell_list, out_shell_filename, sub_shell_log_dir, o_log_file, e_log_file):
+def _create_a_total_shell_file(shell_list: List[Tuple[str, str]],
+                               out_shell_filename: str,
+                               sub_shell_log_dir: str,
+                               o_log_file: str,
+                               e_log_file: str) -> None:
     """Creat all the executable in a big shell script which gather all scripts from ``shell_list``.
 
         ``shell_list`` is a 2-D array: [[mark, shell_file], ...].
@@ -37,11 +49,11 @@ def _create_a_total_shell_file(shell_list, out_shell_filename, sub_shell_log_dir
     return
 
 
-def _make_process_shell(output_shell_fname,
-                        shell_log_directory,
-                        process_shells=None,
-                        is_overwrite=False,
-                        is_dry_run=False):
+def _make_process_shell(output_shell_fname: str,
+                        shell_log_directory: str,
+                        process_shells: List[Tuple[str, str]] = None,
+                        is_overwrite: bool = False,
+                        is_dry_run: bool = False) -> None:
     if is_dry_run:
         return
 
