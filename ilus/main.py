@@ -14,9 +14,11 @@ import yaml
 from datetime import datetime
 
 # Import specific functions of ilus
-from ilus.pipeline import WGS, genotypeGVCFs, variantrecalibrator, \
-    create_wgs_pipeline_command, create_genotype_joint_calling_command, \
-    create_vqsr_command
+from ilus.pipeline import (
+    WGS, create_wgs_pipeline_command,
+    genotypeGVCFs, create_genotype_joint_calling_command,
+    variantrecalibrator, create_vqsr_command
+)
 from ilus.utils import split_jobs, check_jobs_status
 
 PROG_NAME = "ilus"
@@ -24,6 +26,7 @@ VERSION = "1.3.0"
 
 
 def create_utility_module_command(commands):
+    # Create subparser for the "split-jobs" command
     split_job_cmd = commands.add_parser("split-jobs", help="Split the whole shell into multiple jobs.")
 
     split_job_cmd.add_argument(
@@ -32,32 +35,31 @@ def create_utility_module_command(commands):
         required=True,
         help="Input shell file."
     )
-
     split_job_cmd.add_argument(
         "-p", "--prefix",
         dest="prefix",
         type=str,
         default="work",
-        help="The prefix name of output sub-shell file. [work]"
+        help="The prefix name for output sub-shell. (default: %(default)s)"
     )
-
     split_job_cmd.add_argument(
         "-n", "--number",
         dest="number",
         type=int,
         required=True,
-        help="The number of sub tasks (shells)."
+        help="Number of sub job."
     )
-
     split_job_cmd.add_argument(
         "-t", "--parallel",
         dest="t",
         type=int,
         required=True,
-        help="The number of parallel jobs."
+        help="Parallel number for per sub job."
     )
 
+    # Create subparser for the "check-jobs" command
     check_job_cmd = commands.add_parser("check-jobs", help="Check the jobs have finished or not.")
+
     check_job_cmd.add_argument(
         "-I", "--input",
         dest="input",
@@ -154,8 +156,8 @@ def run_command(args):
             config["gatk"]["variant_calling_interval"] = get_intervals(interval_file)
 
         elif type(config["gatk"]["variant_calling_interval"]) is not list:
-            raise ValueError(f"'variant_calling_interval' parameter could only be a file path or a "
-                             f"list of chromosome id in the configure file: {args.sysconf}.\n")
+            raise ValueError(f"'variant_calling_interval' parameter could only be a file path or "
+                             f"a list of chromosome id in the configure file: {args.sysconf}.\n")
 
     else:
         raise ValueError(f"'variant_calling_interval' parameter is required "
