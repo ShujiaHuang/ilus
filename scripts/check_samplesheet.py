@@ -4,10 +4,11 @@
 https://github.com/nf-core/rnaseq/blob/master/bin/check_samplesheet.py
 """
 
-import os
+import argparse
 import sys
 import errno
-import argparse
+
+from pathlib import Path
 
 
 def parse_args(args=None):
@@ -23,7 +24,7 @@ def parse_args(args=None):
 def make_dir(path):
     if len(path) > 0:
         try:
-            os.makedirs(path)
+            Path.mkdir(path)
         except OSError as exception:
             if exception.errno != errno.EEXIST:
                 raise exception

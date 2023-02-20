@@ -17,8 +17,5 @@ def concat(config, input_vcfs, output_vcf):
     if not output_vcf.endswith(".gz"):
         output_vcf += ".gz"
 
-    cmd = [("time {bcftools} concat {concat_options} "
-            "-O z "
-            "-o {output_vcf}").format(**locals())] + input_vcfs
-
-    return " ".join(cmd) + " && time {tabix} -p vcf {output_vcf}".format(**locals())
+    cmd = [f"time {bcftools} concat {concat_options} -O z -o {output_vcf}"] + input_vcfs
+    return " ".join(cmd) + f" && time {tabix} -p vcf {output_vcf}"

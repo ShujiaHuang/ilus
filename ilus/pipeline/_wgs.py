@@ -4,9 +4,9 @@ Author: Shujia Huang
 Date: 2020-04-19
 
 """
-import os
 import stat
 import sys
+from pathlib import Path
 from typing import List, Tuple
 
 from ilus.utils import safe_makedir
@@ -22,20 +22,20 @@ from ilus.launch.runfunction import (
 
 
 def _create_a_total_shell_file(shell_list: List[Tuple[str, str]],
-                               out_shell_filename: str,
-                               sub_shell_log_dir: str,
+                               out_shell_filename: Path,
+                               sub_shell_log_dir: Path,
                                o_log_file: str,
                                e_log_file: str) -> None:
     """Creat all the executable in a big shell script which gather all scripts from ``shell_list``.
 
         ``shell_list`` is a 2-D array: [[mark, shell_file], ...].
     """
-    sub_shell_log_dir = sub_shell_log_dir.rstrip("/")
+    sub_shell_log_dir = str(sub_shell_log_dir).rstrip("/")
     o_log_template = "{marker}\t{sub_shell_log_dir}/{marker}.o.log\t{sub_shell}\n"
     e_log_template = "{marker}\t{sub_shell_log_dir}/{marker}.e.log\t{sub_shell}\n"
     shell_template = "{sub_shell} 2> {sub_shell_log_dir}/{marker}.e.log > {sub_shell_log_dir}/{marker}.o.log\n"
 
-    with open(out_shell_filename, "w") as out_file, open(o_log_file, "w") as o_log, open(e_log_file, "w") as e_log:
+    with open(str(out_shell_filename), "w") as out_file, open(o_log_file, "w") as o_log, open(e_log_file, "w") as e_log:
         out_file.write("#!/bin/bash\n")
         for marker, sub_shell in shell_list:
             # record all the path of log files into a single file
@@ -45,12 +45,12 @@ def _create_a_total_shell_file(shell_list: List[Tuple[str, str]],
             out_file.write(
                 shell_template.format(marker=marker, sub_shell=sub_shell, sub_shell_log_dir=sub_shell_log_dir))
 
-    os.chmod(out_shell_filename, stat.S_IRWXU)  # 0700
+    out_shell_filename.chmod(stat.S_IRWXU)  # 0700
     return
 
 
-def _make_process_shell(output_shell_fname: str,
-                        shell_log_directory: str,
+def _make_process_shell(output_shell_fname: Path,
+                        shell_log_directory: Path,
                         process_shells: List[Tuple[str, str]] = None,
                         is_overwrite: bool = False,
                         is_dry_run: bool = False) -> None:
@@ -58,10 +58,10 @@ def _make_process_shell(output_shell_fname: str,
         return
 
     safe_makedir(shell_log_directory)
-    o_log_file = shell_log_directory.rstrip("/") + ".o.log.list"
-    e_log_file = shell_log_directory.rstrip("/") + ".e.log.list"
+    o_log_file = str(shell_log_directory).rstrip("/") + ".o.log.list"
+    e_log_file = str(shell_log_directory).rstrip("/") + ".e.log.list"
 
-    if not is_overwrite and os.path.exists(output_shell_fname):
+    if not is_overwrite and Path(output_shell_fname).exists():
         sys.stderr.write(f"{output_shell_fname} is already exist. Please set -f parameter if "
                          f"you want to overwrite.\n")
         return
@@ -117,9 +117,9 @@ def WGS(kwargs, aione) -> dict:
 
     # Create project directory and return the abspath.
     # [Important] abspath will remove the last '/' in the path. e.g.: '/a/' -> '/a'
-    kwargs.outdir = os.path.abspath(kwargs.outdir)
-    shell_dirtory = os.path.join(kwargs.outdir, "00.shell")
-    shell_log_dirtory = os.path.join(shell_dirtory, "loginfo")
+    kwargs.outdir = Path(kwargs.outdir).resolve()
+    shell_dirtory = kwargs.outdir.joinpath("00.shell")
+    shell_log_dirtory = shell_dirtory.joinpath("loginfo")
 
     if not kwargs.dry_run:
         safe_makedir(kwargs.outdir)
@@ -130,9 +130,9 @@ def WGS(kwargs, aione) -> dict:
         is_dry_run = True if kwargs.dry_run or (p not in processes_set) else False
 
         func, shell_fname, shell_log_folder, output_result_folder = runner_module[p]
-        _make_process_shell(output_shell_fname=os.path.join(shell_dirtory, shell_fname),
-                            shell_log_directory=os.path.join(shell_log_dirtory, shell_log_folder),
-                            process_shells=func(kwargs, output_result_folder, aione, is_dry_run=is_dry_run),
+        _make_process_shell(output_shell_fname=shell_dirtory.joinpath(shell_fname),
+                            shell_log_directory=shell_log_dirtory.joinpath(shell_log_folder),
+                            process_shells=func(kwargs, Path(output_result_folder), aione, is_dry_run=is_dry_run),
                             is_overwrite=kwargs.overwrite,
                             is_dry_run=is_dry_run)
 
@@ -141,18 +141,17 @@ def WGS(kwargs, aione) -> dict:
 
 def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
     # [Important] abspath will remove the last '/' in the path. e.g.: '/a/' -> '/a'
-    kwargs.outdir = safe_makedir(os.path.abspath(kwargs.outdir))  # return abspath
-    root_path, output_folder_name = os.path.split(kwargs.outdir)
+    kwargs.outdir = safe_makedir(kwargs.outdir.resolve())  # return abspath
+    root_path, output_folder_name = kwargs.outdir.parent, kwargs.ourdir.name
 
     tmp_dir = kwargs.outdir
     kwargs.outdir = root_path
 
-    shell_dirtory = os.path.join(root_path, "00.shell" if kwargs.as_pipe_shell_order else "shell")
-    if not os.path.exists(shell_dirtory):
-        safe_makedir(shell_dirtory)
+    shell_dirtory = root_path.joinpath("00.shell" if kwargs.as_pipe_shell_order else "shell")
+    safe_makedir(shell_dirtory)
 
-    _make_process_shell(output_shell_fname=os.path.join(shell_dirtory, shell_fname),
-                        shell_log_directory=os.path.join(shell_dirtory, "loginfo", shell_log_folder),
+    _make_process_shell(output_shell_fname=shell_dirtory.joinpath(shell_fname),
+                        shell_log_directory=shell_dirtory.joinpath("loginfo", shell_log_folder),
                         process_shells=function_name(kwargs, output_folder_name, aione),
                         is_overwrite=kwargs.overwrite)
 
@@ -193,10 +192,10 @@ def genotypeGVCFs(kwargs, aione):
 
     if aione["config"]["gatk"]["use_genomicsDBImport"]:
         # [Important] return abspath and abspath will remove the last '/' in the path. e.g.: '/a/' -> '/a'
-        kwargs.outdir = safe_makedir(os.path.abspath(kwargs.outdir))
+        kwargs.outdir = Path(kwargs.outdir).resolve()
         aione["sample_map"] = {}
         for interval, value in sample_map.items():
-            out_sample_map_fname = os.path.join(kwargs.outdir, "%s.gvcf.sample_map" % interval)
+            out_sample_map_fname = kwargs.outdir.joinpath(f"{interval}.gvcf.sample_map")
             aione["sample_map"][interval] = out_sample_map_fname
             with open(out_sample_map_fname, "w") as OUT:
                 OUT.write("\n".join(value))

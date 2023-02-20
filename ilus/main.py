@@ -8,9 +8,9 @@ Date: 2020-04-19
 
 """
 import argparse
-import os
 import sys
 import yaml
+from pathlib import Path
 from datetime import datetime
 
 # Import specific functions of ilus
@@ -108,7 +108,7 @@ def load_config(config_file):
 
 
 def get_intervals(interval_file):
-    if not os.path.isfile(interval_file):
+    if not Path(interval_file).is_file():
         raise ValueError(f"Invalid interval file: {interval_file}")
 
     with open(interval_file) as f:
