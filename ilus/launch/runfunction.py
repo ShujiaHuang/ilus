@@ -8,7 +8,7 @@ import stat
 import gzip
 from pathlib import Path
 
-from ilus import utils
+from ilus.modules.utils import safe_makedir, file_exists
 from ilus.modules.ngsaligner import bwa
 from ilus.modules.variants import gatk
 from ilus.modules.vcf import bcftools
@@ -23,8 +23,8 @@ def _md(outdir, out_folder_name, is_dry_run=False):
     output_dirtory = Path(outdir).joinpath(out_folder_name, "output")
     shell_dirtory = Path(outdir).joinpath(out_folder_name, "shell")
     if not is_dry_run:
-        utils.safe_makedir(output_dirtory)
-        utils.safe_makedir(shell_dirtory)
+        safe_makedir(output_dirtory)
+        safe_makedir(shell_dirtory)
 
     # Return two dirctory in Path type
     return output_dirtory, shell_dirtory
@@ -48,11 +48,11 @@ def bwamem(kwargs, out_folder_name, aione, is_dry_run=False):
     output_dirtory = Path(kwargs.outdir).joinpath(out_folder_name, "output")
     shell_dirtory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "bwa")
     if not is_dry_run:
-        utils.safe_makedir(output_dirtory)
-        utils.safe_makedir(shell_dirtory)
+        safe_makedir(output_dirtory)
+        safe_makedir(shell_dirtory)
 
-    if not utils.file_exists(kwargs.fastqlist):
-        sys.stderr.write("[ERROR] %s is not a file.\n" % kwargs.fastqlist)
+    if not file_exists(kwargs.fastqlist):
+        sys.stderr.write(f"[ERROR] {kwargs.fastqlist} is not a file or empty.\n")
         sys.exit(1)
 
     sample_bamfiles_by_lane = {}  # {sample_id: [bwa1, bwa2, ...]}
@@ -70,7 +70,7 @@ def bwamem(kwargs, out_folder_name, aione, is_dry_run=False):
             if sample_id not in sample_bamfiles_by_lane:
                 sample_bamfiles_by_lane[sample_id] = []
                 if not is_dry_run:
-                    utils.safe_makedir(sample_outdir)
+                    safe_makedir(sample_outdir)
 
                 # record the samples' id and keep the order as the same as input.
                 samples.append([sample_id, sample_outdir])
@@ -121,7 +121,7 @@ def gatk_markduplicates(kwargs, out_folder_name, aione, is_dry_run=False):
     """
     shell_dirtory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "markdup")
     if not is_dry_run:
-        utils.safe_makedir(shell_dirtory)
+        safe_makedir(shell_dirtory)
 
     aione["sample_final_markdup_bam"] = []
     markdup_shell_files_list = []
@@ -155,7 +155,7 @@ def gatk_markduplicates(kwargs, out_folder_name, aione, is_dry_run=False):
 def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=True, is_dry_run=False):
     shell_dirtory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "bqsr")
     if not is_dry_run:
-        utils.safe_makedir(shell_dirtory)
+        safe_makedir(shell_dirtory)
 
     aione["sample_final_bqsr_bam"] = []
     bqsr_shell_files_list = []
@@ -252,8 +252,8 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione, is_dry_run=False):
         sample_output_dir = output_dirtory.joinpath(sample)
         sample_shell_dir = shell_dirtory.joinpath(sample)
         if not is_dry_run:
-            utils.safe_makedir(sample_output_dir)
-            utils.safe_makedir(sample_shell_dir)
+            safe_makedir(sample_output_dir)
+            safe_makedir(sample_shell_dir)
 
         for interval in aione["config"]["gatk"]["interval"]:
             if interval == "all":

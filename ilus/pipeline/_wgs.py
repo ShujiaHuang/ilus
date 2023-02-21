@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import List, Tuple
 
-from ilus.utils import safe_makedir
+from ilus.modules.utils import safe_makedir
 from ilus.launch.runfunction import (
     bwamem,
     gatk_markduplicates,
@@ -101,7 +101,7 @@ def WGS(kwargs, aione) -> dict:
         # Variant recalibrator
         "VQSR": [gatk_variantrecalibrator, kwargs.project_name + ".step7.VQSR.sh", "07.VQSR", "03.genotype"],
 
-        # Todo: Integrate summary and status statistic information into ilus pipeline.
+        # Todo: Integrate summary and status statistic information of ilus pipeline.
         "summary": []
     }
 

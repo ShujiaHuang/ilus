@@ -19,16 +19,15 @@ from ilus.pipeline import (
     genotypeGVCFs, create_genotype_joint_calling_command,
     variantrecalibrator, create_vqsr_command
 )
-from ilus.utils import split_jobs, check_jobs_status
+from ilus.modules.utils import split_jobs, check_jobs_status
 
 PROG_NAME = "ilus"
 VERSION = "1.3.0"
 
 
-def create_utility_module_command(commands):
+def create_split_job_command(commands):
     # Create subparser for the "split-jobs" command
     split_job_cmd = commands.add_parser("split-jobs", help="Split the whole shell into multiple jobs.")
-
     split_job_cmd.add_argument(
         "-I", "--input",
         dest="input",
@@ -57,9 +56,12 @@ def create_utility_module_command(commands):
         help="Parallel number for per sub job."
     )
 
+    return
+
+
+def create_check_job_command(commands):
     # Create subparser for the "check-jobs" command
     check_job_cmd = commands.add_parser("check-jobs", help="Check the jobs have finished or not.")
-
     check_job_cmd.add_argument(
         "-I", "--input",
         dest="input",
@@ -76,7 +78,7 @@ def parse_commandline_args():
     cmdparser = argparse.ArgumentParser(
         prog=PROG_NAME,
         description=f"{PROG_NAME} (Version = {VERSION}): A WGS/WES analysis pipeline generator.",
-        epilog="That's how you could use %(prog)s"
+        epilog="That's how you can use %(prog)s"
     )
 
     cmdparser.add_argument(
@@ -97,7 +99,8 @@ def parse_commandline_args():
     create_vqsr_command(commands)
 
     # Utility tools
-    create_utility_module_command(commands)
+    create_split_job_command(commands)
+    create_check_job_command(commands)
 
     return cmdparser.parse_args()
 
