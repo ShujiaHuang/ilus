@@ -8,7 +8,7 @@ import stat
 import gzip
 from pathlib import Path
 
-from ilus.modules.utils import safe_makedir, file_exists
+from ilus.modules.utils import check_samplesheet, safe_makedir, file_exists
 from ilus.modules.ngsaligner import bwa
 from ilus.modules.variants import gatk
 from ilus.modules.vcf import bcftools
@@ -52,20 +52,23 @@ def bwamem(kwargs, out_folder_name, aione, is_dry_run=False):
         safe_makedir(shell_dirtory)
 
     if not file_exists(kwargs.fastqlist):
-        sys.stderr.write(f"[ERROR] {kwargs.fastqlist} is not a file or empty.\n")
+        print(f"[ERROR] {kwargs.fastqlist} is not a file or empty.\n", file=sys.stderr)
         sys.exit(1)
+
+    if check_samplesheet(kwargs.fastqlist):
+        print(f"\n** Input data '{kwargs.fastqlist}' is good. **", file=sys.stderr)
 
     sample_bamfiles_by_lane = {}  # {sample_id: [bwa1, bwa2, ...]}
     samples = []
     with gzip.open(kwargs.fastqlist) if kwargs.fastqlist.endswith(".gz") else \
-            open(kwargs.fastqlist) as I:
+            open(kwargs.fastqlist) as f:
 
         # SAMPLE_ID RGID  FASTQ1  FASTQ2  LANE  LIBRARY PLATFORM   CENTER
-        for line in I:
+        for line in f:
             if line[0] == "#":  # ignore header
                 continue
 
-            sample_id, rgID, fq1, fq2, lane = line.strip().split()[:5]
+            sample_id, read_group_id, fq1, fq2, lane = line.strip().split()[:5]
             sample_outdir = output_dirtory.joinpath(sample_id)
             if sample_id not in sample_bamfiles_by_lane:
                 sample_bamfiles_by_lane[sample_id] = []
@@ -76,7 +79,7 @@ def bwamem(kwargs, out_folder_name, aione, is_dry_run=False):
                 samples.append([sample_id, sample_outdir])
 
             out_prefix = sample_outdir.joinpath(sample_id + "_" + lane)
-            lane_bam_file, cmd = bwa.bwa_mem(aione["config"], out_prefix, rgID, fq1, fq2)
+            lane_bam_file, cmd = bwa.bwa_mem(aione["config"], out_prefix, read_group_id, fq1, fq2)
             sample_bamfiles_by_lane[sample_id].append([lane_bam_file, cmd])
 
     bwa_shell_files_list = []
@@ -88,26 +91,26 @@ def bwamem(kwargs, out_folder_name, aione, is_dry_run=False):
         bwa_shell_files_list.append([sample, sample_shell_fname])
 
         # Create the commandline script.
-        cmd = []
         if len(sample_bamfiles_by_lane[sample]) == 1:
             lane_bam_file, cmd = sample_bamfiles_by_lane[sample][0][0], [sample_bamfiles_by_lane[sample][0][1]]
             if sample_final_bamfile != lane_bam_file:
-                # single lane does not need to merge bamfiles
-                cmd.append("mv -f %s %s" % (lane_bam_file, sample_final_bamfile))
+                # single lane no need to merge
+                cmd.append(f"mv -f {lane_bam_file} {sample_final_bamfile}")
 
         else:
             samtools = aione["config"]["samtools"]["samtools"]
             samtools_merge_options = " ".join(
-                [str(x) for x in aione["config"]["samtools"].get("merge_options", [])])
+                [str(x) for x in aione["config"]["samtools"].get("merge_options", [])]
+            )
 
             lane_bam_files = " ".join([f for f, _ in sample_bamfiles_by_lane[sample]])
             cmd = [c for _, c in sample_bamfiles_by_lane[sample]]
 
-            # merge lane_bam_files into one and rm lane_bam_files
+            # merge lane_bam_files together to be one big BAM file and rm lane_bam_files
             cmd.append(f"{samtools} merge {samtools_merge_options} {sample_final_bamfile} "
                        f"{lane_bam_files} && rm -rf {lane_bam_files}")
 
-        echo_mark_done = "echo \"[bwa] %s done\"" % sample
+        echo_mark_done = f"echo \"[bwa] {sample} done\""
         cmd.append(echo_mark_done)
 
         if not is_dry_run and (not sample_shell_fname.exists() or kwargs.overwrite):
