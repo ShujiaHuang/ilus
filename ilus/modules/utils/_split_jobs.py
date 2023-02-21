@@ -5,6 +5,8 @@ import stat
 from pathlib import Path
 from datetime import datetime
 
+from ._utils import safe_makedir
+
 
 def split_jobs(input_shell_file, job_num, thread_num, prefix="work"):
     """Create sub jobs for input_shell_file."""
@@ -74,4 +76,3 @@ def split_jobs(input_shell_file, job_num, thread_num, prefix="work"):
         sub_shell_fname.chmod(stat.S_IRWXU)
 
     return sub_shell_dir
-

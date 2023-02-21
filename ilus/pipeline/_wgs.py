@@ -62,8 +62,8 @@ def _make_process_shell(output_shell_fname: Path,
     e_log_file = str(shell_log_directory).rstrip("/") + ".e.log.list"
 
     if not is_overwrite and Path(output_shell_fname).exists():
-        sys.stderr.write(f"{output_shell_fname} is already exist. Please set -f parameter if "
-                         f"you want to overwrite.\n")
+        sys.stderr.write(f"{output_shell_fname} is already exist. Please set '-f' "
+                         f"parameter if you want to overwrite.\n")
         return
 
     _create_a_total_shell_file(process_shells,
@@ -112,7 +112,8 @@ def WGS(kwargs, aione) -> dict:
     processes_set = set(kwargs.wgs_processes.split(","))
     for p in processes_set:
         if p not in wgs_processes_order:
-            sys.stderr.write("[ERROR] %s is not one of the wgs processes: %s\n" % (p, ",".join(wgs_processes_order)))
+            sys.stderr.write(f"[ERROR] {p} is not one of the wgs processes: "
+                             f"{','.join(wgs_processes_order)}\n")
             sys.exit(1)
 
     # Create project directory and return the abspath.
@@ -142,7 +143,7 @@ def WGS(kwargs, aione) -> dict:
 def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
     # [Important] abspath will remove the last '/' in the path. e.g.: '/a/' -> '/a'
     kwargs.outdir = safe_makedir(kwargs.outdir.resolve())  # return abspath
-    root_path, output_folder_name = kwargs.outdir.parent, kwargs.ourdir.name
+    root_path, output_folder_name = kwargs.outdir.parent, kwargs.outdir.name
 
     tmp_dir = kwargs.outdir
     kwargs.outdir = root_path
@@ -159,7 +160,7 @@ def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
     return
 
 
-def genotypeGVCFs(kwargs, aione):
+def genotypeGVCFs(kwargs, aione) -> dict:
     """GenotypeGVCFs by GATK."""
 
     aione["intervals"] = []
@@ -174,11 +175,11 @@ def genotypeGVCFs(kwargs, aione):
             try:
                 interval, sample, gvcf = line.strip().split()
             except ValueError:
-                raise ValueError("Input format error in '%s'. Expected: 3 columns \n\n"
-                                 "-- column 1: chromosome ID \n"
-                                 "-- column 2: sample ID\n"
-                                 "-- column 3: gvcf file path)\n\n"
-                                 "got error here: '%s')." % (kwargs.gvcflist, line.strip()))
+                raise ValueError(f"Input format error in '{kwargs.gvcflist}'. Expected: 3 columns \n\n"
+                                 f"-- column 1: chromosome ID \n"
+                                 f"-- column 2: sample ID\n"
+                                 f"-- column 3: gvcf file path)\n\n"
+                                 f"got error here: '{line.strip()}').")
 
             if interval not in aione["gvcf"]:
                 aione["intervals"].append(interval)
@@ -188,11 +189,13 @@ def genotypeGVCFs(kwargs, aione):
             if interval not in sample_map:
                 sample_map[interval] = []
 
-            sample_map[interval].append("%s\t%s" % (sample, gvcf))
+            sample_map[interval].append(f"{sample}\t{gvcf}")
 
     if aione["config"]["gatk"]["use_genomicsDBImport"]:
         # [Important] return abspath and abspath will remove the last '/' in the path. e.g.: '/a/' -> '/a'
         kwargs.outdir = Path(kwargs.outdir).resolve()
+        safe_makedir(kwargs.outdir)
+
         aione["sample_map"] = {}
         for interval, value in sample_map.items():
             out_sample_map_fname = kwargs.outdir.joinpath(f"{interval}.gvcf.sample_map")
@@ -217,11 +220,11 @@ def genotypeGVCFs(kwargs, aione):
     return aione
 
 
-def variantrecalibrator(kwargs, aione):
+def variantrecalibrator(kwargs, aione) -> dict:
     aione["genotype_vcf_list"] = []  # will be called in ``gatk_variantrecalibrator``
-    with open(kwargs.vcflist) as I:
+    with open(kwargs.vcflist) as f_in:
         # Format in vcfilist one file per row
-        for line in I:
+        for line in f_in:
             if line.startswith("#"):
                 continue
 

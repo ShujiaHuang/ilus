@@ -89,13 +89,13 @@ def parse_commandline_args():
 
     commands = cmdparser.add_subparsers(dest="command", title="ilus commands")
 
-    # The arguments for WGS.
+    # The arguments for the whole pipeline of WGS.
     create_wgs_pipeline_command(commands)
 
-    # The arguments for GVCFs
+    # The arguments for joint-calling process
     create_genotype_joint_calling_command(commands)
 
-    # The arguments for VQSR
+    # The arguments for VQSR process
     create_vqsr_command(commands)
 
     # Utility tools
@@ -153,9 +153,11 @@ def run_command(args):
     config = load_config(args.sysconf)
 
     if "variant_calling_interval" in config["gatk"]:
-        if type(config["gatk"]["variant_calling_interval"]) is str:
+        if (type(config["gatk"]["variant_calling_interval"]) is str) \
+                and (Path(config["gatk"]["variant_calling_interval"]).is_file()):
             # A file for recording interval
             interval_file = config["gatk"]["variant_calling_interval"]
+            # reset the value to be a list of interval regions
             config["gatk"]["variant_calling_interval"] = get_intervals(interval_file)
 
         elif type(config["gatk"]["variant_calling_interval"]) is not list:
@@ -180,6 +182,7 @@ def main():
     run_command(args)
 
     elapsed_time = datetime.now() - START_TIME
-    print(f"\n** Creating pipeline for '{args.command}' done, {elapsed_time.seconds} seconds elapsed. **\n")
+    print(f"\n** Creating pipeline for '{args.command}' done, "
+          f"{elapsed_time.seconds} seconds elapsed. **\n")
 
     return

@@ -205,7 +205,7 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=T
             cmd.append(f"rm -rf {out_bqsr_bam_fname}")
             cmd.append(f"rm -rf {out_bqsr_bai_fname}")
 
-        echo_mark_done = "echo \"[BQSR] %s done\"" % sample
+        echo_mark_done = f"echo \"[BQSR] {sample} done\""
         cmd.append(echo_mark_done)
 
         if not is_dry_run and (not sample_shell_fname.exists() or kwargs.overwrite):
@@ -357,7 +357,7 @@ def gatk_combineGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
         combineGVCFs_shell_files_list.append([kwargs.project_name + "." + interval_n, sub_shell_fname])
         aione["combineGVCFs"][interval_n] = combineGVCF_fname
 
-        echo_mark_done = "echo \"[CombineGVCFs] %s done\"" % calling_interval
+        echo_mark_done = f"echo \"[CombineGVCFs] {calling_interval} done\""
         cmd = [combineGVCFs_cmd, echo_mark_done]
 
         if (not is_dry_run) and (not sub_shell_fname.exists() or kwargs.overwrite):
@@ -451,10 +451,10 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
                                           interval=calling_interval)
 
         # delete the genomicsdb workspace (or the combine GVCF file).
-        delete_cmd = "rm -rf %s" % combineGVCF_fname \
-            if is_use_gDBI else "rm -rf %s %s.tbi" % (combineGVCF_fname, combineGVCF_fname)
+        delete_cmd = f"rm -rf {combineGVCF_fname}" \
+            if is_use_gDBI else f"rm -rf {combineGVCF_fname} {combineGVCF_fname}.tbi"
 
-        echo_mark_done = "echo \"[Genotype] %s done\"" % calling_interval
+        echo_mark_done = f"echo \"[Genotype] {calling_interval} done\""
         cmd = [genotype_cmd, delete_cmd, echo_mark_done]
 
         if (not is_dry_run) and (not sub_shell_fname.exists() or kwargs.overwrite):
@@ -494,4 +494,4 @@ def gatk_variantrecalibrator(kwargs, out_folder_name, aione, is_dry_run=False):
         _create_cmd_file(shell_fname, cmd)
 
     # Only one VQSR result
-    return [["%s.VQSR" % kwargs.project_name, shell_fname]]
+    return [[f"{kwargs.project_name}.VQSR", shell_fname]]
