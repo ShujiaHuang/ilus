@@ -42,7 +42,6 @@ if __name__ == "__main__":
           download_url=meta.__DOWNLOAD_URL__,
           packages=find_packages(),
           install_requires=[
-              'logbook',
               'PyYAML>=5.1.2',
           ],
           include_package_data=True,
