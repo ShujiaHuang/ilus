@@ -11,8 +11,9 @@ def stats(config, input_bamfile, output_bamstats_fname):
         if "stats_options" in config["samtools"] and \
            len(config["samtools"]["stats_options"]) else ""
 
-    cmd = ("time {samtools} stats {stats_options} {input_bamfile} "
-           "> {output_bamstats_fname}").format(**locals())
+    cmd = (f"time {samtools} stats {stats_options} {input_bamfile} "
+           f"> {output_bamstats_fname}")
+
     return cmd
 
 
@@ -24,9 +25,8 @@ def genomecoverage(config, input_bamfile, output_cvg_fname):
         if "genomecov_options" in config["bedtools"] and \
            len(config["bedtools"]["genomecov_options"]) else ""
 
-    cmd = ("time {bedtools} genomecov {genomecov_options} -ibam {input_bamfile} | "
-           "{bgzip} > {output_cvg_fname} && "
-           "{tabix} -f -p bed {output_cvg_fname}").format(**locals())
+    cmd = (f"time {bedtools} genomecov {genomecov_options} -ibam {input_bamfile} | "
+           f"{bgzip} > {output_cvg_fname} && {tabix} -f -p bed {output_cvg_fname}")
 
     return cmd
 
@@ -38,9 +38,9 @@ def verifyBamID2(config, input_bamfile, output_prefix):
            len(config["verifyBamID2"]["options"]) else ""
 
     reference = config["resources"]["reference"]  # reference fasta
-    cmd = ("time {verifyBamID} {verifyBamID_options} "
-           "--Reference {reference} "
-           "--BamFile {input_bamfile} "
-           "--Output {output_prefix}").format(**locals())
+    cmd = (f"time {verifyBamID} {verifyBamID_options} "
+           f"--Reference {reference} "
+           f"--BamFile {input_bamfile} "
+           f"--Output {output_prefix}")
 
     return cmd
