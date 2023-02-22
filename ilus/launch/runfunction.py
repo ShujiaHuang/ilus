@@ -155,7 +155,8 @@ def gatk_markduplicates(kwargs, out_folder_name, aione, is_dry_run=False):
     return markdup_shell_files_list  # [[sample, sample_shell_fname], ...]
 
 
-def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=True, is_dry_run=False):
+def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=True,
+                          is_dry_run=False):
     shell_dirtory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "bqsr")
     if not is_dry_run:
         safe_makedir(shell_dirtory)
@@ -298,8 +299,8 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione, is_dry_run=False):
     return gvcf_shell_files_list
 
 
-def _yield_gatk_combineGVCFs(project_name, variant_calling_intervals, output_dirtory, shell_dirtory,
-                             is_use_gDBI, aione=None):
+def _yield_gatk_combineGVCFs(project_name, variant_calling_intervals, output_dirtory,
+                             shell_dirtory, is_use_gDBI, aione=None):
     for interval in variant_calling_intervals:
         interval_id = interval[0] if type(interval) is list else interval  # get chromosome id
         if interval_id in aione["gvcf"]:
@@ -366,58 +367,6 @@ def gatk_combineGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
     return combineGVCFs_shell_files_list
 
 
-# def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
-#     """Create shell for genotypeGVCFs.
-#     """
-#     output_dirtory, shell_dirtory = _md(kwargs.outdir, out_folder_name, is_dry_run=is_dry_run)
-#     is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
-#         if "use_genomicsDBImport" in aione["config"]["gatk"] else False
-#
-#     genotype_vcf_shell_files_list = []
-#     aione["genotype_vcf_list"] = []
-#
-#     # Create commandline for combineGVCFs and genotypeGVCFs process for specific calling intervals
-#     variant_calling_intervals = aione["config"]["gatk"]["variant_calling_interval"]
-#     for (combineGVCFs_cmd,
-#          combineGVCF_fname,
-#          _,  # no need the sub_shell_fname in _yield_gatk_CombineGVCFs
-#          interval_n,  # interval marker
-#          calling_interval) in _yield_gatk_combineGVCFs(kwargs.project_name,
-#                                                        variant_calling_intervals,
-#                                                        output_dirtory,
-#                                                        shell_dirtory,
-#                                                        is_use_gDBI,
-#                                                        aione):
-#
-#         sub_shell_fname = os.path.join(shell_dirtory, "%s.%s.genotype.sh" % (kwargs.project_name, interval_n))
-#         genotype_vcf_fname = os.path.join(output_dirtory, "%s.%s.vcf.gz" % (kwargs.project_name, interval_n))
-#
-#         genotype_vcf_shell_files_list.append([kwargs.project_name + "." + interval_n, sub_shell_fname])
-#         aione["genotype_vcf_list"].append(genotype_vcf_fname)
-#
-#         # Generate the genotype joint-calling process according to the input file
-#         # ``combineGVCF_fname`` which create in  ``_yield_gatk_CombineGVCFs``
-#         genotype_cmd = gatk.genotypeGVCFs(aione["config"],
-#                                           combineGVCF_fname,
-#                                           genotype_vcf_fname,
-#                                           interval=calling_interval)
-#
-#         # delete the genomicsdb workspace (or the combine GVCF file).
-#         delete_cmd = "rm -rf %s" % combineGVCF_fname \
-#             if is_use_gDBI else "rm -rf %s %s.tbi" % (combineGVCF_fname, combineGVCF_fname)
-#
-#         echo_mark_done = "echo \"[Genotype] %s done\"" % calling_interval
-#
-#         # combine all the commands for the final genotype calling.
-#         cmd = [combineGVCFs_cmd, genotype_cmd, delete_cmd, echo_mark_done]
-#
-#         if (not is_dry_run) and (not os.path.exists(sub_shell_fname) or kwargs.overwrite):
-#             # Create shell file
-#             _create_cmd_file(sub_shell_fname, cmd)
-#
-#     return genotype_vcf_shell_files_list
-
-
 def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
     """Create shell for genotypeGVCFs.
     """
@@ -464,6 +413,57 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
         sys.stderr.write("[Error] Interval parameters in configuration file may be different "
                          "from that input gvcf file list when calls ``gatk_genotypeGVCFs``.")
         sys.exit(1)
+
+    return genotype_vcf_shell_files_list
+
+
+def gatk_genotype(kwargs, out_folder_name, aione, is_dry_run=False):
+    """CombineGVCFs and genotypeGVCFs into one function (not use).
+    """
+    output_dirtory, shell_dirtory = _md(kwargs.outdir, out_folder_name, is_dry_run=is_dry_run)
+    is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
+        if "use_genomicsDBImport" in aione["config"]["gatk"] else False
+
+    genotype_vcf_shell_files_list = []
+    aione["genotype_vcf_list"] = []
+
+    # Create commandline for combineGVCFs and genotypeGVCFs process for specific calling intervals
+    variant_calling_intervals = aione["config"]["gatk"]["variant_calling_interval"]
+    for (combineGVCFs_cmd,
+         combineGVCF_fname,
+         _,  # no need the sub_shell_fname in _yield_gatk_combineGVCFs
+         interval_n,  # interval marker
+         calling_interval) in _yield_gatk_combineGVCFs(kwargs.project_name,
+                                                       variant_calling_intervals,
+                                                       output_dirtory,
+                                                       shell_dirtory,
+                                                       is_use_gDBI,
+                                                       aione):
+
+        sub_shell_fname = shell_dirtory.joinpath(f"{kwargs.project_name}.{interval_n}.genotype.sh")
+        genotype_vcf_fname = output_dirtory.joinpath(f"{kwargs.project_name}.{interval_n}.vcf.gz")
+
+        genotype_vcf_shell_files_list.append([kwargs.project_name + "." + interval_n, sub_shell_fname])
+        aione["genotype_vcf_list"].append(genotype_vcf_fname)
+
+        # Generate the genotype joint-calling process according to the input file
+        # ``combineGVCF_fname`` which create in  ``_yield_gatk_CombineGVCFs``
+        genotype_cmd = gatk.genotypeGVCFs(aione["config"],
+                                          combineGVCF_fname,
+                                          genotype_vcf_fname,
+                                          interval=calling_interval)
+
+        # delete the genomicsdb workspace (or the combine GVCF file).
+        delete_cmd = f"rm -rf {combineGVCF_fname}" \
+            if is_use_gDBI else f"rm -rf {combineGVCF_fname} {combineGVCF_fname}.tbi"
+
+        echo_mark_done = f"echo \"[Genotype] {calling_interval} done\""
+
+        # combine all the commands for the final genotype calling.
+        cmd = [combineGVCFs_cmd, genotype_cmd, delete_cmd, echo_mark_done]
+        if (not is_dry_run) and (not sub_shell_fname.exists() or kwargs.overwrite):
+            # Create shell file
+            _create_cmd_file(sub_shell_fname, cmd)
 
     return genotype_vcf_shell_files_list
 
