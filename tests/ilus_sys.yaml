@@ -4,18 +4,18 @@ aligner:
   bwamem_options: [-Y -M -t 8]
 
 samtools:
-    samtools: /path/to/BioSoftware/local/bin/samtools
-    sort_options: ["-@ 8"]
-    merge_options: ["-@ 8 -f"]
-    stats_options: ["-@ 8"]
+  samtools: /path/to/BioSoftware/local/bin/samtools
+  sort_options: ["-@ 8"]
+  merge_options: ["-@ 8 -f"]
+  stats_options: ["-@ 8"]
 
 bcftools:
-    bcftools: /path/to/BioSoftware/local/bin/bcftools
-    concat_options: ["-a --rm-dups all"]
+  bcftools: /path/to/BioSoftware/local/bin/bcftools
+  concat_options: ["-a --rm-dups all"]
 
 bedtools:
-    bedtools: /path/to/BioSoftware/local/bin/bedtools
-    genomecov_options: ["-bga -split"]
+  bedtools: /path/to/BioSoftware/local/bin/bedtools
+  genomecov_options: ["-bga -split"]
 
 # Remove sambamba from ilus
 #sambamba:
@@ -26,12 +26,12 @@ bedtools:
 
 
 verifyBamID2:
-    # The URL link of VerifyBamID2: https://github.com/Griffan/VerifyBamID
-    verifyBamID2: /path/to/BioSoftware/local/bin/verifyBamID2
-    options: [
+  # The URL link of VerifyBamID2: https://github.com/Griffan/VerifyBamID
+  verifyBamID2: /path/to/BioSoftware/local/bin/verifyBamID2
+  options: [
         # download from: https://github.com/Griffan/VerifyBamID/tree/master/resource 
         "--SVDPrefix /path/to/BioSoftware/verifyBamID2/1.0.6/resource/1000g.phase3.10k.b38.vcf.gz.dat"
-    ]
+  ]
 
 
 bgzip: /path/to/BioSoftware/local/bin/bgzip
