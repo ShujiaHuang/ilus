@@ -108,12 +108,12 @@ def WGS(kwargs, aione) -> dict:
     # Todo: Need a program to validate whether the tools, arguments and processes are
     #  available or not for the pipeline.
 
-    wgs_processes_order = ["align", "markdup", "BQSR", "gvcf", "combineGVCFs", "genotype", "VQSR"]
+    wgs_pipeline_processes = ["align", "markdup", "BQSR", "gvcf", "combineGVCFs", "genotype", "VQSR"]
     processes_set = set(kwargs.wgs_processes.split(","))
     for p in processes_set:
-        if p not in wgs_processes_order:
+        if p not in wgs_pipeline_processes:
             sys.stderr.write(f"[ERROR] {p} is not one of the wgs processes: "
-                             f"{','.join(wgs_processes_order)}\n")
+                             f"{','.join(wgs_pipeline_processes)}\n")
             sys.exit(1)
 
     # Create project directory and return the abspath.
@@ -127,7 +127,7 @@ def WGS(kwargs, aione) -> dict:
         safe_makedir(shell_dirtory)
         safe_makedir(shell_log_dirtory)
 
-    for p in wgs_processes_order:
+    for p in wgs_pipeline_processes:
         is_dry_run = True if kwargs.dry_run or (p not in processes_set) else False
 
         func, shell_fname, shell_log_folder, output_result_folder = runner_module[p]
@@ -205,15 +205,15 @@ def genotypeGVCFs(kwargs, aione) -> dict:
 
     # create shell scripts for genomicsDBImport or CombineGVCFs before the genotype joint-calling process
     combineGVCF_shell_fname, combineGVCF_shell_log_folder = [
-        kwargs.project_name + ".step5.combineGVCFs.sh", "05.combineGVCFs"] \
-        if kwargs.as_pipe_shell_order else [kwargs.project_name + ".combineGVCFs.sh", "combineGVCFs"]
+        f"{kwargs.project_name}.step5.combineGVCFs.sh", "05.combineGVCFs"] \
+        if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.combineGVCFs.sh", "combineGVCFs"]
 
     _f(kwargs, aione, combineGVCF_shell_fname, combineGVCF_shell_log_folder, gatk_combineGVCFs)
 
     # create shell scripts for genotype joint-calling
     genotype_shell_fname, genotype_shell_log_folder = [
-        kwargs.project_name + ".step6.genotype.sh", "06.genotype"] \
-        if kwargs.as_pipe_shell_order else [kwargs.project_name + ".genotype.sh", "genotype"]
+        f"{kwargs.project_name}.step6.genotype.sh", "06.genotype"] \
+        if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.genotype.sh", "genotype"]
 
     _f(kwargs, aione, genotype_shell_fname, genotype_shell_log_folder, gatk_genotypeGVCFs)
 
