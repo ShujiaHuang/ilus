@@ -7,7 +7,7 @@ import sys
 import stat
 import gzip
 from pathlib import Path
-from typing import Tuple
+from typing import List, Tuple
 
 from ilus.modules.utils import safe_makedir
 from ilus.modules.ngsaligner import bwa
@@ -31,11 +31,11 @@ def _md(outdir: Path, is_dry_run: bool = False) -> Tuple[Path, Path]:
     return output_dirtory, shell_dirtory
 
 
-def _create_cmd_file(out_shell_file, cmd=None):
+def _create_cmd_file(out_shell_file: Path, cmd: List[str] = None):
     if cmd is None:
         return
 
-    with open(out_shell_file, "w") as OUT:
+    with open(str(out_shell_file), "w") as OUT:
         OUT.write("#!/bin/bash\n")
         OUT.write(f"{' && '.join(cmd)}\n")
 
@@ -43,7 +43,8 @@ def _create_cmd_file(out_shell_file, cmd=None):
     return
 
 
-def bwamem(kwargs, out_folder_name, aione, is_dry_run=False):
+def bwamem(kwargs, out_folder_name: str, aione: dict = None,
+           is_dry_run: bool = False):
     """Create bwamem aligment shell scripts for fastq to BAM.
     """
     output_dirtory = Path(kwargs.outdir).joinpath(out_folder_name, "output")
@@ -86,7 +87,8 @@ def bwamem(kwargs, out_folder_name, aione, is_dry_run=False):
 
         if len(sample_bamfiles_by_lane[sample]) == 1:
             # single lane no need to merge
-            lane_bam_file, cmd = sample_bamfiles_by_lane[sample][0][0], [sample_bamfiles_by_lane[sample][0][1]]
+            lane_bam_file = sample_bamfiles_by_lane[sample][0][0]
+            cmd = [sample_bamfiles_by_lane[sample][0][1]]
             if sample_final_bamfile != lane_bam_file:
                 cmd.append(f"mv -f {lane_bam_file} {sample_final_bamfile}")
 
@@ -112,7 +114,8 @@ def bwamem(kwargs, out_folder_name, aione, is_dry_run=False):
     return bwa_shell_files_list  # [[sample, bwa_shell_file], ...]
 
 
-def gatk_markduplicates(kwargs, out_folder_name, aione, is_dry_run=False):
+def gatk_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
+                        is_dry_run: bool = False):
     """Create shell scripts for Markduplicates by GATK4.
     """
     shell_dirtory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "markdup")
@@ -148,8 +151,9 @@ def gatk_markduplicates(kwargs, out_folder_name, aione, is_dry_run=False):
     return markdup_shell_files_list  # [[sample, sample_shell_fname], ...]
 
 
-def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=True,
-                          is_dry_run=False):
+def gatk_baserecalibrator(kwargs, out_folder_name: str, aione: dict = None,
+                          is_calculate_summary: bool = True,
+                          is_dry_run: bool = False):
     shell_dirtory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "bqsr")
     if not is_dry_run:
         safe_makedir(shell_dirtory)
@@ -210,7 +214,8 @@ def gatk_baserecalibrator(kwargs, out_folder_name, aione, is_calculate_summary=T
     return bqsr_shell_files_list
 
 
-def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione, is_dry_run=False):
+def gatk_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
+                              is_dry_run: bool = False):
     """Create gvcf shell.
     """
 
@@ -297,8 +302,8 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name, aione, is_dry_run=False):
     return gvcf_shell_files_list
 
 
-def _yield_gatk_combineGVCFs(project_name, variant_calling_intervals, output_dirtory,
-                             shell_dirtory, is_use_gDBI, aione=None):
+def _yield_gatk_combineGVCFs(project_name, variant_calling_intervals, output_dirtory: Path,
+                             shell_dirtory: Path, is_use_gDBI: bool, aione: dict = None):
     for interval in variant_calling_intervals:
         interval_id = interval[0] if type(interval) is list else interval  # get chromosome id
         if interval_id in aione["gvcf"]:
@@ -331,7 +336,7 @@ def _yield_gatk_combineGVCFs(project_name, variant_calling_intervals, output_dir
         yield combineGVCFs_cmd, combineGVCF_fname, sub_shell_fname, interval_n, calling_interval
 
 
-def gatk_combineGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
+def gatk_combineGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: bool = False):
     """Combine GVCFs by GATK genomicsDBImport or CombineGVCFs module.
     """
     output_dirtory, shell_dirtory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
@@ -366,7 +371,7 @@ def gatk_combineGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
     return combineGVCFs_shell_files_list
 
 
-def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
+def gatk_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: bool = False):
     """Create shell for genotypeGVCFs.
     """
     output_dirtory, shell_dirtory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
@@ -417,7 +422,7 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name, aione, is_dry_run=False):
     return genotype_vcf_shell_files_list
 
 
-def gatk_genotype(kwargs, out_folder_name, aione, is_dry_run=False):
+def gatk_genotype(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: bool = False):
     """CombineGVCFs and genotypeGVCFs into one function (not use).
     """
     output_dirtory, shell_dirtory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
@@ -469,7 +474,8 @@ def gatk_genotype(kwargs, out_folder_name, aione, is_dry_run=False):
     return genotype_vcf_shell_files_list
 
 
-def gatk_variantrecalibrator(kwargs, out_folder_name, aione, is_dry_run=False):
+def gatk_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None,
+                             is_dry_run: bool = False):
     """Create shell scripts for VQSR.
     """
     output_dirtory, shell_dirtory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
