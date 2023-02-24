@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import List, Tuple
 
-from ilus.modules.utils import safe_makedir
+from ilus.modules.utils import safe_makedir, file_exists, check_samplesheet
 from ilus.launch.runfunction import (
     bwamem,
     gatk_markduplicates,
@@ -74,32 +74,35 @@ def _make_process_shell(output_shell_fname: Path,
     return
 
 
-def WGS(kwargs, aione) -> dict:
+def WGS(kwargs, aione: dict = None) -> dict:
     """Create the WGS data analysis pipeline."""
 
     runner_module = {
-        # [func, shell_file, shell_log_folder, output_folder]
+        # [func, shell_file_name, shell_log_folder_name, output_folder_name]
         # create bwa/sort/merge process
-        "align": [bwamem, kwargs.project_name + ".step1.bwa.sh", "01.alignment", "01.alignment"],
+        "align": [bwamem, f"{kwargs.project_name}.step1.bwa.sh", "01.alignment", "01.alignment"],
 
         # Create Markduplicates shells.
-        "markdup": [gatk_markduplicates, kwargs.project_name + ".step2.markdup.sh", "02.markdup", "01.alignment"],
+        "markdup": [gatk_markduplicates, f"{kwargs.project_name}.step2.markdup.sh", "02.markdup",
+                    "01.alignment"],
 
         # Create BQSR+ApplyBQSR shells.
-        "BQSR": [gatk_baserecalibrator, kwargs.project_name + ".step3.bqsr.sh", "03.BQSR", "01.alignment"],
+        "BQSR": [gatk_baserecalibrator, f"{kwargs.project_name}.step3.bqsr.sh", "03.BQSR", "01.alignment"],
 
         # Create GVCF shells
-        "gvcf": [gatk_haplotypecaller_gvcf, kwargs.project_name + ".step4.gvcf.sh", "04.gvcf", "02.gvcf"],
+        "gvcf": [gatk_haplotypecaller_gvcf, f"{kwargs.project_name}.step4.gvcf.sh", "04.gvcf", "02.gvcf"],
 
         # combineGVCFs
-        "combineGVCFs": [gatk_combineGVCFs, kwargs.project_name + ".step5.combineGVCFs.sh", "05.combineGVCFs",
+        "combineGVCFs": [gatk_combineGVCFs, f"{kwargs.project_name}.step5.combineGVCFs.sh", "05.combineGVCFs",
                          "03.genotype"],
 
         # GenotypeGVCF
-        "genotype": [gatk_genotypeGVCFs, kwargs.project_name + ".step6.genotype.sh", "06.genotype", "03.genotype"],
+        "genotype": [gatk_genotypeGVCFs, f"{kwargs.project_name}.step6.genotype.sh", "06.genotype",
+                     "03.genotype"],
 
         # Variant recalibrator
-        "VQSR": [gatk_variantrecalibrator, kwargs.project_name + ".step7.VQSR.sh", "07.VQSR", "03.genotype"],
+        "VQSR": [gatk_variantrecalibrator, f"{kwargs.project_name}.step7.VQSR.sh", "07.VQSR",
+                 "03.genotype"],
 
         # Todo: Integrate summary and status statistic information of ilus pipeline.
         "summary": []
@@ -116,8 +119,18 @@ def WGS(kwargs, aione) -> dict:
                              f"{','.join(wgs_pipeline_processes)}\n")
             sys.exit(1)
 
+    if not file_exists(kwargs.fastqlist):
+        print(f"[ERROR] {kwargs.fastqlist} is not a file or empty.\n", file=sys.stderr)
+        sys.exit(1)
+
+    if check_samplesheet(kwargs.fastqlist):
+        print(f"\n[INFO] Input file format of '{kwargs.fastqlist}' has been verified.",
+              file=sys.stderr)
+
+    aione["fastqlist"] = kwargs.fastqlist  # record the input file path of fastqlist.
+
     # Create project directory and return the abspath.
-    # [Important] abspath will remove the last '/' in the path. e.g.: '/a/' -> '/a'
+    # [Important] abspath will remove the last '/' of the path. e.g.: '/a/' -> '/a'
     kwargs.outdir = Path(kwargs.outdir).resolve()
     shell_dirtory = kwargs.outdir.joinpath("00.shell")
     shell_log_dirtory = shell_dirtory.joinpath("loginfo")
@@ -130,10 +143,10 @@ def WGS(kwargs, aione) -> dict:
     for p in wgs_pipeline_processes:
         is_dry_run = True if kwargs.dry_run or (p not in processes_set) else False
 
-        func, shell_fname, shell_log_folder, output_result_folder = runner_module[p]
+        func, shell_fname, shell_log_folder, output_folder = runner_module[p]
         _make_process_shell(output_shell_fname=shell_dirtory.joinpath(shell_fname),
                             shell_log_directory=shell_log_dirtory.joinpath(shell_log_folder),
-                            process_shells=func(kwargs, Path(output_result_folder), aione, is_dry_run=is_dry_run),
+                            process_shells=func(kwargs, output_folder, aione, is_dry_run=is_dry_run),
                             is_overwrite=kwargs.overwrite,
                             is_dry_run=is_dry_run)
 
@@ -160,7 +173,7 @@ def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
     return
 
 
-def genotypeGVCFs(kwargs, aione) -> dict:
+def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
     """GenotypeGVCFs by GATK."""
 
     aione["intervals"] = []
@@ -212,15 +225,15 @@ def genotypeGVCFs(kwargs, aione) -> dict:
 
     # create shell scripts for genotype joint-calling
     genotype_shell_fname, genotype_shell_log_folder = [
-        f"{kwargs.project_name}.step6.genotype.sh", "06.genotype"] \
-        if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.genotype.sh", "genotype"]
+        f"{kwargs.project_name}.step6.genotype.sh", "06.genotype"
+    ] if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.genotype.sh", "genotype"]
 
     _f(kwargs, aione, genotype_shell_fname, genotype_shell_log_folder, gatk_genotypeGVCFs)
 
     return aione
 
 
-def variantrecalibrator(kwargs, aione) -> dict:
+def variantrecalibrator(kwargs, aione: dict = None) -> dict:
     aione["genotype_vcf_list"] = []  # will be called in ``gatk_variantrecalibrator``
     with open(kwargs.vcflist) as f_in:
         # Format in vcfilist one file per row
@@ -230,8 +243,9 @@ def variantrecalibrator(kwargs, aione) -> dict:
 
             aione["genotype_vcf_list"].append(line.strip().split()[0])
 
-    shell_fname, shell_log_folder = [kwargs.project_name + ".step7.VQSR.sh", "07.VQSR"] \
-        if kwargs.as_pipe_shell_order else [kwargs.project_name + ".vqsr.sh", "genotype"]
+    shell_fname, shell_log_folder = [
+        f"{kwargs.project_name}.step7.VQSR.sh", "07.VQSR"
+    ] if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.vqsr.sh", "genotype"]
 
     _f(kwargs, aione, shell_fname, shell_log_folder, gatk_variantrecalibrator)
     return aione
