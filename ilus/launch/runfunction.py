@@ -56,7 +56,8 @@ def bwamem(kwargs, out_folder_name, aione, is_dry_run=False):
         sys.exit(1)
 
     if check_samplesheet(kwargs.fastqlist):
-        print(f"\n** Input data '{kwargs.fastqlist}' is good. **", file=sys.stderr)
+        print(f"\n** The input file format of '{kwargs.fastqlist}' has been verified. **",
+              file=sys.stderr)
 
     sample_bamfiles_by_lane = {}  # {sample_id: [bwa1, bwa2, ...]}
     samples = []

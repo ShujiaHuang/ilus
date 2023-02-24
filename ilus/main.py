@@ -66,7 +66,8 @@ def create_check_job_command(commands):
         "-I", "--input",
         dest="input",
         required=True,
-        help="Input the log file of task."
+        help="Task log file with suffix '.o.log.list’. For ilus pipeline, which could always "
+             "be found in the folder 'loginfo/', e.g.: loginfo/01.alignment.o.log.list"
     )
 
     return
