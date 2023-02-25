@@ -1,4 +1,4 @@
-chr1	sample1	02.gvcf/output/00115031174M21BFF2/00115031174M21BFF2.chr1.g.vcf.gz
-chr1	sample2	02.gvcf/output/17100182BFF2/17100182BFF2.chr1.g.vcf.gz
-chr2	sample1	02.gvcf/output/00115031174M21BFF2/00115031174M21BFF2.chr2.g.vcf.gz
-chr2	sample2	02.gvcf/output/17100182BFF2/17100182BFF2.chr2.g.vcf.gz
+chr1	sample1	sample1/sample1.chr1.g.vcf.gz
+chr1	sample2	sample2/sample2.chr1.g.vcf.gz
+chr2	sample1	sample1/sample1.chr2.g.vcf.gz
+chr2	sample2	sample2/sample2.chr2.g.vcf.gz
