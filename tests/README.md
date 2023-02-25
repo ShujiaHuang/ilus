@@ -28,7 +28,7 @@ ilus VQSR -C ilus_sys.yaml -L vcf.list -O 03.genotype --as_pipe_shell_order -f
 python ../../scripts/yhbatch_slurm_jobs.py -I step1.bwa.sh -n 10 -t 3
 ```
 
-python ../scripts/create_wgs_calling_intervals.py -f human_GRCh38.fai -n human_GRCh38.N.interval_list -w 5000000 | head -820 > wgs_calling_regions.GRCh38.5M.interval.bed
+python ../scripts/create_wgs_calling_intervals.py -f human_GRCh38.fai -n human_GRCh38.N.interval_list -w 5000000 | head -820 > human_GRCh38.WGS.calling_regions.interval.bed
 
 ilus WGS -c -C ilus_sys.yaml -L sample_fastq.list -P align,BQSR,gvcf,VQSR -O ./tmp
 ilus WGS -c -n my_wgs -C ilus_sys.yaml -L sample_fastq.list -O ./output
