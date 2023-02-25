@@ -202,7 +202,7 @@ def collect_alignment_summary_metrics(config, input_bam, output_fname):
     gatk = config["gatk"]["gatk"]
     reference = config["resources"]["reference"]  # reference fasta
 
-    java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["CollectAlignmentSummaryMetrics_jave_options"]) \
+    java_options = f'--java-options "{" ".join(config["gatk"]["CollectAlignmentSummaryMetrics_jave_options"])}"' \
         if "CollectAlignmentSummaryMetrics_jave_options" in config["gatk"] \
            and len(config["gatk"]["CollectAlignmentSummaryMetrics_jave_options"]) else ""
 
@@ -222,11 +222,10 @@ def mergevcfs(config, input_vcfs, output_fname):
     # Sometimes bcftools concat is better than MergeVcfs
     gatk = config["gatk"]["gatk"]
 
-    java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["mergevcfs_java_options"]) \
+    java_options = f'--java-options "{" ".join(config["gatk"]["mergevcfs_java_options"])}"' \
         if "mergevcfs_java_options" in config["gatk"] \
            and len(config["gatk"]["mergevcfs_java_options"]) else ""
 
-    cmd = [(f"time {gatk} {java_options} MergeVcfs -O {output_fname}")] + \
-          ["-I %s" % f for f in input_vcfs]
+    cmd = [f"time {gatk} {java_options} MergeVcfs -O {output_fname}"] + [f"-I {f}" for f in input_vcfs]
 
     return " ".join(cmd)
