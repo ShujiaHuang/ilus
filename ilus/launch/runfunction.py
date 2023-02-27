@@ -405,11 +405,11 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_
                                           interval=calling_interval)
 
         # delete the genomicsdb workspace (or the combine GVCF file).
-        delete_cmd = f"rm -rf {combineGVCF_fname}" \
-            if is_use_gDBI else f"rm -rf {combineGVCF_fname} {combineGVCF_fname}.tbi"
+        # delete_cmd = f"rm -rf {combineGVCF_fname}" \
+        #     if is_use_gDBI else f"rm -rf {combineGVCF_fname} {combineGVCF_fname}.tbi"
 
         echo_mark_done = f"echo \"[Genotype] {calling_interval} done\""
-        cmd = [genotype_cmd, delete_cmd, echo_mark_done]
+        cmd = [genotype_cmd, echo_mark_done]  # [genotype_cmd, delete_cmd, echo_mark_done]
 
         if (not is_dry_run) and (not sub_shell_fname.exists() or kwargs.overwrite):
             _create_cmd_file(sub_shell_fname, cmd)
