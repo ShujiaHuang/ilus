@@ -41,6 +41,7 @@ if __name__ == "__main__":
           version=meta.__VERSION__,
           download_url=meta.__DOWNLOAD_URL__,
           packages=find_packages(),
+          python_requires=">=3.5",
           install_requires=[
               'PyYAML>=5.1.2',
           ],
@@ -52,11 +53,14 @@ if __name__ == "__main__":
               ]
           },
           classifiers=[
+              'License :: OSI Approved :: BSD License',
               'Intended Audience :: Science/Research',
+              'Programming Language :: Python :: 3.6',
               'Programming Language :: Python :: 3.7',
               'Programming Language :: Python :: 3.8',
               'Programming Language :: Python :: 3.9',
-              'License :: OSI Approved :: BSD License',
+              'Programming Language :: Python :: 3.10',
+              'Programming Language :: Python :: 3.11',
               'Topic :: Scientific/Engineering :: Bio-Informatics',
               'Operating System :: POSIX',
               'Operating System :: POSIX :: Linux',
