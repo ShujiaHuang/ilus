@@ -21,9 +21,9 @@ def check_samplesheet(input_fname):
     """This function checks that the samplesheet follows the following structure:
 
     #SAMPLE	RGID	FASTQ1	FASTQ2	LANE
-    HL003   "@RG\tID:HL003_HL003_L01_65\tPL:COMPLETE\tPU:HL003_L01_65_HL003\tLB:HL003_L01\tSM:HL003"        HL003_L01_65_1.fq.gz     HL003_L01_65_2.fq.gz     HL003_L01_65
-    HL003   "@RG\tID:HL003_HL003_L01_67\tPL:COMPLETE\tPU:HL003_L01_67_HL003\tLB:HL003_L01\tSM:HL003"        HL003_L01_67_1.fq.gz     .       HL003_L01_67
-    HL003   "@RG\tID:HL003_HL003_L01_68\tPL:COMPLETE\tPU:HL003_L01_68_HL003\tLB:HL003_L01\tSM:HL003"        HL003_L01_68_1.fq.gz     HL003_L01_68_2.fq.gz     HL003_L01_68
+    HL003  "@RG\tID:HL003_HL003_L01_65\tPL:COMPLETE\tPU:HL003_L01_65_HL003\tLB:HL003_L01\tSM:HL003"  HL003_L01_65_1.fq.gz  HL003_L01_65_2.fq.gz  HL003_L01_65
+    HL003  "@RG\tID:HL003_HL003_L01_67\tPL:COMPLETE\tPU:HL003_L01_67_HL003\tLB:HL003_L01\tSM:HL003"  HL003_L01_67_1.fq.gz  .   HL003_L01_67
+    HL003  "@RG\tID:HL003_HL003_L01_68\tPL:COMPLETE\tPU:HL003_L01_68_HL003\tLB:HL003_L01\tSM:HL003"  HL003_L01_68_1.fq.gz  HL003_L01_68_2.fq.gz  HL003_L01_68
     """
 
     with gzip.open(input_fname) if input_fname.endswith(".gz") else open(input_fname) as f:
