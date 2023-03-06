@@ -14,6 +14,7 @@ def check_jobs_status(task_log_file):
         if not Path(input_fname).exists():
             return False
 
+        last_line = ""
         with open(input_fname) as f:
             for last_line in f:
                 pass
