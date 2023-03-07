@@ -15,8 +15,8 @@ def check_jobs_status(task_log_file):
             return False
 
         last_line = ""
-        with open(input_fname) as f:
-            for last_line in f:
+        with open(input_fname) as _f:
+            for last_line in _f:
                 pass
 
         return pattern.match(last_line.strip()) is not None
