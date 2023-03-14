@@ -183,7 +183,7 @@ def main():
     run_command(args)
 
     elapsed_time = datetime.now() - START_TIME
-    print(f"\nCreating pipeline for '{args.command}' done, "
+    print(f"\n{PROG_NAME} (version: {VERSION}) for '{args.command}' done, "
           f"{elapsed_time.seconds} seconds elapsed.")
 
     return
