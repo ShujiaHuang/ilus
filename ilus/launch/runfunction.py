@@ -151,9 +151,12 @@ def gatk_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
     return markdup_shell_files_list  # [[sample, sample_shell_fname], ...]
 
 
-def gatk_baserecalibrator(kwargs, out_folder_name: str, aione: dict = None,
+def gatk_baserecalibrator(kwargs,
+                          out_folder_name: str,
+                          aione: dict = None,
                           is_calculate_summary: bool = True,
                           is_dry_run: bool = False):
+
     shell_dirtory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "bqsr")
     if not is_dry_run:
         safe_makedir(shell_dirtory)
@@ -319,13 +322,12 @@ def _yield_gatk_combineGVCFs(project_name, variant_calling_intervals, output_dir
             sys.exit(1)
 
         interval_n = "_".join(interval) if type(interval) is list else interval.replace(":", "_")  # chr:s -> chr_s
-
         sub_shell_fname = shell_dirtory.joinpath(f"{project_name}.{interval_n}.combineGVCFs.sh")
         combineGVCF_fname = output_dirtory.joinpath(f"{project_name}.{interval_n}.genomics_db") \
             if is_use_gDBI else output_dirtory.joinpath(f"{project_name}.{interval_n}.g.vcf.gz")
 
         # Create commandline for combining GVCFs
-        calling_interval = "%s:%s-%s" % (interval[0], interval[1], interval[2]) \
+        calling_interval = f"{interval[0]}:{interval[1]}-{interval[2]}" \
             if type(interval) is list else interval
 
         combineGVCFs_cmd = gatk.combineGVCFs(aione["config"],
@@ -376,8 +378,8 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_
     """
     output_dirtory, shell_dirtory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
                                         is_dry_run=is_dry_run)
-    is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
-        if "use_genomicsDBImport" in aione["config"]["gatk"] else False
+    # is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
+    #     if "use_genomicsDBImport" in aione["config"]["gatk"] else False
 
     genotype_vcf_shell_files_list = []
     aione["genotype_vcf_list"] = []
@@ -394,7 +396,7 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_
         genotype_vcf_shell_files_list.append([kwargs.project_name + "." + interval_n, sub_shell_fname])
         aione["genotype_vcf_list"].append(genotype_vcf_fname)
 
-        calling_interval = "%s:%s-%s" % (interval[0], interval[1], interval[2]) \
+        calling_interval = f"{interval[0]}:{interval[1]}-{interval[2]}" \
             if type(interval) is list else interval
 
         # Create commandline for genotype joint-calling process
