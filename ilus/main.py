@@ -88,7 +88,7 @@ def parse_commandline_args():
         help=f"show the version of {PROG_NAME} and exit."
     )
 
-    commands = cmdparser.add_subparsers(dest="command", title="ilus commands")
+    commands = cmdparser.add_subparsers(dest="command", title=f"{PROG_NAME} commands")
 
     # The arguments for the whole pipeline of WGS.
     create_wgs_pipeline_command(commands)
@@ -184,6 +184,6 @@ def main():
 
     elapsed_time = datetime.now() - START_TIME
     print(f"\n{PROG_NAME} (version: {VERSION}) for '{args.command}' done, "
-          f"{elapsed_time.seconds} seconds elapsed.")
+          f"{elapsed_time.seconds} seconds elapsed.", file=sys.stderr)
 
     return
