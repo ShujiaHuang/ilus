@@ -72,7 +72,7 @@ gatk:
                              "--reader-threads 12",
                              "--overwrite-existing-genomicsdb-workspace true"]
 
-  genotypeGVCFs_options: [""]
+  genotypeGVCFs_options: ["--max-alternate-alleles 4"]
   vqsr_options: [
     "-an DP -an QD -an FS -an SOR -an ReadPosRankSum -an MQRankSum -an InbreedingCoeff",
     "-tranche 100.0 -tranche 99.9 -tranche 99.5 ",
