@@ -22,7 +22,7 @@ from ilus.pipeline import (
 from ilus.modules.utils import split_jobs, check_jobs_status
 
 PROG_NAME = "ilus"
-VERSION = "1.3.1"
+VERSION = "1.3.2"
 
 
 def create_split_job_command(commands):
