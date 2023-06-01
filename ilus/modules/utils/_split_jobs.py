@@ -17,8 +17,8 @@ def split_jobs(input_shell_file, job_num, thread_num, prefix="work"):
     with open(input_shell_file) as f:
         commands = [line.strip() for line in f if not line.startswith("#")]
 
-    total_cmd_num = len(commands)
     # Ensure job_num is not greater than total_cmd_num
+    total_cmd_num = len(commands)
     job_num = min(job_num, total_cmd_num)
 
     # Calculate number of commands per job
