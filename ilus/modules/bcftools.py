@@ -5,7 +5,7 @@ Date: 2020-04-28 20:29:09
 """
 
 
-def concat(config, input_vcfs, output_vcf):
+def vcfconcat(config, input_vcfs, output_vcf):
 
     tabix = config["tabix"]
     bcftools = config["bcftools"]["bcftools"]

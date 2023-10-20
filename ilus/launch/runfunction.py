@@ -10,10 +10,10 @@ from pathlib import Path
 from typing import List, Tuple
 
 from ilus.modules.utils import safe_makedir
-from ilus.modules.ngsaligner import bwa
-from ilus.modules.variants import gatk
-from ilus.modules.vcf import bcftools
 from ilus.modules.summary import bam
+from ilus.modules import bwa
+from ilus.modules import gatk
+from ilus.modules.bcftools import vcfconcat
 
 IS_RM_SUBBAM = True
 
@@ -156,7 +156,6 @@ def gatk_baserecalibrator(kwargs,
                           aione: dict = None,
                           is_calculate_summary: bool = True,
                           is_dry_run: bool = False):
-
     shell_dirtory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "bqsr")
     if not is_dry_run:
         safe_makedir(shell_dirtory)
@@ -489,9 +488,9 @@ def gatk_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None,
     cmd = []
     if len(aione["genotype_vcf_list"]) > 1:
         # concat-vcf
-        concat_vcf_cmd = bcftools.concat(aione["config"],
-                                         aione["genotype_vcf_list"],
-                                         combine_vcf_fname)
+        concat_vcf_cmd = vcfconcat(aione["config"],
+                                   aione["genotype_vcf_list"],
+                                   combine_vcf_fname)
         cmd.append(concat_vcf_cmd)
     else:
         combine_vcf_fname = str(aione["genotype_vcf_list"][0])
