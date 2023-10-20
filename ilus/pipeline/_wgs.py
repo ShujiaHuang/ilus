@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import List, Tuple
 
-from ilus.modules.utils import safe_makedir, file_exists, check_samplesheet
+from ilus.modules.utils import safe_makedir, file_exists, check_input_sheet
 from ilus.launch.runfunction import (
     bwamem,
     gatk_markduplicates,
@@ -123,9 +123,9 @@ def WGS(kwargs, aione: dict = None) -> dict:
         print(f"[ERROR] {kwargs.fastqlist} is not a file or empty.\n", file=sys.stderr)
         sys.exit(1)
 
-    if check_samplesheet(kwargs.fastqlist):
-        print(f"\n[INFO] Input file format of '{kwargs.fastqlist}' has been verified.",
-              file=sys.stderr)
+    if check_input_sheet(kwargs.fastqlist):
+        print(f"\n[INFO] Input sheet is properly. The format of '{kwargs.fastqlist}' "
+              f"has been verified.", file=sys.stderr)
 
     aione["fastqlist"] = kwargs.fastqlist  # record the input file path of fastqlist.
 
@@ -142,7 +142,6 @@ def WGS(kwargs, aione: dict = None) -> dict:
 
     for p in wgs_pipeline_processes:
         is_dry_run = True if kwargs.dry_run or (p not in processes_set) else False
-
         func, shell_fname, shell_log_folder, output_folder = runner_module[p]
         _make_process_shell(output_shell_fname=shell_directory.joinpath(shell_fname),
                             shell_log_directory=shell_log_directory.joinpath(shell_log_folder),

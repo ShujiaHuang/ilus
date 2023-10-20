@@ -17,8 +17,8 @@ def print_error(error, context="Line", context_str=""):
     sys.exit(1)
 
 
-def check_samplesheet(input_fname):
-    """This function checks that the samplesheet follows the following structure:
+def check_input_sheet(input_fname):
+    """This function checks that the input sheet follows the following structure:
 
     #SAMPLE	RGID	FASTQ1	FASTQ2	LANE
     HL003  "@RG\tID:HL003_HL003_L01_65\tPL:COMPLETE\tPU:HL003_L01_65_HL003\tLB:HL003_L01\tSM:HL003"  HL003_L01_65_1.fq.gz  HL003_L01_65_2.fq.gz  HL003_L01_65
