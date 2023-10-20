@@ -132,20 +132,20 @@ def WGS(kwargs, aione: dict = None) -> dict:
     # Create project directory and return the abspath.
     # [Important] abspath will remove the last '/' of the path. e.g.: '/a/' -> '/a'
     kwargs.outdir = Path(kwargs.outdir).resolve()
-    shell_dirtory = kwargs.outdir.joinpath("00.shell")
-    shell_log_dirtory = shell_dirtory.joinpath("loginfo")
+    shell_directory = kwargs.outdir.joinpath("00.shell")
+    shell_log_directory = shell_directory.joinpath("loginfo")
 
     if not kwargs.dry_run:
         safe_makedir(kwargs.outdir)
-        safe_makedir(shell_dirtory)
-        safe_makedir(shell_log_dirtory)
+        safe_makedir(shell_directory)
+        safe_makedir(shell_log_directory)
 
     for p in wgs_pipeline_processes:
         is_dry_run = True if kwargs.dry_run or (p not in processes_set) else False
 
         func, shell_fname, shell_log_folder, output_folder = runner_module[p]
-        _make_process_shell(output_shell_fname=shell_dirtory.joinpath(shell_fname),
-                            shell_log_directory=shell_log_dirtory.joinpath(shell_log_folder),
+        _make_process_shell(output_shell_fname=shell_directory.joinpath(shell_fname),
+                            shell_log_directory=shell_log_directory.joinpath(shell_log_folder),
                             process_shells=func(kwargs, output_folder, aione, is_dry_run=is_dry_run),
                             is_overwrite=kwargs.overwrite,
                             is_dry_run=is_dry_run)
@@ -161,11 +161,11 @@ def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
     tmp_dir = kwargs.outdir
     kwargs.outdir = root_path
 
-    shell_dirtory = root_path.joinpath("00.shell" if kwargs.as_pipe_shell_order else "shell")
-    safe_makedir(shell_dirtory)
+    shell_directory = root_path.joinpath("00.shell" if kwargs.as_pipe_shell_order else "shell")
+    safe_makedir(shell_directory)
 
-    _make_process_shell(output_shell_fname=shell_dirtory.joinpath(shell_fname),
-                        shell_log_directory=shell_dirtory.joinpath("loginfo", shell_log_folder),
+    _make_process_shell(output_shell_fname=shell_directory.joinpath(shell_fname),
+                        shell_log_directory=shell_directory.joinpath("loginfo", shell_log_folder),
                         process_shells=function_name(kwargs, output_folder_name, aione),
                         is_overwrite=kwargs.overwrite)
 

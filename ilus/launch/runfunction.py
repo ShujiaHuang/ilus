@@ -21,14 +21,14 @@ IS_RM_SUBBAM = True
 def _md(outdir: Path, is_dry_run: bool = False) -> Tuple[Path, Path]:
     """Create folders for output and shell scripts in the same format.
     """
-    output_dirtory = Path(outdir).joinpath("output")
-    shell_dirtory = Path(outdir).joinpath("shell")
+    output_directory = Path(outdir).joinpath("output")
+    shell_directory = Path(outdir).joinpath("shell")
     if not is_dry_run:
-        safe_makedir(output_dirtory)
-        safe_makedir(shell_dirtory)
+        safe_makedir(output_directory)
+        safe_makedir(shell_directory)
 
     # Return two dirctory in Path type
-    return output_dirtory, shell_dirtory
+    return output_directory, shell_directory
 
 
 def _create_cmd_file(out_shell_file: Path, cmd: List[str] = None):
@@ -47,11 +47,11 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
            is_dry_run: bool = False):
     """Create bwamem aligment shell scripts for fastq to BAM.
     """
-    output_dirtory = Path(kwargs.outdir).joinpath(out_folder_name, "output")
-    shell_dirtory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "bwa")
+    output_directory = Path(kwargs.outdir).joinpath(out_folder_name, "output")
+    shell_directory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "bwa")
     if not is_dry_run:
-        safe_makedir(output_dirtory)
-        safe_makedir(shell_dirtory)
+        safe_makedir(output_directory)
+        safe_makedir(shell_directory)
 
     sample_bamfiles_by_lane = {}  # {sample_id: [bwa1, bwa2, ...]}
     samples = []
@@ -64,7 +64,7 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
                 continue
 
             sample_id, read_group_id, fq1, fq2, lane = line.strip().split()[:5]
-            sample_outdir = output_dirtory.joinpath(sample_id)
+            sample_outdir = output_directory.joinpath(sample_id)
             if sample_id not in sample_bamfiles_by_lane:
                 sample_bamfiles_by_lane[sample_id] = []
                 if not is_dry_run:
@@ -82,7 +82,7 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
     for sample, sample_outdir in samples:
         sample_final_bamfile = sample_outdir.joinpath(f"{sample}.sorted.bam")
         aione["sample_final_sorted_bam"].append([sample, sample_final_bamfile])
-        sample_shell_fname = shell_dirtory.joinpath(f"{sample}.bwa.sh")
+        sample_shell_fname = shell_directory.joinpath(f"{sample}.bwa.sh")
         bwa_shell_files_list.append([sample, sample_shell_fname])
 
         if len(sample_bamfiles_by_lane[sample]) == 1:
@@ -118,9 +118,9 @@ def gatk_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
                         is_dry_run: bool = False):
     """Create shell scripts for Markduplicates by GATK4.
     """
-    shell_dirtory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "markdup")
+    shell_directory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "markdup")
     if not is_dry_run:
-        safe_makedir(shell_dirtory)
+        safe_makedir(shell_directory)
 
     aione["sample_final_markdup_bam"] = []
     markdup_shell_files_list = []
@@ -131,7 +131,7 @@ def gatk_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
         # Setting Output path of markduplicate BAM file as the same as ``sample_sorted_bam``
         out_markdup_bam_fname = dirname.joinpath(f"{f_name_stem}.markdup.bam")
         out_markdup_metrics_fname = dirname.joinpath(f"{f_name_stem}.metrics.txt")
-        sample_shell_fname = shell_dirtory.joinpath(f"{sample}.markdup.sh")
+        sample_shell_fname = shell_directory.joinpath(f"{sample}.markdup.sh")
 
         markdup_shell_files_list.append([sample, sample_shell_fname])
         aione["sample_final_markdup_bam"].append([sample, out_markdup_bam_fname])
@@ -156,9 +156,9 @@ def gatk_baserecalibrator(kwargs,
                           aione: dict = None,
                           is_calculate_summary: bool = True,
                           is_dry_run: bool = False):
-    shell_dirtory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "bqsr")
+    shell_directory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "bqsr")
     if not is_dry_run:
-        safe_makedir(shell_dirtory)
+        safe_makedir(shell_directory)
 
     aione["sample_final_bqsr_bam"] = []
     bqsr_shell_files_list = []
@@ -181,7 +181,7 @@ def gatk_baserecalibrator(kwargs,
         aione["sample_final_bqsr_bam"].append(
             [sample, out_bqsr_bam_fname if not kwargs.cram else out_cram_fname]
         )
-        sample_shell_fname = shell_dirtory.joinpath(f"{sample}.bqsr.sh")
+        sample_shell_fname = shell_directory.joinpath(f"{sample}.bqsr.sh")
         bqsr_shell_files_list.append([sample, sample_shell_fname])
 
         cmd = [gatk.baserecalibrator(aione["config"],
@@ -243,8 +243,8 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
 
         return sample_shell_fname_, out_gvcf_fname_
 
-    output_dirtory, shell_dirtory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
-                                        is_dry_run=is_dry_run)
+    output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
+                                            is_dry_run=is_dry_run)
     is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
         if "use_genomicsDBImport" in aione["config"]["gatk"] else False
 
@@ -258,8 +258,8 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
     sample_map = {}  # Record sample_map for genomicsDBImport
     for sample, sample_bqsr_bam in aione["sample_final_bqsr_bam"]:
 
-        sample_output_dir = output_dirtory.joinpath(sample)
-        sample_shell_dir = shell_dirtory.joinpath(sample)
+        sample_output_dir = output_directory.joinpath(sample)
+        sample_shell_dir = shell_directory.joinpath(sample)
         if not is_dry_run:
             safe_makedir(sample_output_dir)
             safe_makedir(sample_shell_dir)
@@ -294,7 +294,7 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
         aione["sample_map"] = {}
         for interval, value in sample_map.items():
             # create sample_map file for next process
-            out_sample_map_fname = output_dirtory.joinpath(f"{interval}.gvcf.sample_map")
+            out_sample_map_fname = output_directory.joinpath(f"{interval}.gvcf.sample_map")
             aione["sample_map"][interval] = out_sample_map_fname
 
             if (not is_dry_run) and (not out_sample_map_fname.exists() or kwargs.overwrite):
@@ -304,8 +304,8 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
     return gvcf_shell_files_list
 
 
-def _yield_gatk_combineGVCFs(project_name, variant_calling_intervals, output_dirtory: Path,
-                             shell_dirtory: Path, is_use_gDBI: bool, aione: dict = None):
+def _yield_gatk_combineGVCFs(project_name, variant_calling_intervals, output_directory: Path,
+                             shell_directory: Path, is_use_gDBI: bool, aione: dict = None):
     for interval in variant_calling_intervals:
         interval_id = interval[0] if type(interval) is list else interval  # get chromosome id
         if interval_id in aione["gvcf"]:
@@ -321,9 +321,9 @@ def _yield_gatk_combineGVCFs(project_name, variant_calling_intervals, output_dir
             sys.exit(1)
 
         interval_n = "_".join(interval) if type(interval) is list else interval.replace(":", "_")  # chr:s -> chr_s
-        sub_shell_fname = shell_dirtory.joinpath(f"{project_name}.{interval_n}.combineGVCFs.sh")
-        combineGVCF_fname = output_dirtory.joinpath(f"{project_name}.{interval_n}.genomics_db") \
-            if is_use_gDBI else output_dirtory.joinpath(f"{project_name}.{interval_n}.g.vcf.gz")
+        sub_shell_fname = shell_directory.joinpath(f"{project_name}.{interval_n}.combineGVCFs.sh")
+        combineGVCF_fname = output_directory.joinpath(f"{project_name}.{interval_n}.genomics_db") \
+            if is_use_gDBI else output_directory.joinpath(f"{project_name}.{interval_n}.g.vcf.gz")
 
         # Create commandline for combining GVCFs
         calling_interval = f"{interval[0]}:{interval[1]}-{interval[2]}" \
@@ -340,8 +340,8 @@ def _yield_gatk_combineGVCFs(project_name, variant_calling_intervals, output_dir
 def gatk_combineGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: bool = False):
     """Combine GVCFs by GATK genomicsDBImport or CombineGVCFs module.
     """
-    output_dirtory, shell_dirtory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
-                                        is_dry_run=is_dry_run)
+    output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
+                                            is_dry_run=is_dry_run)
     is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
         if "use_genomicsDBImport" in aione["config"]["gatk"] else False
 
@@ -355,8 +355,8 @@ def gatk_combineGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
          interval_n,  # interval marker
          calling_interval) in _yield_gatk_combineGVCFs(kwargs.project_name,
                                                        variant_calling_intervals,
-                                                       output_dirtory,
-                                                       shell_dirtory,
+                                                       output_directory,
+                                                       shell_directory,
                                                        is_use_gDBI,
                                                        aione):
 
@@ -375,8 +375,8 @@ def gatk_combineGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
 def gatk_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: bool = False):
     """Create shell for genotypeGVCFs.
     """
-    output_dirtory, shell_dirtory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
-                                        is_dry_run=is_dry_run)
+    output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
+                                            is_dry_run=is_dry_run)
     # is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
     #     if "use_genomicsDBImport" in aione["config"]["gatk"] else False
 
@@ -390,8 +390,8 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_
         if interval_n not in aione["combineGVCFs"]:
             continue
 
-        sub_shell_fname = shell_dirtory.joinpath(f"{kwargs.project_name}.{interval_n}.genotype.sh")
-        genotype_vcf_fname = str(output_dirtory.joinpath(f"{kwargs.project_name}.{interval_n}.vcf.gz"))
+        sub_shell_fname = shell_directory.joinpath(f"{kwargs.project_name}.{interval_n}.genotype.sh")
+        genotype_vcf_fname = str(output_directory.joinpath(f"{kwargs.project_name}.{interval_n}.vcf.gz"))
         genotype_vcf_shell_files_list.append([kwargs.project_name + "." + interval_n, sub_shell_fname])
         aione["genotype_vcf_list"].append(genotype_vcf_fname)
 
@@ -426,8 +426,8 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_
 def gatk_genotype(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: bool = False):
     """CombineGVCFs and genotypeGVCFs into one function (not use).
     """
-    output_dirtory, shell_dirtory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
-                                        is_dry_run=is_dry_run)
+    output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
+                                            is_dry_run=is_dry_run)
     is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
         if "use_genomicsDBImport" in aione["config"]["gatk"] else False
 
@@ -442,13 +442,13 @@ def gatk_genotype(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: 
          interval_n,  # interval marker
          calling_interval) in _yield_gatk_combineGVCFs(kwargs.project_name,
                                                        variant_calling_intervals,
-                                                       output_dirtory,
-                                                       shell_dirtory,
+                                                       output_directory,
+                                                       shell_directory,
                                                        is_use_gDBI,
                                                        aione):
 
-        sub_shell_fname = shell_dirtory.joinpath(f"{kwargs.project_name}.{interval_n}.genotype.sh")
-        genotype_vcf_fname = output_dirtory.joinpath(f"{kwargs.project_name}.{interval_n}.vcf.gz")
+        sub_shell_fname = shell_directory.joinpath(f"{kwargs.project_name}.{interval_n}.genotype.sh")
+        genotype_vcf_fname = output_directory.joinpath(f"{kwargs.project_name}.{interval_n}.vcf.gz")
 
         genotype_vcf_shell_files_list.append([kwargs.project_name + "." + interval_n, sub_shell_fname])
         aione["genotype_vcf_list"].append(genotype_vcf_fname)
@@ -479,11 +479,11 @@ def gatk_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None,
                              is_dry_run: bool = False):
     """Create shell scripts for VQSR.
     """
-    output_dirtory, shell_dirtory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
-                                        is_dry_run=is_dry_run)
-    genotype_vqsr_fname = str(output_dirtory.joinpath(f"{kwargs.project_name}.VQSR.vcf.gz"))
-    combine_vcf_fname = str(output_dirtory.joinpath(f"{kwargs.project_name}.raw.vcf.gz"))
-    shell_fname = shell_dirtory.joinpath(f"{kwargs.project_name}.VQSR.sh")
+    output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
+                                            is_dry_run=is_dry_run)
+    genotype_vqsr_fname = str(output_directory.joinpath(f"{kwargs.project_name}.VQSR.vcf.gz"))
+    combine_vcf_fname = str(output_directory.joinpath(f"{kwargs.project_name}.raw.vcf.gz"))
+    shell_fname = shell_directory.joinpath(f"{kwargs.project_name}.VQSR.sh")
 
     cmd = []
     if len(aione["genotype_vcf_list"]) > 1:
