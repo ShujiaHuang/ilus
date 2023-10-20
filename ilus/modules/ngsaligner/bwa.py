@@ -3,7 +3,11 @@
 
 
 def bwa_mem(config, out_prefix, rgID, fastq1, fastq2=""):
-    """Perform piped alignment of fastq input files, generating sorted output BAM
+    """Perform piped alignment of fastq input files, generating sorted output BAM.
+
+    This function process the following processes:
+    - bwa-mem alignment and output BAM by piping
+    - samtools sort of BAM to coordinate
 
     Parameters:
         ``aione``: A dict like.
