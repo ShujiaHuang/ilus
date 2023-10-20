@@ -160,82 +160,108 @@ The configuration file should be written in [Yaml syntax](https://zh.wikipedia.o
 
 
 ```yaml
-# Configuration file specifying system details for running an analysis pipeline
+# Configuration file specifying system details for running ilus analysis pipeline
+
+# Common datasets
+resources:
+  # Recommend `GCA_000001405.15_GRCh38_no_alt_analysis_set.fa` for human reference
+  reference: /path/to/human/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa
+  # bundle for GATK and Sentieon
+  bundle:
+    hapmap: /path/to/gatk/bundle/hg38/hapmap_3.3.hg38.vcf.gz
+    omni: /path/to/gatk/bundle/hg38/1000G_omni2.5.hg38.vcf.gz
+    1000G: /path/to/gatk/bundle/hg38/1000G_phase1.snps.high_confidence.hg38.vcf.gz
+    mills: /path/to/gatk/bundle/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+    1000G_known_indel: /path/to/gatk/bundle/hg38/Homo_sapiens_assembly38.known_indels.vcf.gz
+    dbsnp: /path/to/gatk/bundle/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
+
+
 aligner:
-  bwa: /path/to/BioSoftware/local/bin/bwa
+  bwa: /path/to/bwa
   bwamem_options: [-Y -M -t 8]
 
+
 samtools:
-    samtools: /path/to/BioSoftware/local/bin/samtools
-    sort_options: ["-@ 8"]
-    merge_options: ["-@ 8 -f"]
-    stats_options: ["-@ 8"]
+  samtools: /path/to/samtools
+  sort_options: ["-@ 8"]
+  merge_options: ["-@ 8 -f"]
+  stats_options: ["-@ 8"]
+
 
 bcftools:
-    bcftools: /path/to/BioSoftware/local/bin/bcftools
-    concat_options: ["-a --rm-dups all"]
+  bcftools: /path/to/bcftools
+  concat_options: ["-a --rm-dups all"]
+
 
 bedtools:
-    bedtools: /path/to/BioSoftware/local/bin/bedtools
-    genomecov_options: ["-bga -split"]
+  bedtools: /path/to/bedtools
+  genomecov_options: ["-bga -split"]
 
-sambamba:
-  sambamba: /path/to/BioSoftware/local/bin/sambamba
-  sort_options: ["-t 8"]
-  merge_options: ["-t 8"]
-  markdup_options: []
+
+# Remove sambamba from ilus
+#sambamba:
+#  sambamba: /path/to/sambamba
+#  sort_options: ["-t 8"]
+#  merge_options: ["-t 8"]
+#  markdup_options: []
 
 
 verifyBamID2:
-    # This is the VerifyBamID2: https://github.com/Griffan/VerifyBamID
-    verifyBamID2: /path/to/BioSoftware/local/bin/verifyBamID2
-    options: [
+  # The URL link of VerifyBamID2: https://github.com/Griffan/VerifyBamID
+  verifyBamID2: /path/to/verifyBamID2
+  options: [
         # download from: https://github.com/Griffan/VerifyBamID/tree/master/resource 
-        "--SVDPrefix /path/to/BioSoftware/verifyBamID2/1.0.6/resource/1000g.phase3.10k.b38.vcf.gz.dat"
-    ]
+        "--SVDPrefix /path/to/verifyBamID2/1.0.6/resource/1000g.phase3.10k.b38.vcf.gz.dat"
+  ]
 
 
-bgzip: /path/to/BioSoftware/local/bin/bgzip
-tabix: /path/to/BioSoftware/local/bin/tabix
+bgzip: /path/to/bgzip
+tabix: /path/to/tabix
+
 
 gatk:
   gatk: /path/to/BioSoftware/gatk/4.1.4.1/gatk
   markdup_java_options: ["-Xmx10G", "-Djava.io.tmpdir=/your_path/cache"]
   bqsr_java_options: ["-Xmx8G", "-Djava.io.tmpdir=/your_path/cache"]
   hc_gvcf_java_options: ["-Xmx4G"]
-  genotype_java_options: ["-Xmx8G"]
+  combineGVCFs_java_options: ["-Xmx32G"]  # java options for GATK genomicsDBImport or CombineGVCFs
+  genotype_java_options: ["-Xmx10G"]      # java options for GATK GenotypeGVCFs
   vqsr_java_options: ["-Xmx10G"]
 
   CollectAlignmentSummaryMetrics_jave_options: ["-Xmx10G"]
 
-  # Default adapter sequence is BGISEQ-500/MGISEQ/DNBSEQ in ilus. If you use illumina (or other) sequencing system 
-  # you should change the value of this parameter. The most widely used adapter of Illumina is TruSeq adapters. If 
-  # your data is from the TruSeq library, you can replace the parameter with the two following sequences: 
+  # Default adapter sequence is BGISEQ-500/MGISEQ/DNBSEQ in ilus. If you use illumina (or other) sequencing platform 
+  # you should change the value of this parameter. The most widely used adapter in Illumina is TruSeq adapters. If 
+  # your data is from the TruSeq library, you can replace the value with the two following sequences: 
   # "--ADAPTER_SEQUENCE AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
   # "--ADAPTER_SEQUENCE AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
-
   CollectAlignmentSummaryMetrics_options: [
     "--ADAPTER_SEQUENCE AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA",
     "--ADAPTER_SEQUENCE AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG"
   ]
 
   hc_gvcf_options: [""]
-  genotypeGVCFs_options: [""]
-  genomicsDBImport_options: ["--reader-threads 12"]
-  use_genomicsDBImport: false  # Do not use genomicsDBImport to combine GVCFs by default
 
+  use_genomicsDBImport: true  # Use genomicsDBImport to combine GVCFs by default
+  genomicsDBImport_options: ["--tmp-dir /your_path/cache",
+                             "--batch-size 100",
+                             "--reader-threads 12",
+                             "--overwrite-existing-genomicsdb-workspace true"]
+
+  genotypeGVCFs_options: ["--max-alternate-alleles 4"]
   vqsr_options: [
     "-an DP -an QD -an FS -an SOR -an ReadPosRankSum -an MQRankSum -an InbreedingCoeff",
-    "-tranche 100.0 -tranche 99.9 -tranche 99.5 -tranche 99.0 -tranche 95.0 -tranche 90.0",
+    "-tranche 100.0 -tranche 99.9 -tranche 99.5 ",
+    "-tranche 99.0 -tranche 95.0 -tranche 90.0",
     "--max-gaussians 6"
   ]
 
-  # Fro creating gvcf. The value could be a interval region file in bed format or 
-  # could be chromosomes list here. I suggest you to use chromosome list here.
-  interval: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9",
-             "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
-             "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
-  
+  # Fro creating gvcf. The value could be an interval region file in bed format or
+  # could be chromosomes list here. I suggest you should use chromosome list here.
+  interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",
+             "chr8",  "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14", 
+             "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", 
+             "chr22", "chrX",  "chrY",  "chrM"]
 
   # Specific variant calling intervals. 
   # The value could be a file in bed format (I show you a example bellow) or a interval of list.
@@ -243,28 +269,14 @@ gatk:
   #         chr1    10001   207666
   #         chr1    257667  297968
 
-  # These invertals could be any regions alone the genome as you wish or just set the same as ``interval`` parameter above.
-  # variant_calling_interval: ["./wgs_calling_regions.GRCh38.5M.interval.bed"]
-  variant_calling_interval: ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9",
-                             "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17",
-                             "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM"]
-  
-
-  # GATK bundle
-  bundle:
-    hapmap: /path/to/BioDatahub/gatk/bundle/hg38/hapmap_3.3.hg38.vcf.gz
-    omni: /path/to/BioDatahub/gatk/bundle/hg38/1000G_omni2.5.hg38.vcf.gz
-    1000G: /path/to/BioDatahub/gatk/bundle/hg38/1000G_phase1.snps.high_confidence.hg38.vcf.gz
-    mills: /path/to/BioDatahub/gatk/bundle/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
-    1000G_known_indel: /path/to/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.known_indels.vcf.gz
-    dbsnp: /path/to/BioDatahub/gatk/bundle/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
-
-
-# Define resources to be used for individual programs on multicore machines.
-# These can be defined specifically for memory and processor availability.
-resources:
-  reference: /path/to/BioDatahub/human_reference/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa
-
+  # These invertals could be any regions alone the genome as you wish or just set the same as ``interval`` argument above.
+  # If the calling interval is changed to include only the exon-calling regions, this pipeline could be applied
+  # to detect variants of WES data.
+  variant_calling_interval: "./human_GRCh38.WGS.calling_regions.interval.bed"
+  #variant_calling_interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",  "chr8",
+  #                           "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16",
+  #                           "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX",  "chrY",
+  #                           "chrM"]
 ```
 
 In the configuration file, `bwa`, `samtools`, `bcftools`, `bedtools`, `gatk`, `bgzip` and `tabix` are all necessary bioinformatics software, which need to be installed in advance, and then fill in the path to in the corresponding parameters (as shown in the template). [verifyBamID2](https://github.com/Griffan/VerifyBamID) is only used to calculate whether there is pollution in the sample, **it is not a required parameter**, if your configuration file does not have this parameter, it means The process does not calculate the contamination of the sample. If there is, you have to install and download the `resource` data supporting it. I also tell you where to download the relevant data in the template.

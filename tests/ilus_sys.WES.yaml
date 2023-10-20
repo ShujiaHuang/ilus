@@ -1,5 +1,18 @@
 # Configuration file specifying system details for running ilus analysis pipeline
 
+# Common datasets
+resources:
+  # Recommend `GCA_000001405.15_GRCh38_no_alt_analysis_set.fa` for human reference
+  reference: /path/to/human/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa
+  # bundle for GATK and Sentieon
+  bundle:
+    hapmap: /path/to/gatk/bundle/hg38/hapmap_3.3.hg38.vcf.gz
+    omni: /path/to/gatk/bundle/hg38/1000G_omni2.5.hg38.vcf.gz
+    1000G: /path/to/gatk/bundle/hg38/1000G_phase1.snps.high_confidence.hg38.vcf.gz
+    mills: /path/to/gatk/bundle/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+    1000G_known_indel: /path/to/gatk/bundle/hg38/Homo_sapiens_assembly38.known_indels.vcf.gz
+    dbsnp: /path/to/gatk/bundle/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
+
 aligner:
   bwa: /path/to/bwa
   bwamem_options: [-Y -M -t 8]
@@ -98,17 +111,4 @@ gatk:
   # to detect variants of WES data.
   variant_calling_interval: "./human_GRCh38.WES.calling_regions.interval.bed"
 
-  # GATK bundle
-  bundle:
-    hapmap: /path/to/gatk/bundle/hg38/hapmap_3.3.hg38.vcf.gz
-    omni: /path/to/gatk/bundle/hg38/1000G_omni2.5.hg38.vcf.gz
-    1000G: /path/to/gatk/bundle/hg38/1000G_phase1.snps.high_confidence.hg38.vcf.gz
-    mills: /path/to/gatk/bundle/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
-    1000G_known_indel: /path/to/gatk/bundle/hg38/Homo_sapiens_assembly38.known_indels.vcf.gz
-    dbsnp: /path/to/gatk/bundle/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
 
-# Define resources to be used for individual programs on multicore machines.
-# These can be defined specifically for memory and processor availability.
-resources:
-  # Recommand `GCA_000001405.15_GRCh38_no_alt_analysis_set.fa` for the human GRCh38 reference
-  reference: /path/to/human/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa

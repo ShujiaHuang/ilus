@@ -24,9 +24,9 @@ def baserecalibrator(config, input_bam, output_bqsr_bam, out_bqsr_recal_table):
            and len(config["gatk"]["bqsr_java_options"]) else ""
 
     reference = config["resources"]["reference"]  # reference fasta
-    known_site_1000G_indel = config["gatk"]["bundle"]["1000G_known_indel"]
-    known_site_mills_gold_indels = config["gatk"]["bundle"]["mills"]
-    known_site_dbsnp = config["gatk"]["bundle"]["dbsnp"]
+    known_site_1000G_indel = config["resources"]["bundle"]["1000G_known_indel"]
+    known_site_mills_gold_indels = config["resources"]["bundle"]["mills"]
+    known_site_dbsnp = config["resources"]["bundle"]["dbsnp"]
 
     # create recalibrate table file for BQSR
     recal_data_cmd = (f"time {gatk} {java_options} BaseRecalibrator "
@@ -148,11 +148,11 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
     out_prefix = output_vcf_fname.replace(".gz", "").replace(".vcf", "")  # delete .vcf.gz
     out_snp_vqsr_fname = out_prefix + ".SNPs.vcf.gz"
 
-    resource_hapmap = config["gatk"]["bundle"]["hapmap"]
-    resource_omni = config["gatk"]["bundle"]["omni"]
-    resource_1000G = config["gatk"]["bundle"]["1000G"]
-    resource_dbsnp = config["gatk"]["bundle"]["dbsnp"]
-    resource_mills_gold_indels = config["gatk"]["bundle"]["mills"]
+    resource_hapmap = config["resources"]["bundle"]["hapmap"]
+    resource_omni = config["resources"]["bundle"]["omni"]
+    resource_1000G = config["resources"]["bundle"]["1000G"]
+    resource_dbsnp = config["resources"]["bundle"]["dbsnp"]
+    resource_mills_gold_indels = config["resources"]["bundle"]["mills"]
 
     # SNP VQSR
     snp_vqsr_cmd = (f"time {gatk} {java_options} VariantRecalibrator "
