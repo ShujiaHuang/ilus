@@ -6,12 +6,8 @@ def bwa_mem(config, out_prefix, rgID, fastq1, fastq2=""):
     """Perform piped alignment of fastq input files, generating sorted output BAM.
 
     This function process the following processes:
-    - bwa-mem alignment and output BAM by piping
+    - bwa-mem alignment and output BAM
     - samtools sort of BAM to coordinate
-
-    Parameters:
-        ``aione``: A dict like.
-            Data all in one by {key: value}
     """
     if fastq2 == ".":
         fastq2 = ""
@@ -26,7 +22,6 @@ def _get_bwa_mem_cmd(fastq1, fastq2, ref_index, rg_info, outfile_prefix, config)
     samtools = config["samtools"]["samtools"]
     samtools_options = " ".join([str(x) for x in config["samtools"].get("sort_options", [])])
 
-    # skip seeds with more than INT occurrences
     bwa_cmd = (f"time {bwa} mem {bwa_options} -R {rg_info} {ref_index} "
                f"{fastq1} {fastq2} | {samtools} view -bS > {outfile_prefix}.bam && "
                f"{samtools} sort {samtools_options} -o {outfile_prefix}.sorted.bam {outfile_prefix}.bam "
