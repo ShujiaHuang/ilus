@@ -143,6 +143,9 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
 
     reference = config["resources"]["reference"]  # reference fasta
     vqsr_options = " ".join(config["gatk"]["vqsr_options"]) if "vqsr_options" in config["gatk"] else ""
+    if "--max-gaussians" in vqsr_options:
+        raise ValueError("[ERROR] No need to set --max-gaussians for `vqsr_options` "
+                         "in your configuration file (.yaml)")
 
     # Set name
     out_prefix = output_vcf_fname.replace(".gz", "").replace(".vcf", "")  # delete .vcf.gz
@@ -153,17 +156,19 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
     resource_1000G = config["resources"]["bundle"]["1000G"]
     resource_dbsnp = config["resources"]["bundle"]["dbsnp"]
     resource_mills_gold_indels = config["resources"]["bundle"]["mills"]
+    resource_1000G_known_indel = config["resources"]["bundle"]["1000G_known_indel"]
 
     # SNP VQSR
     snp_vqsr_cmd = (f"time {gatk} {java_options} VariantRecalibrator "
                     f"-R {reference} "
                     f"-V {input_vcf} "
                     f"--resource:hapmap,known=false,training=true,truth=true,prior=15.0 {resource_hapmap} "
-                    f"--resource:omini,known=false,training=true,truth=false,prior=12.0 {resource_omni} "
+                    f"--resource:omini,known=false,training=true,truth=true,prior=12.0 {resource_omni} "
                     f"--resource:1000G,known=false,training=true,truth=false,prior=10.0 {resource_1000G} "
-                    f"--resource:dbsnp,known=true,training=false,truth=false,prior=5.0 {resource_dbsnp} "
+                    f"--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 {resource_dbsnp} "
                     f"{vqsr_options} "
                     f"-mode SNP "
+                    f"--max-gaussians {config['gatk']['vqsr_snp_max_gaussians']}"
                     f"--tranches-file {out_prefix}.SNPs.tranches "
                     f"-O {out_prefix}.SNPs.recal")
 
@@ -180,11 +185,13 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
     indel_vqsr_cmd = (f"time {gatk} {java_options} VariantRecalibrator "
                       f"-R {reference} "
                       f"-V {out_snp_vqsr_fname} "
-                      f"--resource:mills,known=true,training=true,truth=true,prior=12.0 {resource_mills_gold_indels} "
+                      f"--resource:mills,known=false,training=true,truth=true,prior=12.0 {resource_mills_gold_indels} "
+                      f"--resource:1000G,known=false,training=true,truth=true,prior=10.0 {resource_1000G_known_indel} "
                       f"--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 {resource_dbsnp} "
                       f"{vqsr_options} "
                       f"--tranches-file {out_prefix}.INDELs.tranches "
                       f"-mode INDEL "
+                      f"--max-gaussians {config['gatk']['vqsr_indel_max_gaussians']}"
                       f"-O {out_prefix}.INDELs.recal")
     apply_indel_vqsr_cmd = (f"time {gatk} {java_options} ApplyVQSR "
                             f"-R {reference} "
@@ -209,6 +216,10 @@ def collect_alignment_summary_metrics(config, input_bam, output_fname):
     metric_options = " ".join(config["gatk"]["CollectAlignmentSummaryMetrics_options"]) \
         if "CollectAlignmentSummaryMetrics_options" in config["gatk"] \
            and len(config["gatk"]["CollectAlignmentSummaryMetrics_options"]) else ""
+
+    # Add Adapter sequence
+    for x in config["resources"].get("adapter_sequence", []):
+        metric_options += f" --ADAPTER_SEQUENCE {x}"
 
     cmd = (f"time {gatk} {java_options} CollectAlignmentSummaryMetrics {metric_options} "
            f"-R {reference} "
