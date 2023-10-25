@@ -169,13 +169,13 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
                     f"{vqsr_options} "
                     f"-mode SNP "
                     f"--max-gaussians {config['gatk']['vqsr_snp_max_gaussians']}"
-                    f"--tranches-file {out_prefix}.SNPs.tranches "
+                    f"--tranches-file {out_prefix}.SNPs.tranches.csv "
                     f"-O {out_prefix}.SNPs.recal")
 
     apply_snp_vqsr_cmd = (f"time {gatk} {java_options} ApplyVQSR "
                           f"-R {reference} "
                           f"-V {input_vcf} "
-                          f"--tranches-file {out_prefix}.SNPs.tranches "
+                          f"--tranches-file {out_prefix}.SNPs.tranches.csv "
                           f"--recal-file {out_prefix}.SNPs.recal "
                           f"--truth-sensitivity-filter-level 99.0 "
                           f"-mode SNP "
@@ -189,7 +189,7 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
                       f"--resource:1000G,known=false,training=true,truth=true,prior=10.0 {resource_1000G_known_indel} "
                       f"--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 {resource_dbsnp} "
                       f"{vqsr_options} "
-                      f"--tranches-file {out_prefix}.INDELs.tranches "
+                      f"--tranches-file {out_prefix}.INDELs.tranches.csv "
                       f"-mode INDEL "
                       f"--max-gaussians {config['gatk']['vqsr_indel_max_gaussians']}"
                       f"-O {out_prefix}.INDELs.recal")
@@ -197,7 +197,7 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
                             f"-R {reference} "
                             f"-V {out_snp_vqsr_fname} "
                             f"--truth-sensitivity-filter-level 99.0 "
-                            f"--tranches-file {out_prefix}.INDELs.tranches "
+                            f"--tranches-file {out_prefix}.INDELs.tranches.csv "
                             f"--recal-file {out_prefix}.INDELs.recal "
                             f"-mode INDEL "
                             f"-O {output_vcf_fname} && rm -f {out_snp_vqsr_fname}")
