@@ -177,7 +177,7 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
                           f"-V {input_vcf} "
                           f"--tranches-file {out_prefix}.SNPs.tranches.csv "
                           f"--recal-file {out_prefix}.SNPs.recal "
-                          f"--truth-sensitivity-filter-level 99.0 "
+                          f"--truth-sensitivity-filter-level 99.5 "
                           f"-mode SNP "
                           f"-O {out_snp_vqsr_fname}")
 
@@ -196,7 +196,7 @@ def variantrecalibrator(config, input_vcf, output_vcf_fname):
     apply_indel_vqsr_cmd = (f"time {gatk} {java_options} ApplyVQSR "
                             f"-R {reference} "
                             f"-V {out_snp_vqsr_fname} "
-                            f"--truth-sensitivity-filter-level 99.0 "
+                            f"--truth-sensitivity-filter-level 99.5 "
                             f"--tranches-file {out_prefix}.INDELs.tranches.csv "
                             f"--recal-file {out_prefix}.INDELs.recal "
                             f"-mode INDEL "
