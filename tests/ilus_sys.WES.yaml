@@ -13,6 +13,7 @@ resources:
     1000G_known_indel: /path/to/gatk/bundle/hg38/Homo_sapiens_assembly38.known_indels.vcf.gz
     dbsnp: /path/to/gatk/bundle/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
 
+# Common tools
 aligner:
   bwa: /path/to/bwa
   bwamem_options: [-Y -M -t 8]
