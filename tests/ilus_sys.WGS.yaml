@@ -50,7 +50,7 @@ samtools:
 bcftools:
   bcftools: /path/to/bcftools
   # Parameter for concat VCF files
-  concat_options: ["-a --rm-dups all"]
+  concat_options: ["--threads 12 -a --rm-dups all"]  #
 
 
 bedtools:
@@ -93,7 +93,7 @@ gatk:
 
   # VQSR
   vqsr_options: [
-    "-an DP -an QD -an FS -an SOR -an ReadPosRankSum -an MQRankSum -an InbreedingCoeff",
+    "-an QD -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP",
     "-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 95.0 -tranche 90.0",
   ]
   # maximum number of Gaussians that will be used for the positive recalibration model in VQSR
@@ -109,10 +109,10 @@ gatk:
 
   # Specific variant calling intervals. 
   # The value could be a file in bed format (I show you a example bellow) or a interval of list.
-  # Bed format of interval file only contain three columns: ``Sequencing ID``, ``region start`` and ``region end``,e.g.:
-  #         chr1    10001   207666
-  #         chr1    257667  297968
-
+  # Bed format of interval file only contain three columns: ``Sequencing ID``, ``region start``
+  # and ``region end``, e.g.:
+  #   chr1    10001   207666
+  #   chr1    257667  297968
   # These invertals could be any regions alone the genome as you wish or just set the same as ``interval`` argument above.
   # If the calling interval is changed to include only the exon-calling regions, this pipeline could be applied
   # to detect variants of WES data.
@@ -149,20 +149,44 @@ sentieon:
   #                    GVCFtyper algorithm.
   hc_options: [-t 24 --emit_mode gvcf]
 
+  # Fro creating gvcf. The value could be an interval region file in bed format or
+  # could be chromosomes list here. I suggest you should use chromosome list here.
+  interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",
+             "chr8",  "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14",
+             "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21",
+             "chr22", "chrX",  "chrY",  "chrM"]
+
+  # Specific variant calling intervals.
+  # The value could be a file in bed format (I show you a example bellow) or a interval of list.
+  # Bed format of interval file only contain three columns: ``Sequencing ID``, ``region start``
+  # and ``region end``, e.g.:
+  #   chr1    10001   207666
+  #   chr1    257667  297968
+  # These invertals could be any regions alone the genome as you wish or just set the same as ``interval`` argument above.
+  # If the calling interval is changed to include only the exon-calling regions, this pipeline could be applied
+  # to detect variants of WES data.
+  #variant_calling_interval: "./human_GRCh38.WGS.calling_regions.interval.bed"
+  variant_calling_interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",  "chr8",
+                             "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16",
+                             "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX",  "chrY",
+                             "chrM"]
+
   # 'emit_mode' in GVCFtyper: determines what calls will be emitted. Possible values for mode are:
   #            - variant: emit calls only at confident variant sites. This is the default behavior.
   #            - confident: emit calls at confident variant sites or confident reference sites.
   #            - all: emit all calls, regardless of their confidence.
   gvcftyper_options: [-t 24 --emit_mode variant]
 
-  # VQSR. No need to set `--var_type` option which will be set automatically by ilus
+  # VQSR.
+  ## No need to set `--var_type` option which will be set automatically by ilus
   vqsr_options: [
     "-t 24",
-    "--annotation QD --annotation MQRankSum --annotation ReadPosRankSum --annotation FS --annotation SOR --annotation DP",
+    "--annotation QD --annotation MQRankSum --annotation ReadPosRankSum --annotation FS",
+    "--annotation SOR --annotation DP",
     "-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 95.0 -tranche 90.0",
     "--max_neg_gaussians 2"
   ]
-  # maximum number of Gaussians that will be used for the positive recalibration model in VQSR.
+  ## maximum number of Gaussians that will be used for the positive recalibration model in VQSR.
   vqsr_snp_max_gaussians: 8
   vqsr_indel_max_gaussians: 4
   apply_snp_vqsr_options: [--sensitivity 99.5]
