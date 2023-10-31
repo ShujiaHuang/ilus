@@ -97,18 +97,24 @@ ilus: error: too few arguments
 
 ```bash
 $ ilus --help
-usage: ilus [-h] {WGS,genotype-joint-calling,VQSR} ...
+usage: ilus [-h] [-v] {WGS,genotype-joint-calling,VQSR,split-jobs,check-jobs} ...
 
-ilus: A WGS analysis pipeline.
+ilus (Version = 1.3.2): A WGS/WES analysis pipeline generator.
 
 optional arguments:
-    -h, --help            show this help message and exit
+  -h, --help            show this help message and exit
+  -v, --version         show the version of ilus and exit.
 
 ilus commands:
-{WGS,genotype-joint-calling,VQSR}
-    WGS                 Creating pipeline for WGS(from fastq to genotype VCF)
-    genotype-joint-calling Genotype from GVCFs.
+  {WGS,genotype-joint-calling,VQSR,split-jobs,check-jobs}
+    WGS                 Create a pipeline for WGS (from FASTQ to genotype VCF).
+    genotype-joint-calling
+                        Genotype from GVCFs.
     VQSR                VQSR
+    split-jobs          Split the whole shell into multiple jobs.
+    check-jobs          Check the jobs have finished or not.
+
+That's how you can use ilus
 ```
 
 下面，通过例子逐一介绍如何使用这三个模块。
@@ -119,29 +125,27 @@ ilus commands:
 
 ```bash
 $ ilus WGS --help
-usage: ilus WGS [-h] -C SYSCONF -L FASTQLIST [-P WGS_PROCESSES]
-            [-n PROJECT_NAME] [-f] [-c] -O OUTDIR
+usage: ilus WGS [-h] [-n PROJECT_NAME] -C SYSCONF -O OUTDIR [-f] [--use-sentieon] -L FASTQLIST [-c]
+                [-P WGS_PROCESSES] [-dr]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -C SYSCONF, --conf SYSCONF
-                        YAML configuration file specifying details about
-                        system.
-  -L FASTQLIST, --fastqlist FASTQLIST
-                        Alignment FASTQ Index File.
-  -O OUTDIR, --outdir OUTDIR
-                        A directory for output results.
-
   -n PROJECT_NAME, --name PROJECT_NAME
-                        Name of the project. Default value: test
-  -P WGS_PROCESSES, --Process WGS_PROCESSES
-                        Specific one or more processes (separated by comma) of
-                        WGS pipeline. Defualt value:
-                        align,markdup,BQSR,gvcf,genotype,VQSR. Possible
-                        values: {align,markdup,BQSR,gvcf,genotype,VQSR}
-  -f, --force_overwrite
+                        Name of the project. (Default: test)
+  -C SYSCONF, --conf SYSCONF
+                        YAML configuration file specifying system details.
+  -O OUTDIR, --outdir OUTDIR
+                        Output directory for results.
+  -f, --force-overwrite
                         Force overwrite existing shell scripts and folders.
-  -c, --cram            Covert BAM to CRAM after BQSR and save alignment file storage.
+  --use-sentieon        Use sentieon (doc: https://support.sentieon.com/manual) to create analysis pipeline.
+  -L FASTQLIST, --fastqlist FASTQLIST
+                        List of alignment FASTQ files.
+  -c, --cram            Convert BAM to CRAM after BQSR and save alignment file storage.
+  -P WGS_PROCESSES, --process WGS_PROCESSES
+                        Specify one or more processes (separated by comma) of WGS pipeline. Possible values:
+                        align,markdup,BQSR,gvcf,combineGVCFs,genotype,VQSR
+  -dr, --dry-run        Dry run the pipeline for testing.
 ```
 
 其中，`-C`, `-L` 和 `-O` 这三个是 **必须参数**，其余的按照实际需要做选择。`-O` 参数比较简单，是输出目录，该目录如果不存在，**ilus**将自动创建。最重要的是 `-C` 和 `-L` 参数，前者是 **ilus** 的配置文件，如果没有这个文件 **ilus** 就无法正确生成分析流程，因此它十分重要；后者是输入文件，**这个文件的格式有固定要求**，一共 5 列，每一列都是流程所必须的信息。
@@ -330,28 +334,26 @@ $ ilus WGS -c -n my_wgs -C ilus_sys.yaml -L input.list -P BQSR -O ./output
 
 ```bash
 $ ilus genotype-joint-calling --help
-usage: ilus genotype-joint-calling [-h] -C SYSCONF -L GVCFLIST
-                                   [-n PROJECT_NAME] [--as_pipe_shell_order]
-                                   [-f] -O OUTDIR
+usage: ilus genotype-joint-calling [-h] [-n PROJECT_NAME] -C SYSCONF -O OUTDIR [-f] [--use-sentieon] -L GVCFLIST
+                                   [--as_pipe_shell_order]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -C SYSCONF, --conf SYSCONF
-                        YAML configuration file specifying details about
-                        system.
-  -L GVCFLIST, --gvcflist GVCFLIST
-                        GVCFs file list. One gvcf_file per-row and the format
-                        should looks like: [interval gvcf_file_path]. Column
-                        [1] is a symbol which could represent the genome
-                        region of the gvcf_file and column [2] should be the
-                        path.
-  -O OUTDIR, --outdir OUTDIR
-                        A directory for output results.
   -n PROJECT_NAME, --name PROJECT_NAME
-                        Name of the project. [test]
+                        Name of the project. (Default: test)
+  -C SYSCONF, --conf SYSCONF
+                        YAML configuration file specifying system details.
+  -O OUTDIR, --outdir OUTDIR
+                        Output directory for results.
+  -f, --force-overwrite
+                        Force overwrite existing shell scripts and folders.
+  --use-sentieon        Use sentieon (doc: https://support.sentieon.com/manual) to create analysis pipeline.
+  -L GVCFLIST, --gvcflist GVCFLIST
+                        List of GVCF files. One gvcf_file per-row and the format should looks like: [interval
+                        gvcf_file_path]. Column [1] is a symbol which could represent the genome region of the
+                        gvcf_file and column [2] should be the path.
   --as_pipe_shell_order
                         Keep the shell name as the order of `WGS`.
-  -f, --force           Force overwrite existing shell scripts and folders.
 ```
 
 `-L` 是 **ilus genotype-joint-calling** 的输入参数，它接受的是一个 `gvcf list` 文件，这个文件由两列构成，第一列是每个 `gvcf` 文件所对应的区间或者染色体编号，第二列是 `gvcf` 文件的路径。目前 **ilus** 要求各个样本的 `gvcf` 都按照主要染色体（1-22、X、Y、M）分开，举个例子：
@@ -380,30 +382,27 @@ chrM    /path/sample2.chrM.g.vcf.gz
 
 ```bash
 $ ilus VQSR --help
-usage: ilus VQSR [-h] -C SYSCONF -L VCFLIST [-n PROJECT_NAME]
-                 [--as_pipe_shell_order] [-f] -O OUTDIR
+usage: ilus VQSR [-h] [-n PROJECT_NAME] -C SYSCONF -O OUTDIR [-f] [--use-sentieon] -L VCFLIST
+                 [--as_pipe_shell_order]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -C SYSCONF, --conf SYSCONF
-                        YAML configuration file specifying details about
-                        system.
-  -L VCFLIST, --vcflist VCFLIST
-                        VCFs file list. One vcf_file per-row and the format
-                        should looks like: [interval vcf_file_path]. Column
-                        [1] is a symbol which could represent the genome
-                        region of the vcf_file and column [2] should be the
-                        path.
-  -O OUTDIR, --outdir OUTDIR
-                        A directory for output results.
   -n PROJECT_NAME, --name PROJECT_NAME
-                        Name of the project. [test]
+                        Name of the project. (Default: test)
+  -C SYSCONF, --conf SYSCONF
+                        YAML configuration file specifying system details.
+  -O OUTDIR, --outdir OUTDIR
+                        Output directory for results.
+  -f, --force-overwrite
+                        Force overwrite existing shell scripts and folders.
+  --use-sentieon        Use sentieon (doc: https://support.sentieon.com/manual) to create analysis pipeline.
+  -L VCFLIST, --vcflist VCFLIST
+                        VCFs file list. One file per-row.
   --as_pipe_shell_order
                         Keep the shell name as the order of `WGS`.
-  -f, --force           Force overwrite existing shell scripts and folders.
 ```
 
-跟 `genotype-joint-calling` 相比不同的是，**ilus VQSR** 的输入文件是 `VCF` 文件列表，并且 **每行就是一个VCF文件的路径**，举个例子，如下：
+与 `genotype-joint-calling` 相比不同的是，**ilus VQSR** 的输入文件是 `VCF` 文件列表，并且 **每行就是一个VCF文件的路径**，举个例子，如下：
 
 ```bash
 /path/chr1.vcf.gz
