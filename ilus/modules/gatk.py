@@ -5,12 +5,28 @@ Date: 2020-04-19 15:19:56
 """
 
 
-def markduplicates(config, input_bam, output_markdup_bam, out_metrics_fname):
+# class GATK(object):
+#    """A class for GATK
+#    """
+#    def __init__(self, config):
+#        """Constructor.
+#        """
+#        self.config = config
+#        if "gatk" not in self.config:
+#            raise ValueError("[Error] Missing `gatk` in config file.")
+#
+#        self.gatk = self.config['gatk']['gatk']
+#        self.reference_index = self.config["resources"]["reference"]
+#        self.reference_fasta = self.config["resources"]["reference"]
+
+
+def markduplicates(config, input_bam, output_markdup_bam):
     gatk = config["gatk"]["gatk"]
     java_options = "--java-options \"%s\"" % " ".join(config["gatk"]["markdup_java_options"]) \
         if "markdup_java_options" in config["gatk"] \
            and len(config["gatk"]["markdup_java_options"]) else ""
 
+    out_metrics_fname = str(output_markdup_bam).replace(".bam", ".metrics.txt")
     return (f"time {gatk} {java_options} MarkDuplicates "
             f"-I {input_bam} "
             f"-M {out_metrics_fname} "
@@ -31,9 +47,9 @@ def baserecalibrator(config, input_bam, output_bqsr_bam, out_bqsr_recal_table):
     # create recalibrate table file for BQSR
     recal_data_cmd = (f"time {gatk} {java_options} BaseRecalibrator "
                       f"-R {reference} "
+                      f"--known-sites {known_site_dbsnp} "
                       f"--known-sites {known_site_1000G_indel} "
                       f"--known-sites {known_site_mills_gold_indels} "
-                      f"--known-sites {known_site_dbsnp} "
                       f"-I {input_bam} "
                       f"-O {out_bqsr_recal_table}")
 
@@ -112,6 +128,8 @@ def genotypeGVCFs(config, input_combine_gvcf_fname, output_vcf_fname, interval=N
         if "genotype_java_options" in config["gatk"] \
            and len(config["gatk"]["genotype_java_options"]) else ""
 
+    # location of the Single Nucleotide Polymorphism database (dbSNP) used to label known variants.
+    dbsnp = config["resources"]["bundle"]["dbsnp"]
     reference = config["resources"]["reference"]  # reference fasta
     use_gDBI = config["gatk"]["use_genomicsDBImport"] if "use_genomicsDBImport" in config["gatk"] else False
 
@@ -122,11 +140,13 @@ def genotypeGVCFs(config, input_combine_gvcf_fname, output_vcf_fname, interval=N
     if use_gDBI:
         genotype_cmd = (f"time {gatk} {java_options} GenotypeGVCFs "
                         f"-R {reference} {genotypeGVCFs_options} "
+                        f"--dbsnp {dbsnp} "
                         f"-V gendb://{input_combine_gvcf_fname} "
                         f"-O {output_vcf_fname}")
     else:
         genotype_cmd = (f"time {gatk} {java_options} GenotypeGVCFs "
                         f"-R {reference} {genotypeGVCFs_options} "
+                        f"--dbsnp {dbsnp} "
                         f"-V {input_combine_gvcf_fname} "
                         f"-O {output_vcf_fname}")
     if interval:
