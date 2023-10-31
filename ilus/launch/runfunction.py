@@ -118,7 +118,7 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
         if kwargs.use_sentieon:
             # 只有当使用 Sentieon 时才会计算这些 alignment metrics
             metric_cmd = Sentieon(aione["config"]).alignment_metrics(
-                sample_final_bamfile, f"{sample}")
+                sample_final_bamfile, sample_outdir.joinpath(f"{sample}"))
             cmd.append(metric_cmd)
 
         echo_mark_done = f"echo \"[bwa] {sample} done\""

@@ -99,26 +99,21 @@ def WGS(kwargs, aione: dict = None) -> dict:
     if kwargs.use_sentieon:
         # 如果是 Sentieon 则不需要 CombineGVCF
         # step5: GenotypeGVCF
-        runner_module["genotype"] = [run_genotypeGVCFs,
-                                     f"{kwargs.project_name}.step5.genotype.sh",
+        runner_module["genotype"] = [run_genotypeGVCFs, f"{kwargs.project_name}.step5.genotype.sh",
                                      "05.genotype", "03.genotype"]
         # step6: Variant recalibrator
-        runner_module["VQSR"] = [run_variantrecalibrator,
-                                 f"{kwargs.project_name}.step6.VQSR.sh",
+        runner_module["VQSR"] = [run_variantrecalibrator, f"{kwargs.project_name}.step6.VQSR.sh",
                                  "06.VQSR", "03.genotype"]
     else:
         # 相比于 Sentieon，GATK 需要先 CombineGVCF
         # step5: combineGVCFs
-        runner_module["combineGVCFs"] = [gatk_combineGVCFs,
-                                         f"{kwargs.project_name}.step5.combineGVCFs.sh",
+        runner_module["combineGVCFs"] = [gatk_combineGVCFs, f"{kwargs.project_name}.step5.combineGVCFs.sh",
                                          "05.combineGVCFs", "03.genotype"]
         # step6: GenotypeGVCF
-        runner_module["genotype"] = [run_genotypeGVCFs,
-                                     f"{kwargs.project_name}.step6.genotype.sh",
-                                     "06.genotype", "03.genotype"],
+        runner_module["genotype"] = [run_genotypeGVCFs, f"{kwargs.project_name}.step6.genotype.sh",
+                                     "06.genotype", "03.genotype"]
         # step7: Variant recalibrator
-        runner_module["VQSR"] = [run_variantrecalibrator,
-                                 f"{kwargs.project_name}.step7.VQSR.sh",
+        runner_module["VQSR"] = [run_variantrecalibrator, f"{kwargs.project_name}.step7.VQSR.sh",
                                  "07.VQSR", "03.genotype"]
 
     # Todo: Need a program to validate whether the tools, arguments and processes are
