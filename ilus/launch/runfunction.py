@@ -13,6 +13,7 @@ from ilus.modules.utils import safe_makedir
 from ilus.modules.summary import bam
 from ilus.modules import bwa
 from ilus.modules import gatk
+from ilus.modules.sentieon import Sentieon
 from ilus.modules.bcftools import vcfconcat
 
 IS_RM_SUBBAM = True
@@ -74,11 +75,20 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
                 samples.append([sample_id, sample_outdir])
 
             out_prefix = sample_outdir.joinpath(sample_id + "_" + lane)
-            lane_bam_file, cmd = bwa.bwa_mem(aione["config"], out_prefix, read_group_id, fq1, fq2)
-            sample_bamfiles_by_lane[sample_id].append([lane_bam_file, cmd])
+
+            if kwargs.use_sentieon:
+                lane_sorted_bam_file, cmd = Sentieon(config=aione["config"]).bwamem(
+                    out_prefix, read_group_id, fq1, fq2)
+            else:
+                lane_sorted_bam_file, cmd = bwa.bwa_mem(
+                    aione["config"], out_prefix, read_group_id, fq1, fq2)
+
+            sample_bamfiles_by_lane[sample_id].append([lane_sorted_bam_file, cmd])
 
     bwa_shell_files_list = []
     aione["sample_final_sorted_bam"] = []
+
+    # Merge BAM files for each sample by lane
     for sample, sample_outdir in samples:
         sample_final_bamfile = sample_outdir.joinpath(f"{sample}.sorted.bam")
         aione["sample_final_sorted_bam"].append([sample, sample_final_bamfile])
@@ -91,7 +101,6 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
             cmd = [sample_bamfiles_by_lane[sample][0][1]]
             if sample_final_bamfile != lane_bam_file:
                 cmd.append(f"mv -f {lane_bam_file} {sample_final_bamfile}")
-
         else:
             samtools = aione["config"]["samtools"]["samtools"]
             samtools_merge_options = " ".join(
@@ -105,6 +114,13 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
             cmd.append(f"{samtools} merge {samtools_merge_options} {sample_final_bamfile} "
                        f"{lane_bam_files} && rm -rf {lane_bam_files}")
 
+        # alignment metrics
+        if kwargs.use_sentieon:
+            # 只有当使用 Sentieon 时才会计算这些 alignment metrics
+            metric_cmd = Sentieon(aione["config"]).alignment_metrics(
+                sample_final_bamfile, f"{sample}")
+            cmd.append(metric_cmd)
+
         echo_mark_done = f"echo \"[bwa] {sample} done\""
         cmd.append(echo_mark_done)
 
@@ -114,8 +130,8 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
     return bwa_shell_files_list  # [[sample, bwa_shell_file], ...]
 
 
-def gatk_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
-                        is_dry_run: bool = False):
+def run_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
+                       is_dry_run: bool = False):
     """Create shell scripts for Markduplicates by GATK4.
     """
     shell_directory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "markdup")
@@ -124,23 +140,48 @@ def gatk_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
 
     aione["sample_final_markdup_bam"] = []
     markdup_shell_files_list = []
+    is_calculate_contamination = True if "verifyBamID2" in aione["config"] else False
     for sample, sample_sorted_bam in aione["sample_final_sorted_bam"]:
         # ``f_name_stem``: The final path component, minus its last suffix.
         dirname, f_name_stem = Path(sample_sorted_bam).parent, Path(sample_sorted_bam).stem
 
-        # Setting Output path of markduplicate BAM file as the same as ``sample_sorted_bam``
+        # Setting Output path of markduplicates BAM file as the same as ``sample_sorted_bam``
         out_markdup_bam_fname = dirname.joinpath(f"{f_name_stem}.markdup.bam")
-        out_markdup_metrics_fname = dirname.joinpath(f"{f_name_stem}.metrics.txt")
+        out_alignment_summary_metric = dirname.joinpath(f"{f_name_stem}.AlignmentSummaryMetrics.txt")
+        out_bamstats_fname = dirname.joinpath(f"{f_name_stem}.stats")
+        genome_cvg_fname = dirname.joinpath(f"{f_name_stem}.depth.bed.gz")
+
         sample_shell_fname = shell_directory.joinpath(f"{sample}.markdup.sh")
-
         markdup_shell_files_list.append([sample, sample_shell_fname])
+
+        if kwargs.use_sentieon:
+            # Use sentieon to markduplicates and Indelrealigner
+            cmd = [Sentieon(aione["config"]).markduplicates(sample_sorted_bam, out_markdup_bam_fname)]
+            out_markdup_reagliner_bam_fname = dirname.joinpath(f"{f_name_stem}.markdup.realigner.bam")
+            cmd.append(Sentieon(aione["config"]).indelrealigner(out_markdup_bam_fname,
+                                                                out_markdup_reagliner_bam_fname))
+            cmd.append(f"rm -f {out_markdup_bam_fname}")
+
+            # 重新赋值为 Indel Realign 之后的 BAM
+            out_markdup_bam_fname = out_markdup_reagliner_bam_fname
+        else:
+            # No need to apply Indelrealigner for GATK4
+            cmd = [gatk.markduplicates(aione["config"], sample_sorted_bam, out_markdup_bam_fname)]
+
         aione["sample_final_markdup_bam"].append([sample, out_markdup_bam_fname])
-
-        cmd = [gatk.markduplicates(aione["config"], sample_sorted_bam, out_markdup_bam_fname,
-                                   out_markdup_metrics_fname)]
-
         if IS_RM_SUBBAM:
             cmd.append(f"rm -rf {sample_sorted_bam}")  # save disk space
+
+        cmd.append(gatk.collect_alignment_summary_metrics(
+            aione["config"], out_markdup_bam_fname, out_alignment_summary_metric))
+        cmd.append(bam.stats(aione["config"], out_markdup_bam_fname, out_bamstats_fname))
+        cmd.append(bam.genomecoverage(aione["config"], out_markdup_bam_fname, genome_cvg_fname))
+
+        if is_calculate_contamination:
+            out_verifybamid_stat_prefix = dirname.joinpath(f"{f_name_stem}.verifyBamID2")
+            cmd.append(bam.verifyBamID2(aione["config"],
+                                        out_markdup_bam_fname,
+                                        out_verifybamid_stat_prefix))
 
         echo_mark_done = f"echo \"[MarkDuplicates] {sample} done\""
         cmd.append(echo_mark_done)
@@ -151,61 +192,56 @@ def gatk_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
     return markdup_shell_files_list  # [[sample, sample_shell_fname], ...]
 
 
-def gatk_baserecalibrator(kwargs,
-                          out_folder_name: str,
-                          aione: dict = None,
-                          is_calculate_summary: bool = True,
-                          is_dry_run: bool = False):
+def run_baserecalibrator(kwargs,
+                         out_folder_name: str,
+                         aione: dict = None,
+                         is_dry_run: bool = False):
     shell_directory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "bqsr")
     if not is_dry_run:
         safe_makedir(shell_directory)
 
-    aione["sample_final_bqsr_bam"] = []
     bqsr_shell_files_list = []
-
-    is_calculate_contamination = True if "verifyBamID2" in aione["config"] else False
+    aione["sample_final_bqsr_bam"] = []
     for sample, sample_markdup_bam in aione["sample_final_markdup_bam"]:
         dirname, f_name_stem = Path(sample_markdup_bam).parent, Path(sample_markdup_bam).stem
-
-        out_bqsr_bam_fname = dirname.joinpath(f"{f_name_stem}.BQSR.bam")
-        out_bqsr_bai_fname = dirname.joinpath(f"{f_name_stem}.BQSR.bai")
-        out_bqsr_recal_table = dirname.joinpath(f"{f_name_stem}.recal.table")
-
-        out_alignment_summary_metric = dirname.joinpath(f"{f_name_stem}.AlignmentSummaryMetrics.txt")
-
-        out_bamstats_fname = dirname.joinpath(f"{f_name_stem}.BQSR.stats")
-        genome_cvg_fname = dirname.joinpath(f"{f_name_stem}.BQSR.depth.bed.gz")
-        # when convert to CRAM format
-        out_cram_fname = dirname.joinpath(f"{f_name_stem}.BQSR.cram")
-
-        aione["sample_final_bqsr_bam"].append(
-            [sample, out_bqsr_bam_fname if not kwargs.cram else out_cram_fname]
-        )
         sample_shell_fname = shell_directory.joinpath(f"{sample}.bqsr.sh")
         bqsr_shell_files_list.append([sample, sample_shell_fname])
 
-        cmd = [gatk.baserecalibrator(aione["config"],
-                                     sample_markdup_bam,
-                                     out_bqsr_bam_fname,
-                                     out_bqsr_recal_table)]
-        if IS_RM_SUBBAM:
-            cmd.append(f"rm -rf {sample_markdup_bam}")
+        out_bqsr_recal_table = dirname.joinpath(f"{f_name_stem}.BQSR.recal.table")
+        if kwargs.use_sentieon:
+            cmd = [Sentieon(config=aione["config"]).baserecalibrator(sample_markdup_bam,
+                                                                     out_bqsr_recal_table)]
+            if kwargs.cram:
+                out_cram_fname = dirname.joinpath(f"{f_name_stem}.cram")
+                cmd.append(bwa.bam_to_cram(aione["config"], sample_markdup_bam, out_cram_fname))
+                cmd.append(f"rm -rf {sample_markdup_bam}")
 
-        if is_calculate_summary:
-            cmd.append(gatk.collect_alignment_summary_metrics(
-                aione["config"], out_bqsr_bam_fname, out_alignment_summary_metric)
-            )
-            cmd.append(bam.stats(aione["config"], out_bqsr_bam_fname, out_bamstats_fname))
-            cmd.append(bam.genomecoverage(aione["config"], out_bqsr_bam_fname, genome_cvg_fname))
+                # 注意：对于 Sentieon 来说，不需要单独输出 BQSR 之后的 Bam，
+                # 所以，这里的 sample_final_bqsr_bam 其实还是原来的 sample_markdup_bam
+                aione["sample_final_bqsr_bam"].append([sample, out_cram_fname, out_bqsr_recal_table])
+            else:
+                aione["sample_final_bqsr_bam"].append([sample, sample_markdup_bam, out_bqsr_recal_table])
 
-        if is_calculate_contamination:
-            out_verifybamid_stat_prefix = dirname.joinpath(f"{f_name_stem}.BQSR.verifyBamID2")
-            cmd.append(bam.verifyBamID2(aione["config"], out_bqsr_bam_fname, out_verifybamid_stat_prefix))
+        else:
+            # 对于 GATK 而言，需要生成 ApplyBQSR 之后的新 BAM
+            out_bqsr_bam_fname = dirname.joinpath(f"{f_name_stem}.BQSR.bam")
+            out_bqsr_bai_fname = dirname.joinpath(f"{f_name_stem}.BQSR.bai")
+            cmd = [gatk.baserecalibrator(aione["config"],
+                                         sample_markdup_bam,
+                                         out_bqsr_bam_fname,
+                                         out_bqsr_recal_table)]
+            if IS_RM_SUBBAM:  # Only use in GATK
+                cmd.append(f"rm -rf {sample_markdup_bam}")
 
-        if kwargs.cram:
-            cmd.append(bwa.bam_to_cram(aione["config"], out_bqsr_bam_fname, out_cram_fname))
-            cmd.append(f"rm -rf {out_bqsr_bam_fname}")
-            cmd.append(f"rm -rf {out_bqsr_bai_fname}")
+            if kwargs.cram:
+                out_cram_fname = dirname.joinpath(f"{f_name_stem}.BQSR.cram")
+                cmd.append(bwa.bam_to_cram(aione["config"], out_bqsr_bam_fname, out_cram_fname))
+                cmd.append(f"rm -rf {out_bqsr_bam_fname}")
+                cmd.append(f"rm -rf {out_bqsr_bai_fname}")
+
+                aione["sample_final_bqsr_bam"].append([sample, out_cram_fname, out_bqsr_recal_table])
+            else:
+                aione["sample_final_bqsr_bam"].append([sample, out_bqsr_bam_fname, out_bqsr_recal_table])
 
         echo_mark_done = f"echo \"[BQSR] {sample} done\""
         cmd.append(echo_mark_done)
@@ -216,35 +252,50 @@ def gatk_baserecalibrator(kwargs,
     return bqsr_shell_files_list
 
 
-def gatk_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
-                              is_dry_run: bool = False):
+def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
+                             is_dry_run: bool = False):
     """Create gvcf shell.
     """
 
-    def _create_sub_shell(sample, sample_shell_dir, sample_output_dir,
-                          raw_interval=None, is_dry_run=False):
-
+    def _create_sub_shell(sample, in_sample_bam, bqsr_recal_table, sample_shell_dir,
+                          sample_output_dir, raw_interval=None, is_dry_run=False):
         interval_ = raw_interval if raw_interval else "all"
+
         # in case the raw_interval is a full path file.
         interval_ = Path(interval_).name
         sample_shell_fname_ = sample_shell_dir.joinpath(f"{sample}.{interval_}.gvcf.sh")
-        out_gvcf_fname_ = sample_output_dir.joinpath(f"{sample}.{interval_}.g.vcf.gz")
+        sample_gvcf_fname_ = sample_output_dir.joinpath(f"{sample}.{interval_}.g.vcf.gz")
 
         if raw_interval:
-            cmd = [gatk.haplotypecaller_gvcf(aione["config"], sample_bqsr_bam, out_gvcf_fname_,
-                                             interval=raw_interval)]
+            cmd = [Sentieon(config=aione["config"]).haplotypecaller(
+                in_sample_bam,  # 这里的 BAM 实际上是 Markduplicates 之后的 BAM，Sentieon 不需要单独输出 BQSR BAM
+                bqsr_recal_table,  # HC will apply calibration table on the fly
+                sample_gvcf_fname_,
+                interval=raw_interval) if kwargs.use_sentieon
+                   else gatk.haplotypecaller_gvcf(aione["config"],
+                                                  in_sample_bam,  # GATK 这里的 BAM 则是 ApplyBQSR 之后的。
+                                                  sample_gvcf_fname_,
+                                                  interval=raw_interval)]
         else:
-            cmd = [gatk.haplotypecaller_gvcf(aione["config"], sample_bqsr_bam, out_gvcf_fname_)]
+            cmd = [Sentieon(config=aione["config"]).haplotypecaller(
+                in_sample_bam,
+                bqsr_recal_table,
+                sample_gvcf_fname_) if kwargs.use_sentieon
+                   else gatk.haplotypecaller_gvcf(aione["config"],
+                                                  in_sample_bam,
+                                                  sample_gvcf_fname_)]
+
         echo_mark_done = f"echo \"[GVCF] {sample} {interval_} done\""
         cmd.append(echo_mark_done)
-
         if (not is_dry_run) and (not sample_shell_fname_.exists() or kwargs.overwrite):
             _create_cmd_file(sample_shell_fname_, cmd)
 
-        return sample_shell_fname_, out_gvcf_fname_
+        return sample_shell_fname_, sample_gvcf_fname_
 
-    output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
-                                            is_dry_run=is_dry_run)
+    output_directory, shell_directory = _md(
+        Path(kwargs.outdir).joinpath(out_folder_name),
+        is_dry_run=is_dry_run)
+
     is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
         if "use_genomicsDBImport" in aione["config"]["gatk"] else False
 
@@ -254,41 +305,49 @@ def gatk_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
     if "interval" not in aione["config"]["gatk"]:
         aione["config"]["gatk"]["interval"] = ["all"]
 
-    aione["intervals"] = []  # chromosome id
-    sample_map = {}  # Record sample_map for genomicsDBImport
-    for sample, sample_bqsr_bam in aione["sample_final_bqsr_bam"]:
+    if kwargs.use_sentieon and ("interval" not in aione["config"]["sentieon"]):
+        aione["config"]["sentieon"]["interval"] = ["all"]
 
+    sample_map = {}  # Record sample_map for GATK genomicsDBImport
+    aione["intervals"] = []  # chromosome gvcf
+
+    calling_intervals = aione["config"]["sentieon"]["interval"] \
+        if kwargs.use_sentieon else aione["config"]["gatk"]["interval"]
+
+    for sample, sample_bqsr_bam, bqsr_recal_table in aione["sample_final_bqsr_bam"]:
         sample_output_dir = output_directory.joinpath(sample)
         sample_shell_dir = shell_directory.joinpath(sample)
         if not is_dry_run:
             safe_makedir(sample_output_dir)
             safe_makedir(sample_shell_dir)
 
-        for interval in aione["config"]["gatk"]["interval"]:
+        for interval in calling_intervals:
             if interval == "all":
                 # All the whole genome once, take a lot of time, not suggested
-                sample_shell_fname, out_gvcf_fname = _create_sub_shell(
-                    sample, sample_shell_dir, sample_output_dir, is_dry_run=is_dry_run)
+                sample_shell_fname, sample_gvcf_fname = _create_sub_shell(
+                    sample, sample_bqsr_bam, bqsr_recal_table, sample_shell_dir, sample_output_dir,
+                    is_dry_run=is_dry_run)
             else:
-                sample_shell_fname, out_gvcf_fname = _create_sub_shell(
-                    sample, sample_shell_dir, sample_output_dir, raw_interval=interval,
+                sample_shell_fname, sample_gvcf_fname = _create_sub_shell(
+                    sample, sample_bqsr_bam, bqsr_recal_table, sample_shell_dir, sample_output_dir,
+                    raw_interval=interval,
                     is_dry_run=is_dry_run)
 
-            # ``aione["config"]["gatk"]["interval"]`` may be a file path.
+            # ``aione["config"]["gatk|sentieon"]["interval"]`` may be a file path.
             # Make sure the interval id does not contain any path if the raw interval is a file path
-            interval = Path(interval).name
+            interval = str(Path(interval).name)
             if interval not in aione["gvcf"]:
                 aione["intervals"].append(interval)
                 aione["gvcf"][interval] = []
 
-            gvcf_shell_files_list.append([sample + ".%s" % interval, sample_shell_fname])
-            aione["gvcf"][interval].append(out_gvcf_fname)
+            gvcf_shell_files_list.append([f"{sample}.{interval}", sample_shell_fname])
+            aione["gvcf"][interval].append(sample_gvcf_fname)
 
             if is_use_gDBI and (interval not in sample_map):
                 sample_map[interval] = []
 
             if is_use_gDBI:
-                sample_map[interval].append(f"{sample}\t{out_gvcf_fname}")
+                sample_map[interval].append(f"{sample}\t{sample_gvcf_fname}")
 
     if is_use_gDBI:
         aione["sample_map"] = {}
@@ -359,37 +418,30 @@ def gatk_combineGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
                                                        shell_directory,
                                                        is_use_gDBI,
                                                        aione):
-
         combineGVCFs_shell_files_list.append([kwargs.project_name + "." + interval_n, sub_shell_fname])
         aione["combineGVCFs"][interval_n] = combineGVCF_fname
 
         echo_mark_done = f"echo \"[CombineGVCFs] {calling_interval} done\""
         cmd = [combineGVCFs_cmd, echo_mark_done]
-
         if (not is_dry_run) and (not sub_shell_fname.exists() or kwargs.overwrite):
             _create_cmd_file(sub_shell_fname, cmd)
 
     return combineGVCFs_shell_files_list
 
 
-def gatk_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: bool = False):
+def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: bool = False):
     """Create shell for genotypeGVCFs.
     """
     output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
                                             is_dry_run=is_dry_run)
-    # is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
-    #     if "use_genomicsDBImport" in aione["config"]["gatk"] else False
-
     genotype_vcf_shell_files_list = []
     aione["genotype_vcf_list"] = []
 
-    variant_calling_intervals = aione["config"]["gatk"]["variant_calling_interval"]
+    variant_calling_intervals = aione["config"]["sentieon"]["variant_calling_interval"] \
+        if kwargs.use_sentieon else aione["config"]["gatk"]["variant_calling_interval"]
+
     for interval in variant_calling_intervals:
         interval_n = "_".join(interval) if type(interval) is list else interval.replace(":", "_")  # chr:s -> chr_s
-
-        if interval_n not in aione["combineGVCFs"]:
-            continue
-
         sub_shell_fname = shell_directory.joinpath(f"{kwargs.project_name}.{interval_n}.genotype.sh")
         genotype_vcf_fname = str(output_directory.joinpath(f"{kwargs.project_name}.{interval_n}.vcf.gz"))
         genotype_vcf_shell_files_list.append([kwargs.project_name + "." + interval_n, sub_shell_fname])
@@ -399,15 +451,24 @@ def gatk_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_
             if type(interval) is list else interval
 
         # Create commandline for genotype joint-calling process
-        combineGVCF_fname = aione["combineGVCFs"][interval_n]
-        genotype_cmd = gatk.genotypeGVCFs(aione["config"],
-                                          combineGVCF_fname,
-                                          genotype_vcf_fname,
-                                          interval=calling_interval)
+        if kwargs.use_sentieon:
+            interval_id = interval[0] if type(interval) is list else interval  # get key
+            if interval_id not in aione["gvcf"]:
+                continue
 
-        # delete the genomicsdb workspace (or the combine GVCF file).
-        # delete_cmd = f"rm -rf {combineGVCF_fname}" \
-        #     if is_use_gDBI else f"rm -rf {combineGVCF_fname} {combineGVCF_fname}.tbi"
+            genotype_cmd = Sentieon(config=aione["config"]).genotypeGVCFs(
+                aione["gvcf"][interval_id],  # input the whole gvcf list
+                genotype_vcf_fname,
+                interval=calling_interval)
+        else:
+            # GATK must have combineGVCFs
+            if interval_n not in aione["combineGVCFs"]:
+                continue
+
+            genotype_cmd = gatk.genotypeGVCFs(aione["config"],
+                                              aione["combineGVCFs"][interval_n],
+                                              genotype_vcf_fname,
+                                              interval=calling_interval)
 
         echo_mark_done = f"echo \"[Genotype] {calling_interval} done\""
         cmd = [genotype_cmd, echo_mark_done]  # [genotype_cmd, delete_cmd, echo_mark_done]
@@ -475,8 +536,8 @@ def gatk_genotype(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: 
     return genotype_vcf_shell_files_list
 
 
-def gatk_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None,
-                             is_dry_run: bool = False):
+def run_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None,
+                            is_dry_run: bool = False):
     """Create shell scripts for VQSR.
     """
     output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
@@ -496,9 +557,13 @@ def gatk_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None,
         combine_vcf_fname = str(aione["genotype_vcf_list"][0])
 
     # VQSR process
-    cmd.append(gatk.variantrecalibrator(aione["config"], combine_vcf_fname, genotype_vqsr_fname))
-    cmd.append(f"echo \"[VQSR] {genotype_vqsr_fname} done\"")
+    if kwargs.use_sentieon:
+        cmd.append(Sentieon(config=aione["config"]).variantrecalibrator(
+            combine_vcf_fname, genotype_vqsr_fname))
+    else:
+        cmd.append(gatk.variantrecalibrator(aione["config"], combine_vcf_fname, genotype_vqsr_fname))
 
+    cmd.append(f"echo \"[VQSR] {genotype_vqsr_fname} done\"")
     if not is_dry_run and (not shell_fname.exists() or kwargs.overwrite):
         _create_cmd_file(shell_fname, cmd)
 

@@ -8,8 +8,7 @@ import argparse
 
 
 def _get_parent_parser():
-    """
-    Serves as a parent parser to record all the common arguments for ilus.
+    """Serves as a parent parser to record all the common arguments for ilus.
     """
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument(
@@ -41,6 +40,14 @@ def _get_parent_parser():
         dest="overwrite",
         action="store_true",
         help="Force overwrite existing shell scripts and folders."
+    )
+
+    parser.add_argument(
+        "--use-sentieon",
+        dest="use_sentieon",
+        action="store_true",
+        help="Use sentieon (doc: https://support.sentieon.com/manual) "
+             "to create analysis pipeline."
     )
 
     return parser
@@ -75,7 +82,7 @@ def create_wgs_pipeline_command(commands):
         type=str,
         default="align,markdup,BQSR,gvcf,combineGVCFs,genotype,VQSR",
         help="Specify one or more processes (separated by comma) of WGS pipeline. "
-             "Possible values: {%(default)s}"
+             "Possible values: %(default)s"
     )
 
     # Todo: Write a dry run function for testing the pipeline without truely run the pipeline.
