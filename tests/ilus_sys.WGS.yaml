@@ -132,7 +132,7 @@ sentieon:
   sort_options: [-t 24]
 
   # Option for remove Duplicate Reads.
-  # mark instead of remove duplicates by ommiting the --rmdup option in Dedup.
+  # mark instead of remove duplicates by ommitting the --rmdup option in Dedup.
   LocusCollector_options: [-t 24]
   dedup_options: [-t 24]  # [-t 24 --rmdup]
 
