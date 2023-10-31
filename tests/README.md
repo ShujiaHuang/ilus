@@ -32,3 +32,8 @@ python ../scripts/create_wgs_calling_intervals.py -f human_GRCh38.fai -n human_G
 
 ilus WGS -c -C ilus_sys.WGS.yaml -L sample_fastq.list -P align,BQSR,gvcf,VQSR -O ./tmp
 ilus WGS -c -n my_wgs -C ilus_sys.WGS.yaml -L sample_fastq.list -O ./output
+
+
+## Use sentieon to call variants
+ilus WGS -c -n my_wgs -C ilus_sys.WGS.yaml -L sample_fastq.list -O ./tmp --use-sentieon -f
+
