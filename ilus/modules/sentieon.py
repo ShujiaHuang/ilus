@@ -258,7 +258,7 @@ class Sentieon(object):
             f"--algo VarCal {vqsr_options} "
             f"-v {input_vcf} "
             f"--resource {resource_hapmap} --resource_param hapmap,known=false,training=true,truth=true,prior=15.0  "
-            f"--resource {resource_omni} --resource_param omini,known=false,training=true,truth=truth,prior=12.0 "
+            f"--resource {resource_omni} --resource_param omini,known=false,training=true,truth=true,prior=12.0 "
             f"--resource {resource_1000G} --resource_param 1000G,known=false,training=true,truth=false,prior=10.0 "
             f"--resource {resource_dbsnp} --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 "
             f"--var_type SNP "
@@ -282,7 +282,7 @@ class Sentieon(object):
             f"-r {self.reference_fasta} "
             f"--algo VarCal {vqsr_options} "
             f"-v {out_snp_vqsr_fname} "
-            f"--resource {resource_mills_gold_indels} --resource_param omini,known=false,training=true,truth=truth,prior=12.0 "
+            f"--resource {resource_mills_gold_indels} --resource_param omini,known=false,training=true,truth=true,prior=12.0 "
             f"--resource {resource_1000G_known_indel} --resource_param 1000G,known=false,training=true,truth=true,prior=10.0 "
             f"--resource {resource_dbsnp} --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 "
             f"--var_type INDEL "
@@ -291,6 +291,7 @@ class Sentieon(object):
             f"--plot_file {out_prefix}.plot.INDELs.csv "
             f"{out_prefix}.INDELs.recal"  # Output quality recalibrator data for INDELs
         )
+        tabix = self.config["tabix"]
         apply_indel_vqsr_cmd = (f"time {self.sentieon} driver {self.driver_options} "
                                 f"-r {self.reference_fasta} "
                                 f"--algo ApplyVarCal {apply_indel_vqsr_options} "
@@ -300,4 +301,9 @@ class Sentieon(object):
                                 f"--tranches_file {out_prefix}.INDELs.tranches.csv "
                                 f"{output_vcf_fname} && rm -f {out_snp_vqsr_fname}")
 
-        return " && ".join([snp_vqsr_cmd, apply_snp_vqsr_cmd, indel_vqsr_cmd, apply_indel_vqsr_cmd])
+        vcf_index_cmd = f"time {tabix} -f -p vcf {output_vcf_fname}"
+        return " && ".join([snp_vqsr_cmd,
+                            apply_snp_vqsr_cmd,
+                            indel_vqsr_cmd,
+                            apply_indel_vqsr_cmd,
+                            vcf_index_cmd])

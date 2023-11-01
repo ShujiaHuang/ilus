@@ -35,7 +35,7 @@ resources:
 cleanfastq:
   # `could be any suitable fastq cleaning program`
   soapnuke: /path/to/SOAPnuke
-  soapnuke_options: [-T 12 -M 2 -m 150 -n 0.001 -l 10 -q 0.5 --adaMR 0.25 --polyX 50 --minReadLen 150
+  soapnuke_options: [-T 12 -m 15 -n 0.01 -l 10 -q 0.1 -M 2 --adaMR 0.25 --polyX 50 --minReadLen 100
                      -f AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA -r AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG]
 
 aligner:

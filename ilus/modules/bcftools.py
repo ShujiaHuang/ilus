@@ -18,4 +18,4 @@ def vcfconcat(config, input_vcfs, output_vcf):
         output_vcf += ".gz"
 
     cmd = [f"time {bcftools} concat {concat_options} -O z -o {output_vcf}"] + input_vcfs
-    return " ".join(cmd) + f" && time {tabix} -p vcf {output_vcf}"
+    return " ".join(cmd) + f" && time {tabix} -f -p vcf {output_vcf}"
