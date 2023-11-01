@@ -1,5 +1,6 @@
 ## Update
 
+- [2023-11-01] 添加基于 SOAPnuke 的原始数据过滤模块
 - [2023-10-31] 完成 Sentieon 模块的添加，并且流程中不需要有额外的 CombineGVCF 这个步骤。
 - [2023-10-31] 为 genotypeGVCFs 添加 --dbsnp 参数，用于注释已知位点
 - [2023-10-30] 比对统计信息的计算和数据污染计算从 BQSR 前移到 markduplicate 这一步之后。并将 `.recal.table` 后缀改为 `.BQSR.recal.table`
