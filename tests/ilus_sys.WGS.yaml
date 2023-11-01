@@ -35,7 +35,7 @@ resources:
 cleanfastq:
   # `could be any suitable fastq cleaning program`
   soapnuke: /path/to/SOAPnuke
-  soapnuke_options: [-M 2 -m 150 -n 0.001 -l 10 -q 0.5 --adaMR 0.25 --polyX 50 --minReadLen 150
+  soapnuke_options: [-T 12 -M 2 -m 150 -n 0.001 -l 10 -q 0.5 --adaMR 0.25 --polyX 50 --minReadLen 150
                      -f AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA -r AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG]
 
 aligner:
@@ -202,5 +202,5 @@ sentieon:
   alignment_metrics: [-t 24]
   # '--omit_base_output' skip the output of the per locus coverage with no partition.
   # This option can be used when you do not use intervals to save space.
-  coverage_options: [-t 24 --omit_base_output]
+  coverage_options: [-t 24]
 

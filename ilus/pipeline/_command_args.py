@@ -73,7 +73,14 @@ def create_wgs_pipeline_command(commands):
         "--clean-raw-data",
         dest="clean_raw_data",
         action="store_true",
-        help="Set this option to clean raw sequencing data (fastq data)."
+        help="Set this option to clean raw sequencing data (fastq)."
+    )
+
+    wgs_cmd.add_argument(
+        "--delete-clean-fastq",
+        dest="delete_clean_fastq",
+        action="store_true",
+        help="Set this option to delete clean fastq after aligning all reads to reference."
     )
 
     wgs_cmd.add_argument(

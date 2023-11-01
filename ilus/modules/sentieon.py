@@ -49,7 +49,7 @@ class Sentieon(object):
 
         bwa_cmd = (f"time {self.sentieon} bwa mem {bwa_options} -R {rgID} {self.reference_index} "
                    f"{fastq1} {fastq2} | {self.sentieon} util sort {sort_options} --sam2bam "
-                   f"-o {out_prefix}.sorted.bam -i - ")
+                   f"-o {out_prefix}.sorted.bam -i -")
 
         return f"{out_prefix}.sorted.bam", bwa_cmd
 
@@ -79,18 +79,19 @@ class Sentieon(object):
     def markduplicates(self, input_bam, output_markdup_bam):
         """Markdup Duplicate Reads.
         """
-        output_markdup_bam = str(output_markdup_bam)
         locus_collector_options = " ".join([
             str(x) for x in self.config["sentieon"].get("LocusCollector_options", [])
         ])
         dedup_options = " ".join([str(x) for x in self.config["sentieon"].get("dedup_options", [])])
 
+        output_markdup_bam = str(output_markdup_bam)
         score_info_file = output_markdup_bam.replace(".bam", ".score.txt")
         dedup_metrics_f = output_markdup_bam.replace(".bam", ".metrics.txt")
         dedup_cmd = (f"time {self.sentieon} driver {locus_collector_options} "
                      f"-i {input_bam} "
                      f"--algo LocusCollector --fun score_info {score_info_file} && "
                      f"time {self.sentieon} driver {dedup_options} "
+                     f"-i {input_bam} "
                      f"--algo Dedup --score_info {score_info_file} "
                      f"--metrics {dedup_metrics_f} {output_markdup_bam}")
 
@@ -98,9 +99,13 @@ class Sentieon(object):
         coverage_options = " ".join([
             str(x) for x in self.config["sentieon"].get("coverage_options", [])
         ])
+        if "--omit_base_output" in coverage_options:
+            raise ValueError("[ERROR] do not set '--omit_base_output' option "
+                             "for 'coverage_options' in configuration yaml file.")
         cvg_metrics_fn = output_markdup_bam.replace(".bam", ".coverage_metrics")
         cvg_cmd = (f"{self.sentieon} driver -r {self.reference_fasta} {coverage_options} "
-                   f"--algo CoverageMetrics {cvg_metrics_fn}")
+                   f"-i {output_markdup_bam} "
+                   f"--algo CoverageMetrics --omit_base_output {cvg_metrics_fn}")
 
         return dedup_cmd + " && " + cvg_cmd
 

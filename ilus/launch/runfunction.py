@@ -11,6 +11,7 @@ from typing import List, Tuple
 
 from ilus.modules.utils import safe_makedir
 from ilus.modules.summary import bam
+from ilus.modules import soapnuke
 from ilus.modules import bwa
 from ilus.modules import gatk
 from ilus.modules.sentieon import Sentieon
@@ -74,8 +75,17 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
                 # record the samples' id and keep the order as the same as input.
                 samples.append([sample_id, sample_outdir])
 
-            out_prefix = sample_outdir.joinpath(sample_id + "_" + lane)
+            cmds = []
+            if kwargs.clean_raw_data:
+                clean_fq_cmd, clean_fq1, clean_fq2 = soapnuke.filter(
+                    aione["config"], sample_outdir, fq1, fq2)
 
+                # set to clean data
+                fq1 = clean_fq1
+                fq2 = clean_fq2
+                cmds.append(clean_fq_cmd)
+
+            out_prefix = sample_outdir.joinpath(sample_id + "_" + lane)
             if kwargs.use_sentieon:
                 lane_sorted_bam_file, cmd = Sentieon(config=aione["config"]).bwamem(
                     out_prefix, read_group_id, fq1, fq2)
@@ -83,7 +93,12 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
                 lane_sorted_bam_file, cmd = bwa.bwa_mem(
                     aione["config"], out_prefix, read_group_id, fq1, fq2)
 
-            sample_bamfiles_by_lane[sample_id].append([lane_sorted_bam_file, cmd])
+            cmds.append(cmd)
+            if kwargs.clean_raw_data and kwargs.delete_clean_fastq:
+                # 注意：这里不要用 fq1 和 fq2，故意要用 clean_fq1 和 clean_fq2 就是怕一不小心误删原始数据
+                cmds.append(f"rm -f {clean_fq1} {clean_fq2}")
+
+            sample_bamfiles_by_lane[sample_id].append([lane_sorted_bam_file, " && ".join(cmds)])
 
     bwa_shell_files_list = []
     aione["sample_final_sorted_bam"] = []
@@ -257,7 +272,6 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
                              is_dry_run: bool = False):
     """Create gvcf shell.
     """
-
     def _create_sub_shell(sample, in_sample_bam, bqsr_recal_table, sample_shell_dir,
                           sample_output_dir, raw_interval=None, is_dry_run=False):
         interval_ = raw_interval if raw_interval else "all"
