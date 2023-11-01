@@ -262,7 +262,7 @@ class Sentieon(object):
             f"--resource {resource_1000G} --resource_param 1000G,known=false,training=true,truth=false,prior=10.0 "
             f"--resource {resource_dbsnp} --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 "
             f"--var_type SNP "
-            f"--max-gaussians {self.config['sentieon']['vqsr_snp_max_gaussians']} "
+            f"--max_gaussians {self.config['sentieon']['vqsr_snp_max_gaussians']} "
             f"--tranches_file {out_prefix}.SNPs.tranches.csv "
             f"--plot_file {out_prefix}.plot.SNPs.csv "
             f"{out_prefix}.SNPs.recal"  # Output quality recalibrator data for SNPs
@@ -286,7 +286,7 @@ class Sentieon(object):
             f"--resource {resource_1000G_known_indel} --resource_param 1000G,known=false,training=true,truth=true,prior=10.0 "
             f"--resource {resource_dbsnp} --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 "
             f"--var_type INDEL "
-            f"--max-gaussians {self.config['sentieon']['vqsr_indel_max_gaussians']} "
+            f"--max_gaussians {self.config['sentieon']['vqsr_indel_max_gaussians']} "
             f"--tranches_file {out_prefix}.INDELs.tranches.csv "
             f"--plot_file {out_prefix}.plot.INDELs.csv "
             f"{out_prefix}.INDELs.recal"  # Output quality recalibrator data for INDELs

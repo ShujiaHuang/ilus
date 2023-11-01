@@ -189,7 +189,7 @@ sentieon:
   vqsr_options: [
     "--annotation QD --annotation MQRankSum --annotation ReadPosRankSum --annotation FS",
     "--annotation SOR --annotation DP",
-    "-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 95.0 -tranche 90.0",
+    "--tranche 100.0 --tranche 99.9 --tranche 99.0 --tranche 95.0 --tranche 90.0",
     "--max_neg_gaussians 2"
   ]
   ## maximum number of Gaussians that will be used for the positive recalibration model in VQSR.
