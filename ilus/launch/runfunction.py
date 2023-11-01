@@ -62,7 +62,7 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
 
         # SAMPLE_ID RGID  FASTQ1  FASTQ2  LANE  LIBRARY PLATFORM   CENTER
         for line in f:
-            if line[0] == "#":  # ignore header
+            if line.startswith("#"):  # ignore header
                 continue
 
             sample_id, read_group_id, fq1, fq2, lane = line.strip().split()[:5]
@@ -102,8 +102,8 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
 
     bwa_shell_files_list = []
     aione["sample_final_sorted_bam"] = []
-
     samtools = aione["config"]["samtools"]["samtools"]
+
     # Merge BAM files for each sample by lane
     for sample, sample_outdir in samples:
         sample_final_bamfile = sample_outdir.joinpath(f"{sample}.sorted.bam")
@@ -558,7 +558,8 @@ def run_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None,
     shell_fname = shell_directory.joinpath(f"{kwargs.project_name}.VQSR.sh")
 
     cmd = []
-    # Todo: 把这个 concat 提前到 genotypeGVCFs? 但是 WES 区间过多，文件过多会不会有句柄问题？是否考虑对 WES 不进行区间拆分？
+    # Todo: 把这个 concat 提前到 genotypeGVCFs? 但是 WES 区间过多，
+    #  文件过多会不会有句柄问题？是否考虑对 WES 不进行区间拆分？
     if len(aione["genotype_vcf_list"]) > 1:
         # concat-vcf
         concat_vcf_cmd = vcfconcat(aione["config"],

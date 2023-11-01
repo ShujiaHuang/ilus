@@ -61,14 +61,6 @@ class Sentieon(object):
         if len(adapter_seq) == 0:
             adapter_seq = "' '"
 
-        # Coverage metrics. could only be calculated after markduplicates.
-        coverage_options = " ".join([
-            str(x) for x in self.config["sentieon"].get("coverage_options", [])
-        ])
-        if "--omit_base_output" in coverage_options:
-            raise ValueError("[ERROR] do not set '--omit_base_output' option "
-                             "for 'coverage_options' in configuration yaml file.")
-
         align_metrics_cmd = (f"time {self.sentieon} driver -r {self.reference_fasta} {metrics_options} "
                              f"-i {input_bam} "
                              f"--algo MeanQualityByCycle {out_prefix}.mq_metrics.txt "
@@ -104,15 +96,14 @@ class Sentieon(object):
                      f"--algo Dedup --score_info {score_info_file} "
                      f"--metrics {dedup_metrics_f} {output_markdup_bam}")
 
-        # Coverage metrics. could only be calculated after markduplicates.
         coverage_options = " ".join([
             str(x) for x in self.config["sentieon"].get("coverage_options", [])
         ])
 
-        if "--omit_base_output" in coverage_options:
-            raise ValueError("[ERROR] do not set '--omit_base_output' option "
-                             "for 'coverage_options' in configuration yaml file.")
         cvg_metrics_fn = output_markdup_bam.replace(".bam", ".coverage_metrics")
+
+        # '--omit_base_output' skip the output of the per locus coverage with no partition.
+        # This option can be used when you do not use intervals to save space.
         cvg_cmd = (f"{self.sentieon} driver -r {self.reference_fasta} {coverage_options} "
                    f"-i {output_markdup_bam} "
                    f"--algo CoverageMetrics --omit_base_output {cvg_metrics_fn}")
@@ -185,9 +176,17 @@ class Sentieon(object):
 
         :param input_bam: Input Indel Realigner BAM file
         :param bqsr_recal_table: BQSR recalibrator table.
-        :param output_vcf_fname: gvcf or vcf
+        :param output_vcf_fname: gvcf
         :param interval: Interval string or file (BED/Picard)
         :return:
+
+        'emit_mode' in HaplotypeCaller: determines what calls will be emitted. Possible values for mode are:
+              - variant: emit calls only at confident variant sites. This is the default behavior.
+              - confident: emit calls at confident variant sites or confident reference sites.
+              - all: emit all calls, regardless of their confidence.
+              - gvcf: emits additional information required for joint calling.
+                      This option is required if you want to perform joint calling using the
+                      GVCFtyper algorithm.
         """
         dbsnp = self.config["resources"]["bundle"]["dbsnp"]
         hc_options = " ".join([str(x) for x in self.config["sentieon"].get("hc_options", [])])
@@ -195,35 +194,40 @@ class Sentieon(object):
         if interval:
             hc_options += f" --interval {interval}"
 
-        if "gvcf" in hc_options and ".g.vcf" not in str(output_vcf_fname):
-            raise ValueError(f"[ERROR] {output_vcf_fname} missing .g.vcf in file name with "
-                             f"`--emit_mode gvcf`.")
+        if ".g.vcf" not in str(output_vcf_fname):
+            raise ValueError(f"[ERROR] {output_vcf_fname} missing .g.vcf in file name")
 
         return (f"time {self.sentieon} driver -r {self.reference_fasta} {hc_options} "
                 f"-i {input_bam} "
                 f"-q {bqsr_recal_table} "
                 f"-d {dbsnp} "
-                f"--algo Haplotyper {output_vcf_fname}")
+                f"--algo Haplotyper --emit_mode gvcf {output_vcf_fname}")
 
     def genotypeGVCFs(self, input_gvcfs_list, output_vcf_fname, interval=None):
         """Perform the joint calling by `GVCFtyper` module with input GVCFs.
+
+        'emit_mode' in GVCFtyper: determines what calls will be emitted. Possible values for mode are:
+              - variant: emit calls only at confident variant sites. This is the default behavior.
+              - confident: emit calls at confident variant sites or confident reference sites.
+              - all: emit all calls, regardless of their confidence.
         """
-        # location of the Single Nucleotide Polymorphism database (dbSNP) used to label known variants.
+        # location of the Single Nucleotide Polymorphism database (dbSNP) used to
+        # label known variants.
         dbsnp = self.config["resources"]["bundle"]["dbsnp"]
         gvcftyper_options = " ".join([
             str(x) for x in self.config["sentieon"].get("gvcftyper_options", [])
         ])
-
         if interval:
             gvcftyper_options += f" --interval {interval}"
 
         in_gvcf_arguments = " ".join([f"-v {gvcf_fn}" for gvcf_fn in input_gvcfs_list])
         return (f"time {self.sentieon} driver -r {self.reference_fasta} {gvcftyper_options} "
                 f"-d {dbsnp} "
-                f"--algo GVCFtyper {in_gvcf_arguments} {output_vcf_fname}")
+                f"--algo GVCFtyper --emit_mode variant {in_gvcf_arguments} {output_vcf_fname}")
 
     def variantrecalibrator(self, input_vcf, output_vcf_fname):
-        """Use VarCal and ApplyVarCal modules to do VQSR in senteon. """
+        """Use VarCal and ApplyVarCal modules to do VQSR in senteon.
+        """
         resource_hapmap = self.config["resources"]["bundle"]["hapmap"]
         resource_omni = self.config["resources"]["bundle"]["omni"]
         resource_1000G = self.config["resources"]["bundle"]["1000G"]
