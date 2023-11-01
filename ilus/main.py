@@ -114,6 +114,7 @@ def load_config(config_file):
 def get_variant_calling_intervals(calling_interval_parameter):
     """get variant calling intervals into a bed format"""
 
+    intervals = calling_interval_parameter
     if (type(calling_interval_parameter) is str) \
             and (Path(calling_interval_parameter).is_file()):
         # A file for recording interval
@@ -124,13 +125,13 @@ def get_variant_calling_intervals(calling_interval_parameter):
             chr1	257667	297968
             """
             # return the value to be a list of interval regions
-            return [line.strip().split()[:3] for line in f if not line.startswith("#")]
+            intervals = [line.strip().split()[:3] for line in f if not line.startswith("#")]
 
     elif type(calling_interval_parameter) is not list:
         raise ValueError(f"'variant_calling_interval' parameter could only be a file path or "
                          f"a list of chromosome id in the configure file (.yaml).\n")
 
-    return calling_interval_parameter
+    return intervals
 
 
 def run_command(args):
@@ -162,16 +163,20 @@ def run_command(args):
 
     # loaded global configuration file
     config = load_config(args.sysconf)
-
+    flag = False
     if "variant_calling_interval" in config["gatk"]:
         config["gatk"]["variant_calling_interval"] = get_variant_calling_intervals(
             config["gatk"]["variant_calling_interval"])
+    else:
+        flag = True
 
-    elif args.use_sentieon and "variant_calling_interval" in config["sentieon"]:
+    if args.use_sentieon and "variant_calling_interval" in config["sentieon"]:
         config["sentieon"]["variant_calling_interval"] = get_variant_calling_intervals(
             config["sentieon"]["variant_calling_interval"])
-
     else:
+        flag = True
+
+    if flag:
         raise ValueError(f"'variant_calling_interval' parameter is required "
                          f"in the configure file: {args.sysconf}.\n")
 

@@ -200,8 +200,8 @@ class Sentieon(object):
         return (f"time {self.sentieon} driver -r {self.reference_fasta} {hc_options} "
                 f"-i {input_bam} "
                 f"-q {bqsr_recal_table} "
-                f"-d {dbsnp} "
-                f"--algo Haplotyper --emit_mode gvcf {output_vcf_fname}")
+                f"--algo Haplotyper -d {dbsnp} "
+                f"--emit_mode gvcf {output_vcf_fname}")
 
     def genotypeGVCFs(self, input_gvcfs_list, output_vcf_fname, interval=None):
         """Perform the joint calling by `GVCFtyper` module with input GVCFs.
@@ -222,11 +222,10 @@ class Sentieon(object):
 
         in_gvcf_arguments = " ".join([f"-v {gvcf_fn}" for gvcf_fn in input_gvcfs_list])
         return (f"time {self.sentieon} driver -r {self.reference_fasta} {gvcftyper_options} "
-                f"-d {dbsnp} "
-                f"--algo GVCFtyper --emit_mode variant {in_gvcf_arguments} {output_vcf_fname}")
+                f"--algo GVCFtyper {in_gvcf_arguments} -d {dbsnp} {output_vcf_fname}")
 
     def variantrecalibrator(self, input_vcf, output_vcf_fname):
-        """Use VarCal and ApplyVarCal modules to do VQSR in senteon.
+        """Use VarCal and ApplyVarCal modules to do VQSR in sentieon.
         """
         resource_hapmap = self.config["resources"]["bundle"]["hapmap"]
         resource_omni = self.config["resources"]["bundle"]["omni"]
@@ -245,7 +244,8 @@ class Sentieon(object):
 
         if '--var_type' in vqsr_options + apply_snp_vqsr_options + apply_indel_vqsr_options:
             raise ValueError("[ERROR] Do not set '--var_type' in `vqsr_options` or "
-                             "`apply_snp_vqsr_options` or `apply_indel_vqsr_options` in configuration file")
+                             "`apply_snp_vqsr_options` or `apply_indel_vqsr_options` "
+                             "in configuration file")
 
         # Set name
         out_prefix = str(output_vcf_fname).replace(".gz", "").replace(".vcf", "")  # delete .vcf.gz
