@@ -307,16 +307,13 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
 
         return sample_shell_fname_, sample_gvcf_fname_
 
-    output_directory, shell_directory = _md(
-        Path(kwargs.outdir).joinpath(out_folder_name),
-        is_dry_run=is_dry_run)
-
+    output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
+                                            is_dry_run=is_dry_run)
     is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
         if "use_genomicsDBImport" in aione["config"]["gatk"] else False
 
     gvcf_shell_files_list = []
     aione["gvcf"] = {}
-
     if "interval" not in aione["config"]["gatk"]:
         aione["config"]["gatk"]["interval"] = ["all"]
 
@@ -467,7 +464,7 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
 
         # Create commandline for genotype joint-calling process
         if kwargs.use_sentieon:
-            interval_id = interval[0] if type(interval) is list else interval  # get key
+            interval_id = interval[0] if type(interval) is list else interval  # get chromosome ID
             if interval_id not in aione["gvcf"]:
                 continue
 

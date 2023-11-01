@@ -111,16 +111,26 @@ def load_config(config_file):
         return yaml.safe_load(f)
 
 
-def get_intervals(interval_file):
-    if not Path(interval_file).is_file():
-        raise ValueError(f"Invalid interval file: {interval_file}")
+def get_variant_calling_intervals(calling_interval_parameter):
+    """get variant calling intervals into a bed format"""
 
-    with open(interval_file) as f:
-        """Bed format:
-        chr1	10001	207666
-        chr1	257667	297968
-        """
-        return [line.strip().split()[:3] for line in f if not line.startswith("#")]
+    if (type(calling_interval_parameter) is str) \
+            and (Path(calling_interval_parameter).is_file()):
+        # A file for recording interval
+        interval_file = calling_interval_parameter
+        with open(interval_file) as f:
+            """Bed format:
+            chr1	10001	207666
+            chr1	257667	297968
+            """
+            # return the value to be a list of interval regions
+            return [line.strip().split()[:3] for line in f if not line.startswith("#")]
+
+    elif type(calling_interval_parameter) is not list:
+        raise ValueError(f"'variant_calling_interval' parameter could only be a file path or "
+                         f"a list of chromosome id in the configure file (.yaml).\n")
+
+    return calling_interval_parameter
 
 
 def run_command(args):
@@ -154,16 +164,12 @@ def run_command(args):
     config = load_config(args.sysconf)
 
     if "variant_calling_interval" in config["gatk"]:
-        if (type(config["gatk"]["variant_calling_interval"]) is str) \
-                and (Path(config["gatk"]["variant_calling_interval"]).is_file()):
-            # A file for recording interval
-            interval_file = config["gatk"]["variant_calling_interval"]
-            # reset the value to be a list of interval regions
-            config["gatk"]["variant_calling_interval"] = get_intervals(interval_file)
+        config["gatk"]["variant_calling_interval"] = get_variant_calling_intervals(
+            config["gatk"]["variant_calling_interval"])
 
-        elif type(config["gatk"]["variant_calling_interval"]) is not list:
-            raise ValueError(f"'variant_calling_interval' parameter could only be a file path or "
-                             f"a list of chromosome id in the configure file: {args.sysconf}.\n")
+    elif args.use_sentieon and "variant_calling_interval" in config["sentieon"]:
+        config["sentieon"]["variant_calling_interval"] = get_variant_calling_intervals(
+            config["sentieon"]["variant_calling_interval"])
 
     else:
         raise ValueError(f"'variant_calling_interval' parameter is required "
