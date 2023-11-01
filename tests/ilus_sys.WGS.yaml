@@ -131,21 +131,30 @@ gatk:
 # Setting parameter for Sentieon. Optional
 sentieon:
   sentieon: /path/to/BioSoftware/sentieon
+  sentieon_driver_options: [-t 24]
 
   # The results of this call are dependent on the number of threads used.
   # To have number of threads independent results, add chunk size option -K 10000000
   bwamem_options: [-Y -M -t 24 -K 10000000]
-  sort_options: [-t 24]
+  util_sort_options: [-t 24]
 
   # Option for remove Duplicate Reads.
   # mark instead of remove duplicates by ommitting the --rmdup option in Dedup.
-  LocusCollector_options: [-t 24]
-  dedup_options: [-t 24]  # [-t 24 --rmdup]
+  LocusCollector_options: []
 
-  indel_realigner_options: [-t 24]
-  bqsr_recaltable_options: [-t 24]
-  bqsr_apply_options: [-t 24]
-  hc_options: [-t 24]
+  dedup_options: []  # [--rmdup]
+  indel_realigner_options: []
+
+  bqsr_recaltable_options: []  # [--cycle_val_max xxx]
+
+  # 'emit_mode' in HaplotypeCaller: determines what calls will be emitted. Possible values for mode are:
+  #    - variant: emit calls only at confident variant sites. This is the default behavior.
+  #    - confident: emit calls at confident variant sites or confident reference sites.
+  #    - all: emit all calls, regardless of their confidence.
+  #    - gvcf: emits additional information required for joint calling.
+  #        This option is required if you want to perform joint calling using the
+  #        GVCFtyper algorithm.
+  hc_options: [--emit_mode gvcf]
 
   # Fro creating gvcf. The value could be an interval region file in bed format or
   # could be chromosomes list here. I suggest you should use chromosome list here.
@@ -168,12 +177,16 @@ sentieon:
                              "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16",
                              "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX",  "chrY",
                              "chrM"]
-  gvcftyper_options: [-t 24]
+
+  # 'emit_mode' in GVCFtyper: determines what calls will be emitted. Possible values for mode are:
+  #    - variant: emit calls only at confident variant sites. This is the default behavior.
+  #    - confident: emit calls at confident variant sites or confident reference sites.
+  #    - all: emit all calls, regardless of their confidence.
+  gvcftyper_options: [--emit_mode variant]
 
   # VQSR.
   ## No need to set `--var_type` option which will be set automatically by ilus
   vqsr_options: [
-    "-t 24",
     "--annotation QD --annotation MQRankSum --annotation ReadPosRankSum --annotation FS",
     "--annotation SOR --annotation DP",
     "-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 95.0 -tranche 90.0",
@@ -186,8 +199,7 @@ sentieon:
   apply_indel_vqsr_options: [--sensitivity 99.5]
 
   # Option for alignment metrics
-  alignment_metrics: [-t 24]
   # '--omit_base_output' skip the output of the per locus coverage with no partition.
   # This option can be used when you do not use intervals to save space.
-  coverage_options: [-t 24]
+  coverage_options: [--omit_base_output]
 
