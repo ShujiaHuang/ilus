@@ -61,13 +61,22 @@ class Sentieon(object):
         if len(adapter_seq) == 0:
             adapter_seq = "' '"
 
+        # Coverage metrics. could only be calculated after markduplicates.
+        coverage_options = " ".join([
+            str(x) for x in self.config["sentieon"].get("coverage_options", [])
+        ])
+        if "--omit_base_output" in coverage_options:
+            raise ValueError("[ERROR] do not set '--omit_base_output' option "
+                             "for 'coverage_options' in configuration yaml file.")
+
         align_metrics_cmd = (f"time {self.sentieon} driver -r {self.reference_fasta} {metrics_options} "
                              f"-i {input_bam} "
                              f"--algo MeanQualityByCycle {out_prefix}.mq_metrics.txt "
                              f"--algo QualDistribution {out_prefix}.qd_metrics.txt "
                              f"--algo GCBias --summary {out_prefix}.gc_summary.txt {out_prefix}.gc_metrics.txt "
                              f"--algo AlignmentStat --adapter_seq {adapter_seq} {out_prefix}.aln_metrics.txt "
-                             f"--algo InsertSizeMetricAlgo {out_prefix}.is_metrics.txt")
+                             f"--algo InsertSizeMetricAlgo {out_prefix}.is_metrics.txt "
+                             f"--algo CoverageMetrics --omit_base_output {out_prefix}.coverage_metrics")
 
         plot_cmd = (f"{self.sentieon} plot GCBias -o {out_prefix}.gc-report.pdf {out_prefix}.gc_metrics.txt && "
                     f"{self.sentieon} plot QualDistribution -o {out_prefix}.qd-report.pdf {out_prefix}.qd_metrics.txt && "
@@ -99,6 +108,7 @@ class Sentieon(object):
         coverage_options = " ".join([
             str(x) for x in self.config["sentieon"].get("coverage_options", [])
         ])
+
         if "--omit_base_output" in coverage_options:
             raise ValueError("[ERROR] do not set '--omit_base_output' option "
                              "for 'coverage_options' in configuration yaml file.")

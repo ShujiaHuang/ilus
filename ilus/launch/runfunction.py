@@ -165,10 +165,6 @@ def run_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
 
         # Setting Output path of markduplicates BAM file as the same as ``sample_sorted_bam``
         out_markdup_bam_fname = dirname.joinpath(f"{f_name_stem}.markdup.bam")
-        out_alignment_summary_metric = dirname.joinpath(f"{f_name_stem}.AlignmentSummaryMetrics.txt")
-        out_bamstats_fname = dirname.joinpath(f"{f_name_stem}.stats")
-        genome_cvg_fname = dirname.joinpath(f"{f_name_stem}.depth.bed.gz")
-
         sample_shell_fname = shell_directory.joinpath(f"{sample}.markdup.sh")
         markdup_shell_files_list.append([sample, sample_shell_fname])
 
@@ -178,7 +174,7 @@ def run_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
             out_markdup_reagliner_bam_fname = dirname.joinpath(f"{f_name_stem}.markdup.realigner.bam")
             cmd.append(Sentieon(aione["config"]).indelrealigner(out_markdup_bam_fname,
                                                                 out_markdup_reagliner_bam_fname))
-            cmd.append(f"rm -f {out_markdup_bam_fname}")
+            cmd.append(f"rm -f {out_markdup_bam_fname}*")
 
             # 重新赋值为 Indel Realign 之后的 BAM
             out_markdup_bam_fname = out_markdup_reagliner_bam_fname
@@ -190,11 +186,14 @@ def run_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
         if IS_RM_SUBBAM:
             cmd.append(f"rm -f {sample_sorted_bam} {sample_sorted_bam}.bai")  # save disk space
 
+        out_alignment_summary_metric = dirname.joinpath(f"{f_name_stem}.AlignmentSummaryMetrics.txt")
+        out_bamstats_fname = dirname.joinpath(f"{f_name_stem}.markdup.stats")
+        genome_cvg_fname = dirname.joinpath(f"{f_name_stem}.markdup.depth.bed.gz")
+
         cmd.append(gatk.collect_alignment_summary_metrics(
             aione["config"], out_markdup_bam_fname, out_alignment_summary_metric))
         cmd.append(bam.stats(aione["config"], out_markdup_bam_fname, out_bamstats_fname))
         cmd.append(bam.genomecoverage(aione["config"], out_markdup_bam_fname, genome_cvg_fname))
-
         if is_calculate_contamination:
             out_verifybamid_stat_prefix = dirname.joinpath(f"{f_name_stem}.verifyBamID2")
             cmd.append(bam.verifyBamID2(aione["config"],
@@ -559,6 +558,7 @@ def run_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None,
     shell_fname = shell_directory.joinpath(f"{kwargs.project_name}.VQSR.sh")
 
     cmd = []
+    # Todo: 把这个 concat 提前到 genotypeGVCFs? 但是 WES 区间过多，文件过多会不会有句柄问题？是否考虑对 WES 不进行区间拆分？
     if len(aione["genotype_vcf_list"]) > 1:
         # concat-vcf
         concat_vcf_cmd = vcfconcat(aione["config"],
