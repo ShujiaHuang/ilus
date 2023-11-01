@@ -32,6 +32,12 @@ resources:
 
 
 # Common tools
+cleanfastq:
+  # `could be any suitable fastq cleaning program`
+  soapnuke: /path/to/SOAPnuke
+  soapnuke_options: [-M 2 -m 150 -n 0.001 -l 10 -q 0.5 --adaMR 0.25 --polyX 50 --minReadLen 150
+                     -f AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA -r AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG]
+
 aligner:
   bwa: /path/to/bwa
 

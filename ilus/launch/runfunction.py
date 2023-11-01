@@ -88,6 +88,7 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
     bwa_shell_files_list = []
     aione["sample_final_sorted_bam"] = []
 
+    samtools = aione["config"]["samtools"]["samtools"]
     # Merge BAM files for each sample by lane
     for sample, sample_outdir in samples:
         sample_final_bamfile = sample_outdir.joinpath(f"{sample}.sorted.bam")
@@ -101,19 +102,21 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
             cmd = [sample_bamfiles_by_lane[sample][0][1]]
             if sample_final_bamfile != lane_bam_file:
                 cmd.append(f"mv -f {lane_bam_file} {sample_final_bamfile}")
+                cmd.append(f"rm -f {lane_bam_file}.bai")
         else:
-            samtools = aione["config"]["samtools"]["samtools"]
             samtools_merge_options = " ".join(
                 [str(x) for x in aione["config"]["samtools"].get("merge_options", [])]
             )
 
             lane_bam_files = " ".join([f for f, _ in sample_bamfiles_by_lane[sample]])
+            lane_bai_files = " ".join([f"{f}.bai" for f, _ in sample_bamfiles_by_lane[sample]])
             cmd = [c for _, c in sample_bamfiles_by_lane[sample]]
 
             # merge lane_bam_files together to be one big BAM file and rm lane_bam_files
             cmd.append(f"{samtools} merge {samtools_merge_options} {sample_final_bamfile} "
-                       f"{lane_bam_files} && rm -rf {lane_bam_files}")
+                       f"{lane_bam_files} && rm -f {lane_bam_files} {lane_bai_files}")
 
+        cmd.append(f"{samtools} index -@ 8 {sample_final_bamfile}")
         # alignment metrics
         if kwargs.use_sentieon:
             # 只有当使用 Sentieon 时才会计算这些 alignment metrics
@@ -170,7 +173,7 @@ def run_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
 
         aione["sample_final_markdup_bam"].append([sample, out_markdup_bam_fname])
         if IS_RM_SUBBAM:
-            cmd.append(f"rm -rf {sample_sorted_bam}")  # save disk space
+            cmd.append(f"rm -f {sample_sorted_bam} {sample_sorted_bam}.bai")  # save disk space
 
         cmd.append(gatk.collect_alignment_summary_metrics(
             aione["config"], out_markdup_bam_fname, out_alignment_summary_metric))
@@ -214,7 +217,7 @@ def run_baserecalibrator(kwargs,
             if kwargs.cram:
                 out_cram_fname = dirname.joinpath(f"{f_name_stem}.cram")
                 cmd.append(bwa.bam_to_cram(aione["config"], sample_markdup_bam, out_cram_fname))
-                cmd.append(f"rm -rf {sample_markdup_bam}")
+                cmd.append(f"rm -f {sample_markdup_bam}*")
 
                 # 注意：对于 Sentieon 来说，不需要单独输出 BQSR 之后的 Bam，
                 # 所以，这里的 sample_final_bqsr_bam 其实还是原来的 sample_markdup_bam
@@ -225,19 +228,17 @@ def run_baserecalibrator(kwargs,
         else:
             # 对于 GATK 而言，需要生成 ApplyBQSR 之后的新 BAM
             out_bqsr_bam_fname = dirname.joinpath(f"{f_name_stem}.BQSR.bam")
-            out_bqsr_bai_fname = dirname.joinpath(f"{f_name_stem}.BQSR.bai")
             cmd = [gatk.baserecalibrator(aione["config"],
                                          sample_markdup_bam,
                                          out_bqsr_bam_fname,
                                          out_bqsr_recal_table)]
             if IS_RM_SUBBAM:  # Only use in GATK
-                cmd.append(f"rm -rf {sample_markdup_bam}")
+                cmd.append(f"rm -f {sample_markdup_bam}*")
 
             if kwargs.cram:
                 out_cram_fname = dirname.joinpath(f"{f_name_stem}.BQSR.cram")
                 cmd.append(bwa.bam_to_cram(aione["config"], out_bqsr_bam_fname, out_cram_fname))
-                cmd.append(f"rm -rf {out_bqsr_bam_fname}")
-                cmd.append(f"rm -rf {out_bqsr_bai_fname}")
+                cmd.append(f"rm -f {out_bqsr_bam_fname}*")
 
                 aione["sample_final_bqsr_bam"].append([sample, out_cram_fname, out_bqsr_recal_table])
             else:

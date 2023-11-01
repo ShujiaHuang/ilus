@@ -70,6 +70,13 @@ def create_wgs_pipeline_command(commands):
     )
 
     wgs_cmd.add_argument(
+        "--clean-raw-data",
+        dest="clean_raw_data",
+        action="store_true",
+        help="Set this option to clean raw sequencing data (fastq data)."
+    )
+
+    wgs_cmd.add_argument(
         "-c", "--cram",
         dest="cram",
         action="store_true",

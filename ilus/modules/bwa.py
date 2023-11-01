@@ -35,4 +35,4 @@ def bam_to_cram(config, input_bam_fname, output_cram_fname):
     reference = config["resources"]["reference"]  # reference fasta
 
     return (f"time {samtools} view -CS -T {reference} {input_bam_fname} > "
-            f"{output_cram_fname} && {samtools} index {output_cram_fname}")
+            f"{output_cram_fname} && {samtools} index -@ 8 {output_cram_fname}")
