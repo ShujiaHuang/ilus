@@ -291,7 +291,6 @@ class Sentieon(object):
             f"--plot_file {out_prefix}.plot.INDELs.csv "
             f"{out_prefix}.INDELs.recal"  # Output quality recalibrator data for INDELs
         )
-        tabix = self.config["tabix"]
         apply_indel_vqsr_cmd = (f"time {self.sentieon} driver {self.driver_options} "
                                 f"-r {self.reference_fasta} "
                                 f"--algo ApplyVarCal {apply_indel_vqsr_options} "
@@ -301,6 +300,7 @@ class Sentieon(object):
                                 f"--tranches_file {out_prefix}.INDELs.tranches.csv "
                                 f"{output_vcf_fname} && rm -f {out_snp_vqsr_fname}")
 
+        tabix = self.config["tabix"]
         vcf_index_cmd = f"time {tabix} -f -p vcf {output_vcf_fname}"
         return " && ".join([snp_vqsr_cmd,
                             apply_snp_vqsr_cmd,
