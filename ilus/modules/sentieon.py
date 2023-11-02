@@ -62,8 +62,7 @@ class Sentieon(object):
         if len(adapter_seq) == 0:
             adapter_seq = "' '"
 
-        coverage_options = " ".join([
-            str(x) for x in self.config["sentieon"].get("coverage_options", [])])
+        coverage_options = " ".join([str(x) for x in self.config["sentieon"].get("coverage_options", [])])
         align_metrics_cmd = (f"time {self.sentieon} driver {self.driver_options} "
                              f"-r {self.reference_fasta} "
                              f"-i {input_bam} "
@@ -101,34 +100,30 @@ class Sentieon(object):
                      f"--algo Dedup {dedup_options} --score_info {score_info_file} "
                      f"--metrics {dedup_metrics_f} {output_markdup_bam}")
 
-        coverage_options = " ".join([
-            str(x) for x in self.config["sentieon"].get("coverage_options", [])])
-
-        cvg_metrics_fn = output_markdup_bam.replace(".bam", ".coverage_metrics")
-
-        # '--omit_base_output' skip the output of the per locus coverage with no partition.
-        # This option can be used when you do not use intervals to save space.
-        cvg_cmd = (f"{self.sentieon} driver {self.driver_options} "
-                   f"-r {self.reference_fasta} "
-                   f"-i {output_markdup_bam} "
-                   f"--algo CoverageMetrics {coverage_options} {cvg_metrics_fn}")
-
-        return dedup_cmd + " && " + cvg_cmd
+        return dedup_cmd
 
     def indelrealigner(self, input_bam, output_realig_bam):
         """Indel realignment for sample.
         """
         indel_realigner_options = " ".join([str(x) for x in self.config["sentieon"].get(
             "indel_realigner_options", [])])
+
+        # CoverageMetrics 的计算合并到 Indelrealigner 过程中，可以节省单独计算的时间，同样是计算 input_bam 的覆盖度
+        coverage_options = " ".join([str(x) for x in self.config["sentieon"].get("coverage_options", [])])
+        cvg_metrics_fn = str(input_bam).replace(".bam", ".coverage_metrics")
+
         known_Mills_indels = self.config["resources"]["bundle"]["mills"]
         known_1000G_indels = self.config["resources"]["bundle"]["1000G_known_indel"]
-
         return (f"time {self.sentieon} driver {self.driver_options} "
                 f"-r {self.reference_fasta} "
                 f"-i {input_bam} "
                 f"--algo Realigner {indel_realigner_options} "
                 f"-k {known_Mills_indels} "
-                f"-k {known_1000G_indels} {output_realig_bam}")
+                f"-k {known_1000G_indels} {output_realig_bam} "
+
+                # '--omit_base_output' skip the output of the per locus coverage with no partition.
+                # This option can be used when you do not use intervals to save space.
+                f"--algo CoverageMetrics {coverage_options} {cvg_metrics_fn}")
 
     def baserecalibrator(self, input_bam, out_bqsr_recal_table):
         """Base recalibration.
@@ -265,8 +260,7 @@ class Sentieon(object):
             f"--max_gaussians {self.config['sentieon']['vqsr_snp_max_gaussians']} "
             f"--tranches_file {out_prefix}.SNPs.tranches.csv "
             f"--plot_file {out_prefix}.plot.SNPs.csv "
-            f"{out_prefix}.SNPs.recal"  # Output quality recalibrator data for SNPs
-        )
+            f"{out_prefix}.SNPs.recal")  # Output quality recalibrator data for SNPs
         apply_snp_vqsr_cmd = (f"time {self.sentieon} driver {self.driver_options} "
                               f"-r {self.reference_fasta} "
                               f"--algo ApplyVarCal {apply_snp_vqsr_options} "
@@ -289,8 +283,7 @@ class Sentieon(object):
             f"--max_gaussians {self.config['sentieon']['vqsr_indel_max_gaussians']} "
             f"--tranches_file {out_prefix}.INDELs.tranches.csv "
             f"--plot_file {out_prefix}.plot.INDELs.csv "
-            f"{out_prefix}.INDELs.recal"  # Output quality recalibrator data for INDELs
-        )
+            f"{out_prefix}.INDELs.recal")  # Output quality recalibrator data for INDELs
         apply_indel_vqsr_cmd = (f"time {self.sentieon} driver {self.driver_options} "
                                 f"-r {self.reference_fasta} "
                                 f"--algo ApplyVarCal {apply_indel_vqsr_options} "
