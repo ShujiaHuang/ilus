@@ -91,13 +91,10 @@ def WGS(kwargs, aione: dict = None) -> dict:
 
         # step4: Create GVCF shells
         "gvcf": [run_haplotypecaller_gvcf, f"{kwargs.project_name}.step4.gvcf.sh", "04.gvcf", "02.gvcf"],
-
-        # Todo: Integrate summary and status statistic information of ilus pipeline.
-        "summary": []
     }
 
     if kwargs.use_sentieon:
-        # 如果是 Sentieon 则不需要 CombineGVCF
+        # Sentieon 不需要 CombineGVCF，多余!
         # step5: GenotypeGVCF
         runner_module["genotype"] = [run_genotypeGVCFs, f"{kwargs.project_name}.step5.genotype.sh",
                                      "05.genotype", "03.genotype"]
@@ -105,7 +102,7 @@ def WGS(kwargs, aione: dict = None) -> dict:
         runner_module["VQSR"] = [run_variantrecalibrator, f"{kwargs.project_name}.step6.VQSR.sh",
                                  "06.VQSR", "03.genotype"]
     else:
-        # 相比于 Sentieon，GATK 需要先 CombineGVCF
+        # GATK 需要先 CombineGVCF
         # step5: combineGVCFs
         runner_module["combineGVCFs"] = [gatk_combineGVCFs, f"{kwargs.project_name}.step5.combineGVCFs.sh",
                                          "05.combineGVCFs", "03.genotype"]
@@ -116,11 +113,12 @@ def WGS(kwargs, aione: dict = None) -> dict:
         runner_module["VQSR"] = [run_variantrecalibrator, f"{kwargs.project_name}.step7.VQSR.sh",
                                  "07.VQSR", "03.genotype"]
 
-    # Todo: Need a program to validate whether the tools, arguments and processes are
-    #  available or not for the pipeline.
+    # Todo: Need a program to validate whether the tools, arguments and the order of processes are
+    #  appropriate or not for the pipeline.
 
     processes_set = set(kwargs.wgs_processes.split(","))
     if kwargs.use_sentieon:
+        # do not need to do combineGVCFs
         wgs_pipeline_processes = ["align", "markdup", "BQSR", "gvcf", "genotype", "VQSR"]
         if "combineGVCFs" in processes_set:
             processes_set.remove("combineGVCFs")
@@ -202,7 +200,6 @@ def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
         for line in I:
             if line.startswith("#"):
                 continue
-
             try:
                 interval, sample, gvcf = line.strip().split()
             except ValueError:
@@ -234,17 +231,23 @@ def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
             with open(out_sample_map_fname, "w") as OUT:
                 OUT.write("\n".join(value))
 
-    # create shell scripts for genomicsDBImport or CombineGVCFs before the genotype joint-calling process
-    combineGVCF_shell_fname, combineGVCF_shell_log_folder = [
-        f"{kwargs.project_name}.step5.combineGVCFs.sh", "05.combineGVCFs"] \
-        if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.combineGVCFs.sh", "combineGVCFs"]
+    if kwargs.use_sentieon:
+        # create shell scripts for genotype joint-calling
+        genotype_shell_fname, genotype_shell_log_folder = [
+            f"{kwargs.project_name}.step5.genotype.sh", "05.genotype"
+        ] if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.genotype.sh", "genotype"]
+    else:
+        # For GATK
+        # create shell scripts for genomicsDBImport or CombineGVCFs
+        combineGVCF_shell_fname, combineGVCF_shell_log_folder = [
+            f"{kwargs.project_name}.step5.combineGVCFs.sh", "05.combineGVCFs"] \
+            if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.combineGVCFs.sh", "combineGVCFs"]
+        _f(kwargs, aione, combineGVCF_shell_fname, combineGVCF_shell_log_folder, gatk_combineGVCFs)
 
-    _f(kwargs, aione, combineGVCF_shell_fname, combineGVCF_shell_log_folder, gatk_combineGVCFs)
-
-    # create shell scripts for genotype joint-calling
-    genotype_shell_fname, genotype_shell_log_folder = [
-        f"{kwargs.project_name}.step6.genotype.sh", "06.genotype"
-    ] if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.genotype.sh", "genotype"]
+        # create shell scripts for genotype joint-calling
+        genotype_shell_fname, genotype_shell_log_folder = [
+            f"{kwargs.project_name}.step6.genotype.sh", "06.genotype"
+        ] if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.genotype.sh", "genotype"]
 
     _f(kwargs, aione, genotype_shell_fname, genotype_shell_log_folder, run_genotypeGVCFs)
 
@@ -252,13 +255,12 @@ def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
 
 
 def variantrecalibrator(kwargs, aione: dict = None) -> dict:
-    aione["genotype_vcf_list"] = []  # will be called in ``gatk_variantrecalibrator``
+    aione["genotype_vcf_list"] = []  # will be called in ``run_variantrecalibrator``
     with open(kwargs.vcflist) as f_in:
-        # Format in vcfilist one file per row
+        # one file path per row
         for line in f_in:
             if line.startswith("#"):
                 continue
-
             aione["genotype_vcf_list"].append(line.strip().split()[0])
 
     shell_fname, shell_log_folder = [

@@ -95,7 +95,7 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
 
             cmds.append(cmd)
             if kwargs.clean_raw_data and kwargs.delete_clean_fastq:
-                # 注意：这里不要用 fq1 和 fq2，故意要用 clean_fq1 和 clean_fq2 就是怕一不小心误删原始数据
+                # 注意：这里不要用 fq1 和 fq2，故意要用 clean_fq1 和 clean_fq2 就是预防误删原始数据
                 cmds.append(f"rm -f {clean_fq1} {clean_fq2}")
 
             sample_bamfiles_by_lane[sample_id].append([lane_sorted_bam_file, " && ".join(cmds)])
@@ -133,7 +133,7 @@ def bwamem(kwargs, out_folder_name: str, aione: dict = None,
         cmd.append(f"{samtools} index -@ 8 {sample_final_bamfile}")
         # alignment metrics
         if kwargs.use_sentieon:
-            # 只有当使用 Sentieon 时才会计算这些 alignment metrics
+            # 当使用 Sentieon 时才计算这些 alignment metrics
             metric_cmd = Sentieon(aione["config"]).alignment_metrics(
                 sample_final_bamfile, sample_outdir.joinpath(f"{sample}"))
             cmd.append(metric_cmd)
@@ -331,18 +331,13 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
             safe_makedir(sample_shell_dir)
 
         for interval in calling_intervals:
-            if interval == "all":
-                # All the whole genome once, take a lot of time, not suggested
-                sample_shell_fname, sample_gvcf_fname = _create_sub_shell(
-                    sample, sample_bqsr_bam, bqsr_recal_table, sample_shell_dir, sample_output_dir,
-                    is_dry_run=is_dry_run)
-            else:
-                sample_shell_fname, sample_gvcf_fname = _create_sub_shell(
-                    sample, sample_bqsr_bam, bqsr_recal_table, sample_shell_dir, sample_output_dir,
-                    raw_interval=interval,
-                    is_dry_run=is_dry_run)
+            sample_shell_fname, sample_gvcf_fname = _create_sub_shell(
+                sample, sample_bqsr_bam, bqsr_recal_table, sample_shell_dir, sample_output_dir,
+                # 'all' => whole genome, take a lot of time, not suggested
+                raw_interval=interval if interval != "all" else None,
+                is_dry_run=is_dry_run)
 
-            # ``aione["config"]["gatk|sentieon"]["interval"]`` may be a file path.
+            # ``aione["config"]["gatk/sentieon"]["interval"]`` may be a file path.
             # Make sure the interval id does not contain any path if the raw interval is a file path
             interval = str(Path(interval).name)
             if interval not in aione["gvcf"]:
