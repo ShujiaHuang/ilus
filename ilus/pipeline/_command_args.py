@@ -53,15 +53,10 @@ def _get_parent_parser():
     return parser
 
 
-def create_wgs_pipeline_command(commands):
-    """Add arguments to create WGS pipeline command."""
-    wgs_cmd = commands.add_parser(
-        "WGS",
-        parents=[_get_parent_parser()],
-        help="Create a pipeline for WGS (from FASTQ to genotype VCF)."
-    )
-
-    wgs_cmd.add_argument(
+def _add_germline_short_variant_discovery_argument(command):
+    """Add argument for variant discovery.
+    """
+    command.add_argument(
         "-L", "--fastqlist",
         dest="fastqlist",
         type=str,
@@ -69,28 +64,28 @@ def create_wgs_pipeline_command(commands):
         help="List of alignment FASTQ files."
     )
 
-    wgs_cmd.add_argument(
+    command.add_argument(
         "--clean-raw-data",
         dest="clean_raw_data",
         action="store_true",
         help="Set this option to clean raw sequencing data (fastq)."
     )
 
-    wgs_cmd.add_argument(
+    command.add_argument(
         "--delete-clean-fastq",
         dest="delete_clean_fastq",
         action="store_true",
         help="Set this option to delete clean fastq after aligning all reads to reference."
     )
 
-    wgs_cmd.add_argument(
+    command.add_argument(
         "-c", "--cram",
         dest="cram",
         action="store_true",
         help="Convert BAM to CRAM after BQSR and save alignment file storage."
     )
 
-    wgs_cmd.add_argument(
+    command.add_argument(
         "-P", "--process",
         dest="wgs_processes",
         type=str,
@@ -100,13 +95,25 @@ def create_wgs_pipeline_command(commands):
     )
 
     # Todo: Write a dry run function for testing the pipeline without truely run the pipeline.
-    wgs_cmd.add_argument(
+    command.add_argument(
         "-dr", "--dry-run",
         dest="dry_run",
         action="store_true",
         help="Dry run the pipeline for testing."
     )
 
+    return command
+
+
+def create_wgs_pipeline_command(commands):
+    """Add arguments to create WGS pipeline command."""
+    # Generate the commandline argument for WGS pipeline.
+    wgs_cmd = _add_germline_short_variant_discovery_argument(
+        commands.add_parser(
+            "WGS",
+            parents=[_get_parent_parser()],
+            help="Create aaa pipeline for WGS (from FASTQ to genotype VCF).")
+    )
     return wgs_cmd
 
 
