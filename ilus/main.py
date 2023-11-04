@@ -15,9 +15,9 @@ from datetime import datetime
 
 # Import specific functions of ilus
 from ilus.pipeline import (
-    WGS, create_wgs_pipeline_command,
-    genotypeGVCFs, create_genotype_joint_calling_command,
-    variantrecalibrator, create_vqsr_command
+    create_wgs_pipeline_command, WGS,
+    create_genotype_joint_calling_command, genotypeGVCFs,
+    create_vqsr_command, variantrecalibrator
 )
 from ilus.modules.utils import split_jobs, check_jobs_status
 
