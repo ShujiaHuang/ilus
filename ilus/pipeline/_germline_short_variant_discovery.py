@@ -94,7 +94,7 @@ def WGS(kwargs, aione: dict = None) -> dict:
     }
 
     if kwargs.use_sentieon:
-        # Sentieon 不需要 CombineGVCF，多余!
+        # Sentieon 不需要 CombineGVCF，多余的
         # step5: GenotypeGVCF
         runner_module["genotype"] = [run_genotypeGVCFs, f"{kwargs.project_name}.step5.genotype.sh",
                                      "05.genotype", "03.genotype"]
@@ -115,7 +115,6 @@ def WGS(kwargs, aione: dict = None) -> dict:
 
     # Todo: Need a program to validate whether the tools, arguments and the order of processes are
     #  appropriate or not for the pipeline.
-
     processes_set = set(kwargs.wgs_processes.split(","))
     if kwargs.use_sentieon:
         # do not need to do combineGVCFs
@@ -123,36 +122,31 @@ def WGS(kwargs, aione: dict = None) -> dict:
         if "combineGVCFs" in processes_set:
             processes_set.remove("combineGVCFs")
     else:
-        wgs_pipeline_processes = ["align", "markdup", "BQSR", "gvcf", "combineGVCFs",
-                                  "genotype", "VQSR"]
+        wgs_pipeline_processes = ["align", "markdup", "BQSR", "gvcf", "combineGVCFs", "genotype", "VQSR"]
 
     for p in processes_set:
         if p not in wgs_pipeline_processes:
-            sys.stderr.write(f"[ERROR] {p} is not one of the wgs processes: "
+            raise ValueError(f"[ERROR] {p} is not one of the wgs processes: "
                              f"{','.join(wgs_pipeline_processes)}\n")
-            sys.exit(1)
 
     if not file_exists(kwargs.fastqlist):
-        print(f"[ERROR] {kwargs.fastqlist} is not a file or empty.\n", file=sys.stderr)
-        sys.exit(1)
+        raise ValueError(f"[ERROR] {kwargs.fastqlist} is not a file or empty.\n")
 
     if check_input_sheet(kwargs.fastqlist):
         print(f"\n[INFO] Input sheet is properly. The format of '{kwargs.fastqlist}' "
-              f"has been verified.", file=sys.stderr)
-
-    aione["fastqlist"] = kwargs.fastqlist  # record the input file path of fastqlist.
+              f"has been verified.")
 
     # Create project directory and return the abspath.
     # [Important] abspath will remove the last '/' of the path. e.g.: '/a/' -> '/a'
     kwargs.outdir = Path(kwargs.outdir).resolve()
     shell_directory = kwargs.outdir.joinpath("00.shell")
     shell_log_directory = shell_directory.joinpath("loginfo")
-
     if not kwargs.dry_run:
         safe_makedir(kwargs.outdir)
         safe_makedir(shell_directory)
         safe_makedir(shell_log_directory)
 
+    aione["fastqlist"] = kwargs.fastqlist  # record the input file path of fastqlist.
     for p in wgs_pipeline_processes:
         is_dry_run = True if kwargs.dry_run or (p not in processes_set) else False
 
@@ -232,16 +226,15 @@ def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
                 OUT.write("\n".join(value))
 
     if kwargs.use_sentieon:
-        # create shell scripts for genotype joint-calling
+        # For sentieon: create shell scripts for genotype joint-calling
         genotype_shell_fname, genotype_shell_log_folder = [
             f"{kwargs.project_name}.step5.genotype.sh", "05.genotype"
         ] if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.genotype.sh", "genotype"]
     else:
-        # For GATK
-        # create shell scripts for genomicsDBImport or CombineGVCFs
+        # For GATK: create shell scripts for genomicsDBImport or CombineGVCFs
         combineGVCF_shell_fname, combineGVCF_shell_log_folder = [
-            f"{kwargs.project_name}.step5.combineGVCFs.sh", "05.combineGVCFs"] \
-            if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.combineGVCFs.sh", "combineGVCFs"]
+            f"{kwargs.project_name}.step5.combineGVCFs.sh", "05.combineGVCFs"
+        ] if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.combineGVCFs.sh", "combineGVCFs"]
         _f(kwargs, aione, combineGVCF_shell_fname, combineGVCF_shell_log_folder, gatk_combineGVCFs)
 
         # create shell scripts for genotype joint-calling
