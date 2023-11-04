@@ -163,7 +163,6 @@ def run_command(args):
 
     # loaded global configuration file
     config = load_config(args.sysconf)
-    missing_variant_calling_interval = False
     if not args.use_sentieon and "variant_calling_interval" in config["gatk"]:
         config["gatk"]["variant_calling_interval"] = get_variant_calling_intervals(
             config["gatk"]["variant_calling_interval"])
@@ -172,9 +171,6 @@ def run_command(args):
         config["sentieon"]["variant_calling_interval"] = get_variant_calling_intervals(
             config["sentieon"]["variant_calling_interval"])
     else:
-        missing_variant_calling_interval = True
-
-    if missing_variant_calling_interval:
         raise ValueError(f"'variant_calling_interval' parameter is required "
                          f"in the configure file: {args.sysconf}.\n")
 
