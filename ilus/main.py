@@ -10,7 +10,6 @@ Date: 2020-04-19
 import argparse
 import sys
 import yaml
-from pathlib import Path
 from datetime import datetime
 
 # Import specific functions of ilus
@@ -111,33 +110,9 @@ def load_config(config_file):
         return yaml.safe_load(f)
 
 
-def get_variant_calling_intervals(calling_interval_parameter):
-    """get variant calling intervals into a bed format"""
-
-    intervals = calling_interval_parameter
-    if (type(calling_interval_parameter) is str) \
-            and (Path(calling_interval_parameter).is_file()):
-        # A file for recording interval
-        interval_file = calling_interval_parameter
-        with open(interval_file) as f:
-            """Bed format:
-            chr1	10001	207666
-            chr1	257667	297968
-            """
-            # return the value to be a list of interval regions
-            intervals = [line.strip().split()[:3] for line in f if not line.startswith("#")]
-
-    elif type(calling_interval_parameter) is not list:
-        raise ValueError(f"'variant_calling_interval' parameter could only be a file path or "
-                         f"a list of chromosome id in the configure file (.yaml).\n")
-
-    return intervals
-
-
 def run_command(args):
     """ Main function for pipeline.
     """
-
     if args.version:
         print(f"{PROG_NAME} {VERSION}", file=sys.stderr)
         sys.exit(1)
@@ -164,23 +139,10 @@ def run_command(args):
     if args.command not in runner:
         raise ValueError(f"Invalid command: {args.command}")
 
-    # loaded global configuration file
-    config = load_config(args.sysconf)
+    # loaded global configuration file and record all information into one single dict.
+    aione = {"config": load_config(args.sysconf)}
 
-    # Variant calling interval must exist.
-    if not args.use_sentieon and "variant_calling_interval" in config["gatk"]:
-        config["gatk"]["variant_calling_interval"] = get_variant_calling_intervals(
-            config["gatk"]["variant_calling_interval"])
-
-    elif args.use_sentieon and "variant_calling_interval" in config["sentieon"]:
-        config["sentieon"]["variant_calling_interval"] = get_variant_calling_intervals(
-            config["sentieon"]["variant_calling_interval"])
-    else:
-        raise ValueError(f"'variant_calling_interval' parameter is required "
-                         f"in the configure file: {args.sysconf}.\n")
-
-    # recording all information into one single dict.
-    aione = {"config": config}
+    # Run the whole processes
     runner[args.command](args, aione)
 
     return

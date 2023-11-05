@@ -29,7 +29,7 @@ def _md(outdir: Path, is_dry_run: bool = False) -> Tuple[Path, Path]:
         safe_makedir(output_directory)
         safe_makedir(shell_directory)
 
-    # Return two dirctory in Path type
+    # Return two directory in Path type
     return output_directory, shell_directory
 
 
@@ -45,8 +45,8 @@ def _create_cmd_file(out_shell_file: Path, cmd: List[str] = None):
     return
 
 
-def bwamem(kwargs, out_folder_name: str, aione: dict = None,
-           is_dry_run: bool = False):
+def run_bwamem(kwargs, out_folder_name: str, aione: dict = None,
+               is_dry_run: bool = False):
     """Create bwamem aligment shell scripts for fastq to BAM.
     """
     output_directory = Path(kwargs.outdir).joinpath(out_folder_name, "output")
@@ -236,7 +236,6 @@ def run_baserecalibrator(kwargs,
                 aione["sample_final_bqsr_bam"].append([sample, out_cram_fname, out_bqsr_recal_table])
             else:
                 aione["sample_final_bqsr_bam"].append([sample, sample_markdup_bam, out_bqsr_recal_table])
-
         else:
             # 对于 GATK 而言，需要生成 ApplyBQSR 之后的新 BAM
             out_bqsr_bam_fname = dirname.joinpath(f"{f_name_stem}.BQSR.bam")
@@ -377,9 +376,8 @@ def _yield_gatk_combineGVCFs(project_name, variant_calling_intervals, output_dir
             continue
 
         if not sample_gvcf_list:
-            sys.stderr.write("[Error] Interval parameters in configuration file may be different "
+            raise ValueError("[Error] Interval parameters in configuration file may be different "
                              "from that input gvcf file list in ``gatk_combineGVCFs`` function.")
-            sys.exit(1)
 
         interval_n = "_".join(interval) if type(interval) is list else interval.replace(":", "_")  # chr:s -> chr_s
         sub_shell_fname = shell_directory.joinpath(f"{project_name}.{interval_n}.combineGVCFs.sh")

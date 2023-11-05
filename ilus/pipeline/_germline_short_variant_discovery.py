@@ -9,9 +9,9 @@ import sys
 from pathlib import Path
 from typing import List, Tuple
 
-from ilus.modules.utils import safe_makedir, file_exists, check_input_sheet
+from ilus.modules.utils import get_variant_calling_intervals, safe_makedir, file_exists, check_input_sheet
 from ilus.launch.runfunction import (
-    bwamem,
+    run_bwamem,
     run_markduplicates,
     run_baserecalibrator,
     run_haplotypecaller_gvcf,
@@ -74,13 +74,17 @@ def _make_process_shell(output_shell_fname: Path,
     return
 
 
-def WGS(kwargs, aione: dict = None) -> dict:
-    """Create the WGS data analysis pipeline."""
-
+def _variant_discovery_common_processes(kwargs, processes_set):
+    """
+    :param kwargs:
+    :param processes_set:
+    :return:
+    """
+    # Set processes
     runner_module = {
         # [func, shell_file_name, shell_log_folder_name, output_folder_name]
         # step1: create bwa/sort/merge process
-        "align": [bwamem, f"{kwargs.project_name}.step1.bwa.sh", "01.alignment", "01.alignment"],
+        "align": [run_bwamem, f"{kwargs.project_name}.step1.bwa.sh", "01.alignment", "01.alignment"],
 
         # step2: Create Markduplicates shells.
         "markdup": [run_markduplicates, f"{kwargs.project_name}.step2.markdup.sh", "02.markdup",
@@ -113,16 +117,14 @@ def WGS(kwargs, aione: dict = None) -> dict:
         runner_module["VQSR"] = [run_variantrecalibrator, f"{kwargs.project_name}.step7.VQSR.sh",
                                  "07.VQSR", "03.genotype"]
 
-    # Todo: Need a program to validate whether the tools, arguments and the order of processes are
-    #  appropriate or not for the pipeline.
-    processes_set = set(kwargs.wgs_processes.split(","))
     if kwargs.use_sentieon:
         # do not need to do combineGVCFs
         wgs_pipeline_processes = ["align", "markdup", "BQSR", "gvcf", "genotype", "VQSR"]
         if "combineGVCFs" in processes_set:
             processes_set.remove("combineGVCFs")
     else:
-        wgs_pipeline_processes = ["align", "markdup", "BQSR", "gvcf", "combineGVCFs", "genotype", "VQSR"]
+        wgs_pipeline_processes = ["align", "markdup", "BQSR", "gvcf", "combineGVCFs",
+                                  "genotype", "VQSR"]
 
     for p in processes_set:
         if p not in wgs_pipeline_processes:
@@ -136,6 +138,13 @@ def WGS(kwargs, aione: dict = None) -> dict:
         print(f"\n[INFO] Input sheet is properly. The format of '{kwargs.fastqlist}' "
               f"has been verified.")
 
+    return wgs_pipeline_processes, runner_module
+
+
+def WGS(kwargs, aione: dict = None) -> dict:
+    """Create the WGS data analysis pipeline.
+    """
+
     # Create project directory and return the abspath.
     # [Important] abspath will remove the last '/' of the path. e.g.: '/a/' -> '/a'
     kwargs.outdir = Path(kwargs.outdir).resolve()
@@ -146,17 +155,32 @@ def WGS(kwargs, aione: dict = None) -> dict:
         safe_makedir(shell_directory)
         safe_makedir(shell_log_directory)
 
-    aione["fastqlist"] = kwargs.fastqlist  # record the input file path of fastqlist.
+    # Variant calling interval for WGS process must exist.
+    if not kwargs.use_sentieon and "variant_calling_interval" in aione["config"]["gatk"]:
+        aione["config"]["gatk"]["variant_calling_interval"] = get_variant_calling_intervals(
+            aione["config"]["gatk"]["variant_calling_interval"])
+
+    elif kwargs.use_sentieon and "variant_calling_interval" in aione["config"]["sentieon"]:
+        aione["config"]["sentieon"]["variant_calling_interval"] = get_variant_calling_intervals(
+            aione["config"]["sentieon"]["variant_calling_interval"])
+    else:
+        raise ValueError(f"'variant_calling_interval' parameter is required in the "
+                         f"configure file for WGS processes: {kwargs.sysconf}.\n")
+
+    # Todo: Need a program to validate whether the tools, arguments and the order of processes are
+    #  appropriate or not for the pipeline.
+    processes_set = set(kwargs.wgs_processes.split(","))
+    wgs_pipeline_processes, runner_module = _variant_discovery_common_processes(kwargs, processes_set)
+
+    # record the input file path of fastqlist
+    aione["fastqlist"] = kwargs.fastqlist
     for p in wgs_pipeline_processes:
         is_dry_run = True if kwargs.dry_run or (p not in processes_set) else False
 
         func, shell_fname, shell_log_folder, output_folder = runner_module[p]
         _make_process_shell(output_shell_fname=shell_directory.joinpath(shell_fname),
                             shell_log_directory=shell_log_directory.joinpath(shell_log_folder),
-                            process_shells=func(kwargs,
-                                                output_folder,
-                                                aione,
-                                                is_dry_run=is_dry_run),
+                            process_shells=func(kwargs, output_folder, aione, is_dry_run=is_dry_run),
                             is_overwrite=kwargs.overwrite,
                             is_dry_run=is_dry_run)
 
@@ -243,7 +267,6 @@ def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
         ] if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.genotype.sh", "genotype"]
 
     _f(kwargs, aione, genotype_shell_fname, genotype_shell_log_folder, run_genotypeGVCFs)
-
     return aione
 
 

@@ -32,3 +32,26 @@ def file_exists(fname):
         return Path(fname).is_file() and Path(fname).stat().st_size > 0
     except OSError:
         return False
+
+
+def get_variant_calling_intervals(calling_interval_parameter):
+    """get variant calling intervals into a bed format"""
+
+    intervals = calling_interval_parameter
+    if (type(calling_interval_parameter) is str) \
+            and (Path(calling_interval_parameter).is_file()):
+        # A file for recording interval
+        interval_file = calling_interval_parameter
+        with open(interval_file) as f:
+            """Bed format:
+            chr1	10001	207666
+            chr1	257667	297968
+            """
+            # return the value to be a list of interval regions
+            intervals = [line.strip().split()[:3] for line in f if not line.startswith("#")]
+
+    elif type(calling_interval_parameter) is not list:
+        raise ValueError(f"'variant_calling_interval' parameter could only be a file path or "
+                         f"a list of chromosome id in the configure file (.yaml).\n")
+
+    return intervals
