@@ -33,6 +33,7 @@ class Sentieon(object):
         self.sentieon = self.config['sentieon']['sentieon']
         self.reference_index = self.config["resources"]["reference"]
         self.reference_fasta = self.config["resources"]["reference"]
+        self.resources_bundle = self.config["resources"]["bundle"]
         self.driver_options = " ".join(
             [str(x) for x in self.config["sentieon"].get("sentieon_driver_options", [])])
 
@@ -112,8 +113,8 @@ class Sentieon(object):
         coverage_options = " ".join([str(x) for x in self.config["sentieon"].get("coverage_options", [])])
         cvg_metrics_fn = str(input_bam).replace(".bam", ".coverage_metrics")
 
-        known_Mills_indels = self.config["resources"]["bundle"]["mills"]
-        known_1000G_indels = self.config["resources"]["bundle"]["1000G_known_indel"]
+        known_Mills_indels = self.resources_bundle["mills"]
+        known_1000G_indels = self.resources_bundle["1000G_known_indel"]
         return (f"time {self.sentieon} driver {self.driver_options} "
                 f"-r {self.reference_fasta} "
                 f"-i {input_bam} "
@@ -126,16 +127,15 @@ class Sentieon(object):
                 f"--algo CoverageMetrics {coverage_options} {cvg_metrics_fn}")
 
     def baserecalibrator(self, input_bam, out_bqsr_recal_table):
-        """Base recalibration.
+        """Base quality recalibration.
 
         Note:
             1. -k options to known SNP sites are optional, but recommended.
             2. Applying the ReadWriter algo is optional, the next step in
                HC will apply calibration table on the fly.
         """
-        dbsnp = self.config["resources"]["bundle"]["dbsnp"]
-        known_Mills_indels = self.config["resources"]["bundle"]["mills"]
-        known_1000G_indels = self.config["resources"]["bundle"]["1000G_known_indel"]
+        known_Mills_indels = self.resources_bundle['mills']
+        known_1000G_indels = self.resources_bundle['1000G_known_indel']
         bqsr_recaltable_options = " ".join([str(x) for x in self.config["sentieon"].get(
             "bqsr_recaltable_options", [])])
 
@@ -144,7 +144,7 @@ class Sentieon(object):
                            f"-r {self.reference_fasta} "
                            f"-i {input_bam} "
                            f"--algo QualCal {bqsr_recaltable_options} "
-                           f"-k {dbsnp} "
+                           f"-k {self.resources_bundle['dbsnp']} "
                            f"-k {known_Mills_indels} "
                            f"-k {known_1000G_indels} {out_bqsr_recal_table}")
 
@@ -155,7 +155,7 @@ class Sentieon(object):
                           f"-i {input_bam} "
                           f"-q {out_bqsr_recal_table} "
                           f"--algo QualCal {bqsr_recaltable_options} "
-                          f"-k {dbsnp} "
+                          f"-k {self.resources_bundle['dbsnp']} "
                           f"-k {known_Mills_indels} "
                           f"-k {known_1000G_indels} {recal_table_post_fn} "
 
@@ -186,7 +186,6 @@ class Sentieon(object):
         :param interval: Interval string or file (BED/Picard)
         :return:
         """
-        dbsnp = self.config["resources"]["bundle"]["dbsnp"]
         hc_options = " ".join([str(x) for x in self.config["sentieon"].get("hc_options", [])])
 
         if ("gvcf" in hc_options) and (".g.vcf" not in str(output_vcf_fname)):
@@ -200,14 +199,13 @@ class Sentieon(object):
                 f"-i {input_bam} "
                 f"-q {bqsr_recal_table} "
                 f"--algo Haplotyper {hc_options} "
-                f"-d {dbsnp} {output_vcf_fname}")
+                f"-d {self.resources_bundle['dbsnp']} {output_vcf_fname}")
 
     def genotypeGVCFs(self, input_gvcfs_list, output_vcf_fname, interval=None):
         """Perform the joint calling by `GVCFtyper` module with input GVCFs.
         """
         # location of the Single Nucleotide Polymorphism database (dbSNP) used to
         # label known variants.
-        dbsnp = self.config["resources"]["bundle"]["dbsnp"]
         gvcftyper_options = " ".join([
             str(x) for x in self.config["sentieon"].get("gvcftyper_options", [])])
 
@@ -218,18 +216,18 @@ class Sentieon(object):
         return (f"time {self.sentieon} driver {driver_options} "
                 f"-r {self.reference_fasta}  "
                 f"--algo GVCFtyper {gvcftyper_options} "
-                f"-d {dbsnp} "
+                f"-d {self.resources_bundle['dbsnp']} "
                 f"{in_gvcf_arguments} {output_vcf_fname}")
 
     def variantrecalibrator(self, input_vcf, output_vcf_fname):
         """Use VarCal and ApplyVarCal modules to do VQSR in sentieon.
         """
-        resource_hapmap = self.config["resources"]["bundle"]["hapmap"]
-        resource_omni = self.config["resources"]["bundle"]["omni"]
-        resource_1000G = self.config["resources"]["bundle"]["1000G"]
-        resource_dbsnp = self.config["resources"]["bundle"]["dbsnp"]
-        resource_mills_gold_indels = self.config["resources"]["bundle"]["mills"]
-        resource_1000G_known_indel = self.config["resources"]["bundle"]["1000G_known_indel"]
+        dbsnp = self.resources_bundle["dbsnp"]
+        hapmap = self.resources_bundle["hapmap"]
+        omni = self.resources_bundle["omni"]
+        k_1000G = self.resources_bundle["1000G"]
+        k_1000G_known_indel = self.resources_bundle["1000G_known_indel"]
+        mills_gold_indels = self.resources_bundle["mills"]
 
         vqsr_options = " ".join([str(x) for x in self.config["sentieon"].get("vqsr_options", [])])
         apply_snp_vqsr_options = " ".join([
@@ -252,10 +250,10 @@ class Sentieon(object):
             f"-r {self.reference_fasta} "
             f"--algo VarCal {vqsr_options} "
             f"-v {input_vcf} "
-            f"--resource {resource_hapmap} --resource_param hapmap,known=false,training=true,truth=true,prior=15.0  "
-            f"--resource {resource_omni} --resource_param omini,known=false,training=true,truth=true,prior=12.0 "
-            f"--resource {resource_1000G} --resource_param 1000G,known=false,training=true,truth=false,prior=10.0 "
-            f"--resource {resource_dbsnp} --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 "
+            f"--resource {hapmap} --resource_param hapmap,known=false,training=true,truth=true,prior=15.0  "
+            f"--resource {omni} --resource_param omini,known=false,training=true,truth=true,prior=12.0 "
+            f"--resource {k_1000G} --resource_param 1000G,known=false,training=true,truth=false,prior=10.0 "
+            f"--resource {dbsnp} --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 "
             f"--var_type SNP "
             f"--max_gaussians {self.config['sentieon']['vqsr_snp_max_gaussians']} "
             f"--tranches_file {out_prefix}.SNPs.tranches.csv "
@@ -276,9 +274,9 @@ class Sentieon(object):
             f"-r {self.reference_fasta} "
             f"--algo VarCal {vqsr_options} "
             f"-v {out_snp_vqsr_fname} "
-            f"--resource {resource_mills_gold_indels} --resource_param omini,known=false,training=true,truth=true,prior=12.0 "
-            f"--resource {resource_1000G_known_indel} --resource_param 1000G,known=false,training=true,truth=true,prior=10.0 "
-            f"--resource {resource_dbsnp} --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 "
+            f"--resource {mills_gold_indels} --resource_param omini,known=false,training=true,truth=true,prior=12.0 "
+            f"--resource {k_1000G_known_indel} --resource_param 1000G,known=false,training=true,truth=true,prior=10.0 "
+            f"--resource {dbsnp} --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 "
             f"--var_type INDEL "
             f"--max_gaussians {self.config['sentieon']['vqsr_indel_max_gaussians']} "
             f"--tranches_file {out_prefix}.INDELs.tranches.csv "
