@@ -135,9 +135,12 @@ def get_variant_calling_intervals(calling_interval_parameter):
 
 
 def run_command(args):
+    """ Main function for pipeline.
+    """
+
     if args.version:
         print(f"{PROG_NAME} {VERSION}", file=sys.stderr)
-        sys.exit(0)
+        sys.exit(1)
 
     if args.command is None:
         print(f"Please type: {PROG_NAME} -h or {PROG_NAME} --help to show the help message.\n",
@@ -163,6 +166,8 @@ def run_command(args):
 
     # loaded global configuration file
     config = load_config(args.sysconf)
+
+    # Variant calling interval must exist.
     if not args.use_sentieon and "variant_calling_interval" in config["gatk"]:
         config["gatk"]["variant_calling_interval"] = get_variant_calling_intervals(
             config["gatk"]["variant_calling_interval"])

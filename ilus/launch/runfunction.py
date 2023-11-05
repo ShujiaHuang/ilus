@@ -309,18 +309,17 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
     is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
         if "use_genomicsDBImport" in aione["config"]["gatk"] else False
 
-    gvcf_shell_files_list = []
-    aione["gvcf"] = {}
     if "interval" not in aione["config"]["gatk"]:
         aione["config"]["gatk"]["interval"] = ["all"]
 
     if kwargs.use_sentieon and ("interval" not in aione["config"]["sentieon"]):
         aione["config"]["sentieon"]["interval"] = ["all"]
 
+    gvcf_shell_files_list = []
     sample_map = {}  # Record sample_map for GATK genomicsDBImport
-    aione["intervals"] = []  # chromosome gvcf
-
-    calling_intervals = aione["config"]["sentieon"]["interval"] \
+    aione["intervals"] = []  # chromosome => gvcf
+    aione["gvcf"] = {}
+    intervals = aione["config"]["sentieon"]["interval"] \
         if kwargs.use_sentieon else aione["config"]["gatk"]["interval"]
 
     for sample, sample_bqsr_bam, bqsr_recal_table in aione["sample_final_bqsr_bam"]:
@@ -330,15 +329,15 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
             safe_makedir(sample_output_dir)
             safe_makedir(sample_shell_dir)
 
-        for interval in calling_intervals:
+        for interval in intervals:
             sample_shell_fname, sample_gvcf_fname = _create_sub_shell(
                 sample, sample_bqsr_bam, bqsr_recal_table, sample_shell_dir, sample_output_dir,
-                # 'all' => whole genome, take a lot of time, not suggested
+                # 'all' => whole genome, take a lot of time for WGS, not suggested
                 raw_interval=interval if interval != "all" else None,
                 is_dry_run=is_dry_run)
 
             # ``aione["config"]["gatk/sentieon"]["interval"]`` may be a file path.
-            # Make sure the interval id does not contain any path if the raw interval is a file path
+            # Todo: Make sure the interval id does not contain any path if the raw interval is a file path
             interval = str(Path(interval).name)
             if interval not in aione["gvcf"]:
                 aione["intervals"].append(interval)
@@ -347,13 +346,12 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
             gvcf_shell_files_list.append([f"{sample}.{interval}", sample_shell_fname])
             aione["gvcf"][interval].append(sample_gvcf_fname)
 
-            if is_use_gDBI and (interval not in sample_map):
-                sample_map[interval] = []
-
-            if is_use_gDBI:
+            if is_use_gDBI and not kwargs.use_sentieon:
+                if interval not in sample_map:
+                    sample_map[interval] = []
                 sample_map[interval].append(f"{sample}\t{sample_gvcf_fname}")
 
-    if is_use_gDBI:
+    if is_use_gDBI and not kwargs.use_sentieon:
         aione["sample_map"] = {}
         for interval, value in sample_map.items():
             # create sample_map file for next process

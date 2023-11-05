@@ -117,6 +117,28 @@ def create_wgs_pipeline_command(commands):
     return wgs_cmd
 
 
+def create_wes_pipeline_command(commands):
+    """All the arguments for creating WES pipeline."""
+    wes_cmd = commands.add_parser(
+        "WES",
+        parents=[_get_parent_parser()],
+        help="Create aaa pipeline for WGS (from FASTQ to genotype VCF)."
+    )
+
+    wes_cmd.add_argument(
+        "-L", "--interval",
+        dest="interval",
+        type=str,
+        required=True,
+        help="WES capture intervals: string or file (BED/Picard)"
+    )
+
+    # Add other arguments
+    _add_germline_short_variant_discovery_argument(wes_cmd)
+
+    return wes_cmd
+
+
 def create_genotype_joint_calling_command(commands):
     """Add arguments to create genotype joint calling command."""
     genotype_cmd = commands.add_parser(
