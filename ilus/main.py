@@ -113,6 +113,12 @@ def load_config(config_file):
 def run_command(args):
     """ Main function for pipeline.
     """
+    runner = {
+        "WGS": WGS,
+        "genotype-joint-calling": genotypeGVCFs,
+        "VQSR": variantrecalibrator,
+    }
+
     if args.version:
         print(f"{PROG_NAME} {VERSION}", file=sys.stderr)
         sys.exit(1)
@@ -122,28 +128,20 @@ def run_command(args):
               file=sys.stderr)
         sys.exit(1)
 
-    if args.command == "split-jobs":
+    elif args.command == "split-jobs":
         split_jobs(args.input, args.number, args.t, prefix=args.prefix)
         return
 
-    if args.command == "check-jobs":
+    elif args.command == "check-jobs":
         check_jobs_status(args.input)
         return
 
-    runner = {
-        "WGS": WGS,
-        "genotype-joint-calling": genotypeGVCFs,
-        "VQSR": variantrecalibrator,
-    }
-
-    if args.command not in runner:
+    elif args.command in runner:
+        # loaded global configuration file and record all information into one single dict.
+        aione = {"config": load_config(args.sysconf)}
+        runner[args.command](args, aione)  # Run the processes
+    else:
         raise ValueError(f"Invalid command: {args.command}")
-
-    # loaded global configuration file and record all information into one single dict.
-    aione = {"config": load_config(args.sysconf)}
-
-    # Run the whole processes
-    runner[args.command](args, aione)
 
     return
 
