@@ -57,7 +57,7 @@ def run_bwamem(kwargs, out_folder_name: str, aione: dict = None,
 
     sample_bamfiles_by_lane = {}  # {sample_id: [bwa1, bwa2, ...]}
     samples = []
-    with gzip.open(aione["fastqlist"]) if aione["fastqlist"].endswith(".gz") else \
+    with gzip.open(aione["fastqlist"], "rt") if aione["fastqlist"].endswith(".gz") else \
             open(aione["fastqlist"]) as f:
 
         # SAMPLE_ID RGID  FASTQ1  FASTQ2  LANE  LIBRARY PLATFORM   CENTER
