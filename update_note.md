@@ -1,5 +1,7 @@
 ## Update
 
+- [2023-11-09] 为 WGS 增加 --interval 参数作为 variant-calling-interval 
+- [2023-11-08] 用 -I 代表输入参数，而不是原来的 -L
 - [2023-11-06] 将 gatk 模块封装为 GATK class
 - [2023-11-01] 添加基于 SOAPnuke 的原始数据过滤模块
 - [2023-10-31] 完成 Sentieon 模块的添加，并且流程中不需要有额外的 CombineGVCF 这个步骤。

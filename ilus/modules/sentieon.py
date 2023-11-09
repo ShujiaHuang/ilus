@@ -22,7 +22,6 @@ class Sentieon(object):
     """A class for Sentieon.
     Sentieon doc: https://support.sentieon.com/manual
     """
-
     def __init__(self, config):
         """Constructor.
         """

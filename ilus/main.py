@@ -18,7 +18,12 @@ from ilus.pipeline import (
     create_genotype_joint_calling_command, genotypeGVCFs,
     create_vqsr_command, variantrecalibrator
 )
-from ilus.modules.utils import split_jobs, check_jobs_status
+from ilus.modules.utils import (
+    get_chromosome_list_from_fai,
+    split_jobs,
+    check_jobs_status,
+    file_exists
+)
 
 PROG_NAME = "ilus"
 VERSION = "1.3.2"
@@ -139,6 +144,19 @@ def run_command(args):
     elif args.command in runner:
         # loaded global configuration file and record all information into one single dict.
         aione = {"config": load_config(args.sysconf)}
+
+        # Loading chromosome id for create gvcf
+        reference_file = aione["config"]["resources"]["reference"]
+        if file_exists(reference_file + ".fai"):
+            fai = reference_file + ".fai"
+        elif file_exists(reference_file.replace(".fasta", ".fa").replace(".fa", ".fai")):
+            fai = reference_file.replace(".fasta", ".fa").replace(".fa", ".fai")
+        else:
+            sys.stderr.write(f"[Error] Need to create an index (.fai) for reference file: "
+                             f"{reference_file}.\n")
+            sys.exit(1)
+
+        aione["config"]["gvcf_interval"] = get_chromosome_list_from_fai(fai)
         runner[args.command](args, aione)  # Run the processes
     else:
         raise ValueError(f"Invalid command: {args.command}")
