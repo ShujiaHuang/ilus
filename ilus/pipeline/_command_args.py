@@ -57,11 +57,11 @@ def _add_germline_short_variant_discovery_argument(command):
     """Add argument for variant discovery.
     """
     command.add_argument(
-        "-L", "--fastqlist",
+        "-I", "--fastqlist",
         dest="fastqlist",
         type=str,
         required=True,
-        help="List of alignment FASTQ files."
+        help="Input the list of FASTQ files."
     )
 
     command.add_argument(
@@ -92,6 +92,17 @@ def _add_germline_short_variant_discovery_argument(command):
         default="align,markdup,BQSR,gvcf,combineGVCFs,genotype,VQSR",
         help="Specify one or more processes (separated by comma) of WGS pipeline. "
              "Possible values: %(default)s"
+    )
+
+    command.add_argument(
+        "--interval",
+        dest="interval",
+        type=str,
+        required=False,
+        help="Interval strings (separate by comma) or a file (BED/Picard,1-based) that "
+             "will be used in variants calling. "
+             "e.g: '--interval chr1:1-2,chr2,chr3:4-5' "
+             "or '--interval interval_file.bed'."
     )
 
     # Todo: Write a dry run function for testing the pipeline without truely run the pipeline.
@@ -126,8 +137,8 @@ def create_wes_pipeline_command(commands):
     )
 
     wes_cmd.add_argument(
-        "-L", "--interval",
-        dest="interval",
+        "--capture-interval",
+        dest="capture_interval",
         type=str,
         required=True,
         help="WES capture intervals: string or file (BED/Picard)"

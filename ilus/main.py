@@ -25,7 +25,7 @@ VERSION = "1.3.2"
 
 
 def create_split_job_command(commands):
-    # Create subparser for the "split-jobs" command
+    # Create sub-parser for the "split-jobs" command
     split_job_cmd = commands.add_parser("split-jobs", help="Split the whole shell into multiple jobs.")
     split_job_cmd.add_argument(
         "-I", "--input",

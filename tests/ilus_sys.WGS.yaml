@@ -2,24 +2,22 @@
 
 # Common datasets
 resources:
-  # Recommend `GCA_000001405.15_GRCh38_no_alt_analysis_set.fa` for human reference
+  # For human reference (recommend `GCA_000001405.15_GRCh38_no_alt_analysis_set.fa`)
   # Preparing reference file for use:
-  # 1. Generate the BWA index: bwa index GCA_000001405.15_GRCh38_no_alt_analysis_set.fa
-  # 2. Generate the Fasta index: samtools faidx GCA_000001405.15_GRCh38_no_alt_analysis_set.fa
+  # 1. Generate the BWA index: bwa index human_GRCh38.fa
+  # 2. Generate the Fasta index: samtools faidx human_GRCh38.fa
   # 3. Generate the sequencing dictionary:
   #    java -jar picard.jar CreateSequenceDictionary \
-  #       REFERENCE=GCA_000001405.15_GRCh38_no_alt_analysis_set.fa \
-  #       OUTPUT=GCA_000001405.15_GRCh38_no_alt_analysis_set.dict
-  reference: /path/to/human/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa
+  #       REFERENCE=human_GRCh38.fa \
+  #       OUTPUT=human_GRCh38.dict
+  reference: human_GRCh38.fa   # set to be a full directory path of `human_GRCh38.fa`
 
-  # Default adapter sequence is **BGISEQ-500/MGISEQ/DNBSEQ** in ilus. If you use illumina (or other) sequencing platform
-  # you should change the value of this parameter. The most widely used adapter in Illumina is TruSeq adapters. If
-  # your data is from the TruSeq library, you can replace the value with the two following sequences:
-  # adapter_sequence: ["AGATCGGAAGAGCACACGTCTGAACTCCAGTCA", "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"]
-  adapter_sequence: [
-    "AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA",
-    "AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG"
-  ]
+  # Default adapter sequence is **BGISEQ-500/MGISEQ/DNBSEQ** in ilus.
+  # If you use illumina (or other) sequencing platform you should change the value of this parameter.
+  # The most widely used adapter in Illumina is TruSeq adapters. If your data is from the TruSeq library,
+  # you can replace the value with the two following sequences:
+  # adapter_sequence: [AGATCGGAAGAGCACACGTCTGAACTCCAGTCA, AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT]
+  adapter_sequence: [AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA, AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG]
 
   # bundle datasets (GRCh38)
   bundle:
@@ -77,7 +75,7 @@ bgzip: /path/to/bgzip
 tabix: /path/to/tabix
 
 gatk:
-  gatk: /path/to/BioSoftware/gatk/4.1.4.1/gatk
+  gatk: /path/to/BioSoftware/gatk
   markdup_java_options: ["-Xmx10G", "-Djava.io.tmpdir=/your_path/cache"]
   bqsr_java_options: ["-Xmx8G", "-Djava.io.tmpdir=/your_path/cache"]
   hc_gvcf_java_options: ["-Xmx4G"]
@@ -108,10 +106,10 @@ gatk:
 
   # Fro creating gvcf. The value could be an interval region file in bed format or
   # could be chromosomes list here. I suggest you should use chromosome list here.
-  interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",
-             "chr8",  "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14", 
-             "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", 
-             "chr22", "chrX",  "chrY",  "chrM"]
+#  interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",
+#             "chr8",  "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14",
+#             "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21",
+#             "chr22", "chrX",  "chrY",  "chrM"]
 
   # Specific variant calling intervals. 
   # The value could be a file in bed format (I show you a example bellow) or a interval of list.
@@ -119,10 +117,10 @@ gatk:
   # and ``region end``, e.g.:
   #   chr1    10001   207666
   #   chr1    257667  297968
-  # These invertals could be any regions alone the genome as you wish or just set the same as ``interval`` argument above.
+  # These intervals could be any regions alone the genome as you wish or just set the same as ``interval`` argument above.
   # If the calling interval is changed to include only the exon-calling regions, this pipeline could be applied
   # to detect variants of WES data.
-  variant_calling_interval: "./human_GRCh38.WGS.calling_regions.interval.bed"
+#  variant_calling_interval: "./human_GRCh38.WGS.calling_regions.interval.bed"
   #variant_calling_interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",  "chr8",
   #                           "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16",
   #                           "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX",  "chrY",
@@ -158,10 +156,10 @@ sentieon:
 
   # For creating gvcf. The value could be an interval region file in bed format or
   # could be chromosomes list here. I suggest you use chromosome list here.
-  interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",
-             "chr8",  "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14",
-             "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21",
-             "chr22", "chrX",  "chrY",  "chrM"]
+#  interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",
+#             "chr8",  "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14",
+#             "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21",
+#             "chr22", "chrX",  "chrY",  "chrM"]
 
   # Specific variant calling intervals.
   # The value could be a file in bed format (I show you a example bellow) or a interval of list.
@@ -173,10 +171,10 @@ sentieon:
   # If the calling interval is changed to include only the exon-calling regions, this pipeline could be applied
   # to detect variants of WES data.
   #variant_calling_interval: "./human_GRCh38.WGS.calling_regions.interval.bed"
-  variant_calling_interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",  "chr8",
-                             "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16",
-                             "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX",  "chrY",
-                             "chrM"]
+#  variant_calling_interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",  "chr8",
+#                             "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16",
+#                             "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX",  "chrY",
+#                             "chrM"]
 
   # 'emit_mode' in GVCFtyper: determines what calls will be emitted. Possible values for mode are:
   #    - variant: emit calls only at confident variant sites. This is the default behavior.

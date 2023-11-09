@@ -9,7 +9,13 @@ import sys
 from pathlib import Path
 from typing import List, Tuple
 
-from ilus.modules.utils import get_variant_calling_intervals, safe_makedir, file_exists, check_input_sheet
+from ilus.modules.utils import (
+    get_variant_calling_intervals,
+    get_chromosome_list_from_fai,
+    safe_makedir,
+    file_exists,
+    check_input_sheet
+)
 from ilus.launch.runfunction import (
     run_bwamem,
     run_markduplicates,
@@ -144,7 +150,6 @@ def _variant_discovery_common_processes(kwargs, processes_set):
 def WGS(kwargs, aione: dict = None) -> dict:
     """Create the WGS data analysis pipeline.
     """
-
     # Create project directory and return the abspath.
     # [Important] abspath will remove the last '/' of the path. e.g.: '/a/' -> '/a'
     kwargs.outdir = Path(kwargs.outdir).resolve()
@@ -155,17 +160,42 @@ def WGS(kwargs, aione: dict = None) -> dict:
         safe_makedir(shell_directory)
         safe_makedir(shell_log_directory)
 
-    # Variant calling interval for WGS process must exist.
-    if not kwargs.use_sentieon and "variant_calling_interval" in aione["config"]["gatk"]:
-        aione["config"]["gatk"]["variant_calling_interval"] = get_variant_calling_intervals(
-            aione["config"]["gatk"]["variant_calling_interval"])
-
-    elif kwargs.use_sentieon and "variant_calling_interval" in aione["config"]["sentieon"]:
-        aione["config"]["sentieon"]["variant_calling_interval"] = get_variant_calling_intervals(
-            aione["config"]["sentieon"]["variant_calling_interval"])
+    # Loading chromosome id for create gvcf
+    reference_file = aione["config"]["resources"]["reference"]
+    if file_exists(reference_file + ".fai"):
+        fai = reference_file + ".fai"
+    elif file_exists(reference_file.replace(".fasta", ".fa").replace(".fa", ".fai")):
+        fai = reference_file.replace(".fasta", ".fa").replace(".fa", ".fai")
     else:
-        raise ValueError(f"'variant_calling_interval' parameter is required in the "
-                         f"configure file for WGS processes: {kwargs.sysconf}.\n")
+        sys.stderr.write(f"[Error] Need to create an index (.fai) for reference file: "
+                         f"{reference_file}.\n")
+        sys.exit(1)
+
+    aione["config"]["gvcf_interval"] = get_chromosome_list_from_fai(fai)
+
+    # Variant calling interval for WGS process must exist.
+    if kwargs.interval and ("all" in kwargs.interval.split(",")) and (kwargs.interval != "all"):
+        sys.stderr.write("[ERROR]: Do not add any other interval in `--interval` "
+                         "if 'all' in it.")
+        sys.exit(1)
+
+    # Fetch variant calling intervals
+    if kwargs.interval:
+        aione["config"]["variant_calling_interval"] = get_variant_calling_intervals(kwargs.interval)
+
+        # Reset the chromosomes only appear in variant calling interval
+        aione["config"]["gvcf_interval"] = []
+        id_set = set()
+        for c in aione["config"]["variant_calling_interval"]:
+            # Keep the original order
+            d = c[0] if type(c) is list else c.split(":")[0]   # chr:s-end
+            if d in id_set:
+                continue
+            else:
+                id_set.add(d)
+                aione["config"]["gvcf_interval"].append(d)
+    else:
+        aione["config"]["variant_calling_interval"] = aione["config"]["gvcf_interval"]
 
     # Todo: Need a program to validate whether the tools, arguments and the order of processes are
     #  appropriate or not for the pipeline.
