@@ -3,7 +3,6 @@
 Author: Shujia Huang
 Date:   2023-02-16
 """
-
 import argparse
 
 
@@ -94,6 +93,18 @@ def _add_germline_short_variant_discovery_argument(command):
              "Possible values: %(default)s"
     )
 
+    # Specific variant calling intervals.
+    # The value could be a file in bed format (I show you a example bellow) or a interval of list.
+    # Bed format of interval file only contain three columns: ``Sequencing ID``, ``region start``
+    # and ``region end``, e.g.:
+    #   chr1    10001   207666
+    #   chr1    257667  297968
+    #
+    # These invertals could be any regions alone the genome as you wish or just set the same as
+    # ``--interval`` argument above.
+    #
+    # If the calling interval is changed to include only the exon-calling regions,
+    # this pipeline could be applied to detect variants of WES data.
     command.add_argument(
         "--interval",
         dest="interval",

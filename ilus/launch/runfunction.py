@@ -103,6 +103,7 @@ def run_bwamem(kwargs, out_folder_name: str, aione: dict = None,
     bwa_shell_files_list = []
     aione["sample_final_sorted_bam"] = []
     samtools = aione["config"]["samtools"]["samtools"]
+    is_calculate_contamination = True if "verifyBamID2" in aione["config"] else False
 
     # Merge BAM files for each sample by lane
     for sample, sample_outdir in samples:
@@ -119,8 +120,7 @@ def run_bwamem(kwargs, out_folder_name: str, aione: dict = None,
                 cmd.append(f"mv -f {lane_bam_file} {sample_final_bamfile}")
                 cmd.append(f"rm -f {lane_bam_file}.bai")
         else:
-            samtools_merge_options = " ".join(
-                [str(x) for x in aione["config"]["samtools"].get("merge_options", [])])
+            samtools_merge_options = " ".join([str(x) for x in aione["config"]["samtools"].get("merge_options", [])])
 
             lane_bam_files = " ".join([f for f, _ in sample_bamfiles_by_lane[sample]])
             lane_bai_files = " ".join([f"{f}.bai" for f, _ in sample_bamfiles_by_lane[sample]])
@@ -131,6 +131,12 @@ def run_bwamem(kwargs, out_folder_name: str, aione: dict = None,
                        f"{lane_bam_files} && rm -f {lane_bam_files} {lane_bai_files}")
 
         cmd.append(f"{samtools} index -@ 8 {sample_final_bamfile}")
+        if is_calculate_contamination:
+            out_verifybamid_stat_prefix = sample_outdir.joinpath(f"{sample}.sorted.verifyBamID2")
+            cmd.append(bam.verifyBamID2(aione["config"],
+                                        sample_final_bamfile,
+                                        out_verifybamid_stat_prefix))
+
         # alignment metrics
         if kwargs.use_sentieon:
             # 当使用 Sentieon 时才计算这些 alignment metrics
@@ -157,7 +163,6 @@ def run_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
 
     aione["sample_final_markdup_bam"] = []
     markdup_shell_files_list = []
-    is_calculate_contamination = True if "verifyBamID2" in aione["config"] else False
     for sample, sample_sorted_bam in aione["sample_final_sorted_bam"]:
         # ``f_name_stem``: The final path component, minus its last suffix.
         dirname, f_name_stem = Path(sample_sorted_bam).parent, Path(sample_sorted_bam).stem
@@ -183,7 +188,7 @@ def run_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
 
         aione["sample_final_markdup_bam"].append([sample, out_markdup_bam_fname])
         if IS_RM_SUBBAM:
-            cmd.append(f"rm -f {sample_sorted_bam} {sample_sorted_bam}.bai")  # save disk space
+            cmd.append(f"rm -f {sample_sorted_bam}*")  # save disk space
 
         # It's time consuming to calculate alignment metrics by GATK
         # out_alignment_summary_metric = dirname.joinpath(f"{f_name_stem}.AlignmentSummaryMetrics.txt")
@@ -194,9 +199,6 @@ def run_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
         genome_cvg_fname = dirname.joinpath(f"{f_name_stem}.markdup.depth.bed.gz")
         cmd.append(bam.stats(aione["config"], out_markdup_bam_fname, out_bamstats_fname))
         cmd.append(bam.genomecoverage(aione["config"], out_markdup_bam_fname, genome_cvg_fname))
-        if is_calculate_contamination:
-            out_verifybamid_stat_prefix = dirname.joinpath(f"{f_name_stem}.verifyBamID2")
-            cmd.append(bam.verifyBamID2(aione["config"], out_markdup_bam_fname, out_verifybamid_stat_prefix))
 
         echo_mark_done = f"echo \"[MarkDuplicates] {sample} done\""
         cmd.append(echo_mark_done)
