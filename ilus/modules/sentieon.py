@@ -29,12 +29,14 @@ class Sentieon(object):
         if "sentieon" not in self.config:
             raise ValueError("[Error] Missing `sentieon` in config file.")
 
-        self.sentieon = self.config['sentieon']['sentieon']
+        self.sent_options = self.config['sentieon']
+        self.sentieon = self.sent_options['sentieon']  # sentieon program
+
         self.reference_index = self.config["resources"]["reference"]
         self.reference_fasta = self.config["resources"]["reference"]
         self.resources_bundle = self.config["resources"]["bundle"]
         self.driver_options = " ".join(
-            [str(x) for x in self.config["sentieon"].get("sentieon_driver_options", [])])
+            [str(x) for x in self.sent_options.get("sentieon_driver_options", [])])
 
     def bwamem(self, out_prefix, rgID, fastq1, fastq2=""):
         """Mapping reads with BWA-MEM and sorting BAM to coordinate.
@@ -46,9 +48,9 @@ class Sentieon(object):
         if fastq2 == ".":
             fastq2 = ""
 
-        bwa_options = " ".join([str(x) for x in self.config["sentieon"].get("bwamem_options", [])])
+        bwa_options = " ".join([str(x) for x in self.sent_options.get("bwamem_options", [])])
         util_sort_options = " ".join(
-            [str(x) for x in self.config["sentieon"].get("util_sort_options", [])])
+            [str(x) for x in self.sent_options.get("util_sort_options", [])])
         bwa_cmd = (f"time {self.sentieon} bwa mem {bwa_options} -R {rgID} {self.reference_index} "
                    f"{fastq1} {fastq2} | {self.sentieon} util sort {util_sort_options} --sam2bam "
                    f"-o {out_prefix}.sorted.bam -i -")
@@ -62,7 +64,7 @@ class Sentieon(object):
         if len(adapter_seq) == 0:
             adapter_seq = "' '"
 
-        coverage_options = " ".join([str(x) for x in self.config["sentieon"].get("coverage_options", [])])
+        coverage_options = " ".join([str(x) for x in self.sent_options.get("coverage_options", [])])
         align_metrics_cmd = (f"time {self.sentieon} driver {self.driver_options} "
                              f"-r {self.reference_fasta} "
                              f"-i {input_bam} "
@@ -84,9 +86,9 @@ class Sentieon(object):
         """Markdup Duplicate Reads.
         """
         locus_collector_options = " ".join([
-            str(x) for x in self.config["sentieon"].get("LocusCollector_options", [])
+            str(x) for x in self.sent_options.get("LocusCollector_options", [])
         ])
-        dedup_options = " ".join([str(x) for x in self.config["sentieon"].get("dedup_options", [])])
+        dedup_options = " ".join([str(x) for x in self.sent_options.get("dedup_options", [])])
 
         output_markdup_bam = str(output_markdup_bam)
         score_info_file = output_markdup_bam.replace(".bam", ".score.txt")
@@ -105,11 +107,11 @@ class Sentieon(object):
     def indelrealigner(self, input_bam, output_realig_bam):
         """Indel realignment for sample.
         """
-        indel_realigner_options = " ".join([str(x) for x in self.config["sentieon"].get(
+        indel_realigner_options = " ".join([str(x) for x in self.sent_options.get(
             "indel_realigner_options", [])])
 
         # CoverageMetrics 的计算合并到 Indelrealigner 过程中，可以节省单独计算的时间，同样是计算 input_bam 的覆盖度
-        coverage_options = " ".join([str(x) for x in self.config["sentieon"].get("coverage_options", [])])
+        coverage_options = " ".join([str(x) for x in self.sent_options.get("coverage_options", [])])
         cvg_metrics_fn = str(input_bam).replace(".bam", ".coverage_metrics")
 
         known_Mills_indels = self.resources_bundle["mills"]
@@ -135,7 +137,7 @@ class Sentieon(object):
         """
         known_Mills_indels = self.resources_bundle['mills']
         known_1000G_indels = self.resources_bundle['1000G_known_indel']
-        bqsr_recaltable_options = " ".join([str(x) for x in self.config["sentieon"].get(
+        bqsr_recaltable_options = " ".join([str(x) for x in self.sent_options.get(
             "bqsr_recaltable_options", [])])
 
         # Create recalibrate table file for BQSR
@@ -185,7 +187,7 @@ class Sentieon(object):
         :param interval: Interval string or file (BED/Picard)
         :return:
         """
-        hc_options = " ".join([str(x) for x in self.config["sentieon"].get("hc_options", [])])
+        hc_options = " ".join([str(x) for x in self.sent_options.get("hc_options", [])])
 
         if ("gvcf" in hc_options) and (".g.vcf" not in str(output_vcf_fname)):
             raise ValueError(f"[ERROR] {output_vcf_fname} missing .g.vcf in file name")
@@ -206,7 +208,7 @@ class Sentieon(object):
         # location of the Single Nucleotide Polymorphism database (dbSNP) used to
         # label known variants.
         gvcftyper_options = " ".join([
-            str(x) for x in self.config["sentieon"].get("gvcftyper_options", [])])
+            str(x) for x in self.sent_options.get("gvcftyper_options", [])])
 
         driver_options = f"{self.driver_options} --interval {interval}" \
             if interval else self.driver_options
@@ -228,18 +230,20 @@ class Sentieon(object):
         k_1000G_known_indel = self.resources_bundle["1000G_known_indel"]
         mills_gold_indels = self.resources_bundle["mills"]
 
-        vqsr_options = " ".join([str(x) for x in self.config["sentieon"].get("vqsr_options", [])])
+        vqsr_snp_options = " ".join([str(x) for x in self.sent_options.get("vqsr_snp_options", [])])
+        vqsr_indel_options = " ".join([str(x) for x in self.sent_options.get("vqsr_indel_options", [])])
         apply_snp_vqsr_options = " ".join([
-            str(x) for x in self.config["sentieon"].get("apply_snp_vqsr_options", [])
+            str(x) for x in self.sent_options.get("apply_snp_vqsr_options", [])
         ])
         apply_indel_vqsr_options = " ".join([
-            str(x) for x in self.config["sentieon"].get("apply_indel_vqsr_options", [])
+            str(x) for x in self.sent_options.get("apply_indel_vqsr_options", [])
         ])
 
-        if '--var_type' in vqsr_options + apply_snp_vqsr_options + apply_indel_vqsr_options:
-            raise ValueError("[ERROR] Do not set '--var_type' in `vqsr_options` or "
-                             "`apply_snp_vqsr_options` or `apply_indel_vqsr_options` "
-                             "in configuration file")
+        if '--var_type' in vqsr_snp_options + vqsr_indel_options + \
+                apply_snp_vqsr_options + apply_indel_vqsr_options:
+            raise ValueError("[ERROR] Do not set '--var_type' in `vqsr_snp_options` or "
+                             "`vqsr_indel_options` or `apply_snp_vqsr_options` or "
+                             "`apply_indel_vqsr_options` in configuration file")
 
         # Set name
         out_prefix = str(output_vcf_fname).replace(".gz", "").replace(".vcf", "")  # delete .vcf.gz
@@ -247,14 +251,14 @@ class Sentieon(object):
         snp_vqsr_cmd = (
             f"time {self.sentieon} driver {self.driver_options} "
             f"-r {self.reference_fasta} "
-            f"--algo VarCal {vqsr_options} "
+            f"--algo VarCal {vqsr_snp_options} "
             f"-v {input_vcf} "
             f"--resource {hapmap} --resource_param hapmap,known=false,training=true,truth=true,prior=15.0  "
             f"--resource {omni} --resource_param omini,known=false,training=true,truth=true,prior=12.0 "
             f"--resource {k_1000G} --resource_param 1000G,known=false,training=true,truth=false,prior=10.0 "
             f"--resource {dbsnp} --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 "
             f"--var_type SNP "
-            f"--max_gaussians {self.config['sentieon']['vqsr_snp_max_gaussians']} "
+            f"--max_gaussians {self.sent_options['vqsr_snp_max_gaussians']} "
             f"--tranches_file {out_prefix}.SNPs.tranches.csv "
             f"--plot_file {out_prefix}.plot.SNPs.csv "
             f"{out_prefix}.SNPs.recal")  # Output quality recalibrator data for SNPs
@@ -271,13 +275,13 @@ class Sentieon(object):
         indel_vqsr_cmd = (
             f"time {self.sentieon} driver {self.driver_options} "
             f"-r {self.reference_fasta} "
-            f"--algo VarCal {vqsr_options} "
+            f"--algo VarCal {vqsr_indel_options} "
             f"-v {out_snp_vqsr_fname} "
             f"--resource {mills_gold_indels} --resource_param omini,known=false,training=true,truth=true,prior=12.0 "
             f"--resource {k_1000G_known_indel} --resource_param 1000G,known=false,training=true,truth=true,prior=10.0 "
             f"--resource {dbsnp} --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 "
             f"--var_type INDEL "
-            f"--max_gaussians {self.config['sentieon']['vqsr_indel_max_gaussians']} "
+            f"--max_gaussians {self.sent_options['vqsr_indel_max_gaussians']} "
             f"--tranches_file {out_prefix}.INDELs.tranches.csv "
             f"--plot_file {out_prefix}.plot.INDELs.csv "
             f"{out_prefix}.INDELs.recal")  # Output quality recalibrator data for INDELs

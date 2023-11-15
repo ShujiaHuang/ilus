@@ -153,10 +153,11 @@ class GATK(object):
             if "vqsr_java_options" in self.gatk_options \
                and len(self.gatk_options["vqsr_java_options"]) else ""
 
-        vqsr_options = " ".join(self.gatk_options["vqsr_options"]) \
-            if "vqsr_options" in self.gatk_options else ""
-        if "--max-gaussians" in vqsr_options:
-            raise ValueError("[ERROR] No need to set --max-gaussians for `vqsr_options` "
+        vqsr_snp_options = " ".join([str(x) for x in self.gatk_options.get("vqsr_snp_options", [])])
+        vqsr_indel_options = " ".join([str(x) for x in self.gatk_options.get("vqsr_indel_options", [])])
+        if "--max-gaussians" in vqsr_snp_options + vqsr_indel_options:
+            raise ValueError("[ERROR] No need to set --max-gaussians for "
+                             "`vqsr_snp_options` and `vqsr_indel_options`"
                              "in your configuration file (.yaml)")
 
         # Set name
@@ -178,12 +179,11 @@ class GATK(object):
                         f"--resource:omini,known=false,training=true,truth=true,prior=12.0 {resource_omni} "
                         f"--resource:1000G,known=false,training=true,truth=false,prior=10.0 {resource_1000G} "
                         f"--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 {resource_dbsnp} "
-                        f"{vqsr_options} "
+                        f"{vqsr_snp_options} "
                         f"-mode SNP "
                         f"--max-gaussians {self.gatk_options['vqsr_snp_max_gaussians']}"
                         f"--tranches-file {out_prefix}.SNPs.tranches.csv "
                         f"-O {out_prefix}.SNPs.recal")
-
         apply_snp_vqsr_cmd = (f"time {self.gatk} {java_options} ApplyVQSR "
                               f"-R {self.reference_fasta} "
                               f"-V {input_vcf} "
@@ -200,7 +200,7 @@ class GATK(object):
                           f"--resource:mills,known=false,training=true,truth=true,prior=12.0 {resource_mills_gold_indels} "
                           f"--resource:1000G,known=false,training=true,truth=true,prior=10.0 {resource_1000G_known_indel} "
                           f"--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 {resource_dbsnp} "
-                          f"{vqsr_options} "
+                          f"{vqsr_indel_options} "
                           f"--tranches-file {out_prefix}.INDELs.tranches.csv "
                           f"-mode INDEL "
                           f"--max-gaussians {self.gatk_options['vqsr_indel_max_gaussians']}"
