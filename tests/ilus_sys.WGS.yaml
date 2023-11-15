@@ -35,7 +35,6 @@ cleanfastq:
   soapnuke: /path/to/SOAPnuke
   soapnuke_options: [-T 12 -m 15 -n 0.01 -l 10 -q 0.1 -M 2 --adaMR 0.25 --polyX 50 --minReadLen 100
                      -f AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA -r AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG]
-
 aligner:
   bwa: /path/to/bwa
 
@@ -43,94 +42,74 @@ aligner:
   # To have number of threads independent results, add chunk size option -K 10000000
   bwamem_options: [-Y -M -t 8 -K 10000000]
 
-
 samtools:
   samtools: /path/to/samtools
-  sort_options: ["-@ 8"]
-  merge_options: ["-@ 8 -f"]
-  stats_options: ["-@ 8"]
+  sort_options: [-@ 8]
+  merge_options: [-@ 8 -f]
+  stats_options: [-@ 8]
 
 
 bcftools:
   bcftools: /path/to/bcftools
   # Parameter for concat VCF files
-  concat_options: ["--threads 12 -a --rm-dups all"]  #
-
+  concat_options: [--threads 12 -a --rm-dups all]
 
 bedtools:
   bedtools: /path/to/bedtools
-  genomecov_options: ["-bga -split"]
-
+  genomecov_options: [-bga -split]
 
 verifyBamID2:
   # The URL link of VerifyBamID2: https://github.com/Griffan/VerifyBamID
   verifyBamID2: /path/to/verifyBamID2
-  options: [
-        # download from: https://github.com/Griffan/VerifyBamID/tree/master/resource 
-        "--SVDPrefix /path/to/verifyBamID2/1.0.6/resource/1000g.phase3.10k.b38.vcf.gz.dat"
+  options: [ # download from: https://github.com/Griffan/VerifyBamID/tree/master/resource
+        --SVDPrefix /path/to/verifyBamID2/1.0.6/resource/1000g.phase3.10k.b38.vcf.gz.dat
   ]
-
 
 bgzip: /path/to/bgzip
 tabix: /path/to/tabix
 
 gatk:
   gatk: /path/to/BioSoftware/gatk
-  markdup_java_options: ["-Xmx10G", "-Djava.io.tmpdir=/your_path/cache"]
-  bqsr_java_options: ["-Xmx8G", "-Djava.io.tmpdir=/your_path/cache"]
-  hc_gvcf_java_options: ["-Xmx4G"]
-  combineGVCFs_java_options: ["-Xmx32G"]  # java options for GATK genomicsDBImport or CombineGVCFs
-  genotype_java_options: ["-Xmx10G"]      # java options for GATK GenotypeGVCFs
-  vqsr_java_options: ["-Xmx10G"]
+  markdup_java_options: [-Xmx10G, -Djava.io.tmpdir=/your_path/cache]
+  bqsr_java_options: [-Xmx8G, -Djava.io.tmpdir=/your_path/cache]
+  hc_gvcf_java_options: [-Xmx4G]
+  combineGVCFs_java_options: [-Xmx32G]  # java options for GATK genomicsDBImport or CombineGVCFs
+  genotype_java_options: [-Xmx10G]      # java options for GATK GenotypeGVCFs
+  vqsr_java_options: [-Xmx10G]
 
-  CollectAlignmentSummaryMetrics_jave_options: ["-Xmx10G"]
+  CollectAlignmentSummaryMetrics_jave_options: [-Xmx10G]
   CollectAlignmentSummaryMetrics_options: []
 
-  hc_gvcf_options: [""]
+  hc_gvcf_options: []
   use_genomicsDBImport: true  # Use genomicsDBImport to combine GVCFs by default
-  genomicsDBImport_options: ["--tmp-dir /your_path/cache",
-                             "--batch-size 100",
-                             "--reader-threads 12",
-                             "--overwrite-existing-genomicsdb-workspace true"]
-  genotypeGVCFs_options: ["--max-alternate-alleles 4"]
+  genomicsDBImport_options: [--tmp-dir /your_path/cache,
+                             --batch-size 100,
+                             --reader-threads 12,
+                             --overwrite-existing-genomicsdb-workspace true]
+  genotypeGVCFs_options: [--max-alternate-alleles 4]
 
   # VQSR
   vqsr_snp_options: [
-    "-an QD",
-    "-an MQRankSum",
-    "-an ReadPosRankSum",
-    "-an FS",
-    "-an SOR",
-    "-an DP",
-    "-tranche 100.0 -tranche 99.9 -tranche 99.5 -tranche 99.0 -tranche 95.0 -tranche 90.0",
+    -an QD,
+    -an MQRankSum,
+    -an ReadPosRankSum,
+    -an FS,
+    -an SOR,
+    -an DP,
+    -tranche 100.0 -tranche 99.9 -tranche 99.5 -tranche 99.0 -tranche 95.0 -tranche 90.0,
   ]
   vqsr_indel_options: [
-    "-an QD",
-    "-an MQRankSum",
-    "-an ReadPosRankSum",
-    "-an FS",
-    "-an SOR",
-    "-an DP",
-    "-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 95.0 -tranche 92.0 -tranche 90.0",
+    -an QD,
+    -an MQRankSum,
+    -an ReadPosRankSum,
+    -an FS,
+    -an SOR,
+    -an DP,
+    -tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 95.0 -tranche 92.0 -tranche 90.0,
   ]
   # maximum number of Gaussians that will be used for the positive recalibration model in VQSR
   vqsr_snp_max_gaussians: 8
   vqsr_indel_max_gaussians: 4
-
-  # Specific variant calling intervals.
-  # The value could be a file in bed format (I show you a example bellow) or a interval of list.
-  # Bed format of interval file only contain three columns: ``Sequencing ID``, ``region start``
-  # and ``region end``, e.g.:
-  #   chr1    10001   207666
-  #   chr1    257667  297968
-  # These intervals could be any regions alone the genome as you wish or just set the same as ``interval`` argument above.
-  # If the calling interval is changed to include only the exon-calling regions, this pipeline could be applied
-  # to detect variants of WES data.
-#  variant_calling_interval: "./human_GRCh38.WGS.calling_regions.interval.bed"
-  #variant_calling_interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",  "chr8",
-  #                           "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16",
-  #                           "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX",  "chrY",
-  #                           "chrM"]
 
 # Setting parameter for Sentieon. Optional
 sentieon:
@@ -148,7 +127,6 @@ sentieon:
 
   dedup_options: []  # [--rmdup]
   indel_realigner_options: []
-
   bqsr_recaltable_options: []  # [--cycle_val_max xxx]
 
   # 'emit_mode' in HaplotypeCaller: determines what calls will be emitted. Possible values for mode are:
@@ -160,21 +138,6 @@ sentieon:
   #        GVCFtyper algorithm.
   hc_options: [--emit_mode gvcf]
 
-  # Specific variant calling intervals.
-  # The value could be a file in bed format (I show you a example bellow) or a interval of list.
-  # Bed format of interval file only contain three columns: ``Sequencing ID``, ``region start``
-  # and ``region end``, e.g.:
-  #   chr1    10001   207666
-  #   chr1    257667  297968
-  # These invertals could be any regions alone the genome as you wish or just set the same as ``interval`` argument above.
-  # If the calling interval is changed to include only the exon-calling regions, this pipeline could be applied
-  # to detect variants of WES data.
-  #variant_calling_interval: "./human_GRCh38.WGS.calling_regions.interval.bed"
-#  variant_calling_interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",  "chr8",
-#                             "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16",
-#                             "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX",  "chrY",
-#                             "chrM"]
-
   # 'emit_mode' in GVCFtyper: determines what calls will be emitted. Possible values for mode are:
   #    - variant: emit calls only at confident variant sites. This is the default behavior.
   #    - confident: emit calls at confident variant sites or confident reference sites.
@@ -184,25 +147,25 @@ sentieon:
   # VQSR.
   ## No need to set `--var_type` option which will be set automatically by ilus
   vqsr_snp_options: [
-    "--annotation QD",
-    "--annotation MQ",
-    "--annotation FS",
-    "--annotation MQRankSum",
-    "--annotation ReadPosRankSum",
-    "--annotation SOR",
-    "--annotation DP",
-    "--tranche 100.0 --tranche 99.9 --tranche 99.5 --tranche 99.0 --tranche 95.0 --tranche 90.0",
-    "--max_neg_gaussians 2"
+    --annotation QD,
+    --annotation MQ,
+    --annotation FS,
+    --annotation MQRankSum,
+    --annotation ReadPosRankSum,
+    --annotation SOR,
+    --annotation DP,
+    --tranche 100.0 --tranche 99.9 --tranche 99.5 --tranche 99.0 --tranche 95.0 --tranche 90.0,
+    --max_neg_gaussians 2,
   ]
   vqsr_indel_options: [
-    "--annotation QD",
-    "--annotation FS",
-    "--annotation MQRankSum",
-    "--annotation ReadPosRankSum",
-    "--annotation SOR",
-    "--annotation DP",
-    "--tranche 100.0 --tranche 99.9 --tranche 99.0 --tranche 95.0 --tranche 92.0 --tranche 90.0",
-    "--max_neg_gaussians 2"
+    --annotation QD,
+    --annotation FS,
+    --annotation MQRankSum,
+    --annotation ReadPosRankSum,
+    --annotation SOR,
+    --annotation DP,
+    --tranche 100.0 --tranche 99.9 --tranche 99.0 --tranche 95.0 --tranche 92.0 --tranche 90.0,
+    --max_neg_gaussians 2,
   ]
   ## maximum number of Gaussians that will be used for the positive recalibration model in VQSR.
   vqsr_snp_max_gaussians: 8
