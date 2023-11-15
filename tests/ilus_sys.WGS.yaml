@@ -92,26 +92,32 @@ gatk:
                              "--batch-size 100",
                              "--reader-threads 12",
                              "--overwrite-existing-genomicsdb-workspace true"]
-
   genotypeGVCFs_options: ["--max-alternate-alleles 4"]
 
   # VQSR
-  vqsr_options: [
-    "-an QD -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP",
-    "-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 95.0 -tranche 90.0",
+  vqsr_snp_options: [
+    "-an QD",
+    "-an MQRankSum",
+    "-an ReadPosRankSum",
+    "-an FS",
+    "-an SOR",
+    "-an DP",
+    "-tranche 100.0 -tranche 99.9 -tranche 99.5 -tranche 99.0 -tranche 95.0 -tranche 90.0",
+  ]
+  vqsr_indel_options: [
+    "-an QD",
+    "-an MQRankSum",
+    "-an ReadPosRankSum",
+    "-an FS",
+    "-an SOR",
+    "-an DP",
+    "-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 95.0 -tranche 92.0 -tranche 90.0",
   ]
   # maximum number of Gaussians that will be used for the positive recalibration model in VQSR
   vqsr_snp_max_gaussians: 8
   vqsr_indel_max_gaussians: 4
 
-  # Fro creating gvcf. The value could be an interval region file in bed format or
-  # could be chromosomes list here. I suggest you should use chromosome list here.
-#  interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",
-#             "chr8",  "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14",
-#             "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21",
-#             "chr22", "chrX",  "chrY",  "chrM"]
-
-  # Specific variant calling intervals. 
+  # Specific variant calling intervals.
   # The value could be a file in bed format (I show you a example bellow) or a interval of list.
   # Bed format of interval file only contain three columns: ``Sequencing ID``, ``region start``
   # and ``region end``, e.g.:
@@ -154,13 +160,6 @@ sentieon:
   #        GVCFtyper algorithm.
   hc_options: [--emit_mode gvcf]
 
-  # For creating gvcf. The value could be an interval region file in bed format or
-  # could be chromosomes list here. I suggest you use chromosome list here.
-#  interval: ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",
-#             "chr8",  "chr9",  "chr10", "chr11", "chr12", "chr13", "chr14",
-#             "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21",
-#             "chr22", "chrX",  "chrY",  "chrM"]
-
   # Specific variant calling intervals.
   # The value could be a file in bed format (I show you a example bellow) or a interval of list.
   # Bed format of interval file only contain three columns: ``Sequencing ID``, ``region start``
@@ -184,10 +183,25 @@ sentieon:
 
   # VQSR.
   ## No need to set `--var_type` option which will be set automatically by ilus
-  vqsr_options: [
-    "--annotation QD --annotation MQRankSum --annotation ReadPosRankSum --annotation FS",
-    "--annotation SOR --annotation DP",
-    "--tranche 100.0 --tranche 99.9 --tranche 99.0 --tranche 95.0 --tranche 90.0",
+  vqsr_snp_options: [
+    "--annotation QD",
+    "--annotation MQ",
+    "--annotation FS",
+    "--annotation MQRankSum",
+    "--annotation ReadPosRankSum",
+    "--annotation SOR",
+    "--annotation DP",
+    "--tranche 100.0 --tranche 99.9 --tranche 99.5 --tranche 99.0 --tranche 95.0 --tranche 90.0",
+    "--max_neg_gaussians 2"
+  ]
+  vqsr_indel_options: [
+    "--annotation QD",
+    "--annotation FS",
+    "--annotation MQRankSum",
+    "--annotation ReadPosRankSum",
+    "--annotation SOR",
+    "--annotation DP",
+    "--tranche 100.0 --tranche 99.9 --tranche 99.0 --tranche 95.0 --tranche 92.0 --tranche 90.0",
     "--max_neg_gaussians 2"
   ]
   ## maximum number of Gaussians that will be used for the positive recalibration model in VQSR.
