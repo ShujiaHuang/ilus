@@ -129,7 +129,8 @@ def run_command(args):
         sys.exit(1)
 
     if args.command is None:
-        print(f"Please type: {PROG_NAME} -h or {PROG_NAME} --help to show the help message.\n",
+        print(f"Please type: {PROG_NAME} -h or {PROG_NAME} "
+              f"--help to show the help message.\n",
               file=sys.stderr)
         sys.exit(1)
 
