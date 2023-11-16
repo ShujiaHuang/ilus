@@ -250,8 +250,8 @@ def run_baserecalibrator(kwargs,
             if kwargs.cram:
                 out_cram_fname = dirname.joinpath(f"{f_name_stem}.BQSR.cram")
                 cmd.append(bwa.bam_to_cram(aione["config"], out_bqsr_bam_fname, out_cram_fname))
-                cmd.append(f"rm -f {out_bqsr_bam_fname}*")
-
+                out_bqsr_bai_fname = dirname.joinpath(f"{f_name_stem}.BQSR.bai")
+                cmd.append(f"rm -f {out_bqsr_bam_fname} {out_bqsr_bai_fname}")
                 aione["sample_final_bqsr_bam"].append([sample, out_cram_fname, out_bqsr_recal_table])
             else:
                 aione["sample_final_bqsr_bam"].append([sample, out_bqsr_bam_fname, out_bqsr_recal_table])

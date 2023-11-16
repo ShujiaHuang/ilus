@@ -11,7 +11,6 @@ from typing import List, Tuple
 
 from ilus.modules.utils import (
     get_variant_calling_intervals,
-    get_chromosome_list_from_fai,
     safe_makedir,
     file_exists,
     check_input_sheet
@@ -80,7 +79,7 @@ def _make_process_shell(output_shell_fname: Path,
     return
 
 
-def _variant_discovery_common_processes(kwargs, processes_set):
+def _variant_discovery_common_processes(kwargs, processes_set: set = None):
     """
     :param kwargs:
     :param processes_set:
@@ -160,26 +159,12 @@ def WGS(kwargs, aione: dict = None) -> dict:
         safe_makedir(shell_directory)
         safe_makedir(shell_log_directory)
 
-    # Loading chromosome id for create gvcf
-    reference_file = aione["config"]["resources"]["reference"]
-    if file_exists(reference_file + ".fai"):
-        fai = reference_file + ".fai"
-    elif file_exists(reference_file.replace(".fasta", ".fa").replace(".fa", ".fai")):
-        fai = reference_file.replace(".fasta", ".fa").replace(".fa", ".fai")
-    else:
-        sys.stderr.write(f"[Error] Need to create an index (.fai) for reference file: "
-                         f"{reference_file}.\n")
-        sys.exit(1)
-
-    aione["config"]["gvcf_interval"] = get_chromosome_list_from_fai(fai)
-
     # Variant calling interval for WGS process must exist.
     if kwargs.interval and ("all" in kwargs.interval.split(",")) and (kwargs.interval != "all"):
-        sys.stderr.write("[ERROR]: Do not add any other interval in `--interval` "
-                         "if 'all' in it.")
+        sys.stderr.write("[ERROR]: Do not add any other interval in --interval if 'all' in it.")
         sys.exit(1)
 
-    # Fetch variant calling intervals
+    # Fetch variant calling intervals for WGS
     if kwargs.interval:
         aione["config"]["variant_calling_interval"] = get_variant_calling_intervals(kwargs.interval)
 
@@ -189,9 +174,7 @@ def WGS(kwargs, aione: dict = None) -> dict:
         for c in aione["config"]["variant_calling_interval"]:
             # Keep the original order
             d = c[0] if type(c) is list else c.split(":")[0]   # chr:s-end
-            if d in id_set:
-                continue
-            else:
+            if d not in id_set:
                 id_set.add(d)
                 aione["config"]["gvcf_interval"].append(d)
     else:
@@ -199,6 +182,49 @@ def WGS(kwargs, aione: dict = None) -> dict:
 
     # Todo: Need a program to validate whether the tools, arguments and the order of processes are
     #  appropriate or not for the pipeline.
+    processes_set = set(kwargs.wgs_processes.split(","))  # 因为顺序不重要
+    wgs_pipeline_processes, runner_module = _variant_discovery_common_processes(kwargs, processes_set)
+
+    # record the input file path of fastqlist
+    aione["fastqlist"] = kwargs.fastqlist
+    for p in wgs_pipeline_processes:
+        is_dry_run = True if kwargs.dry_run or (p not in processes_set) else False
+        func, shell_fname, shell_log_folder, output_folder = runner_module[p]
+        _make_process_shell(output_shell_fname=shell_directory.joinpath(shell_fname),
+                            shell_log_directory=shell_log_directory.joinpath(shell_log_folder),
+                            process_shells=func(kwargs, output_folder, aione, is_dry_run=is_dry_run),
+                            is_overwrite=kwargs.overwrite,
+                            is_dry_run=is_dry_run)
+
+    return aione
+
+
+def WES(kwargs, aione: dict = None) -> dict:
+    """Create WES pipeline.
+    """
+    # Create project directory and return the abspath.
+    # [Important] abspath will remove the last '/' of the path. e.g.: '/a/' -> '/a'
+    kwargs.outdir = Path(kwargs.outdir).resolve()
+    shell_directory = kwargs.outdir.joinpath("00.shell")
+    shell_log_directory = shell_directory.joinpath("loginfo")
+    if not kwargs.dry_run:
+        safe_makedir(kwargs.outdir)
+        safe_makedir(shell_directory)
+        safe_makedir(shell_log_directory)
+
+    # Record the capture interval file of WES
+    aione["config"]["capture_interval"] = kwargs.capture_interval  # File name
+
+    # Reset the chromosomes only appear in WES capture regions
+    aione["config"]["gvcf_interval"] = []
+    id_set = set()
+    for c in get_variant_calling_intervals(kwargs.capture_interval):
+        # Keep the original order
+        d = c[0] if type(c) is list else c.split(":")[0]  # chr:s-end
+        if d not in id_set:
+            id_set.add(d)
+            aione["config"]["gvcf_interval"].append(d)
+
     processes_set = set(kwargs.wgs_processes.split(","))
     wgs_pipeline_processes, runner_module = _variant_discovery_common_processes(kwargs, processes_set)
 
@@ -206,7 +232,6 @@ def WGS(kwargs, aione: dict = None) -> dict:
     aione["fastqlist"] = kwargs.fastqlist
     for p in wgs_pipeline_processes:
         is_dry_run = True if kwargs.dry_run or (p not in processes_set) else False
-
         func, shell_fname, shell_log_folder, output_folder = runner_module[p]
         _make_process_shell(output_shell_fname=shell_directory.joinpath(shell_fname),
                             shell_log_directory=shell_log_directory.joinpath(shell_log_folder),
@@ -244,14 +269,16 @@ def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
     aione["gvcf"] = {}  # will be called in ``gatk_genotypeGVCFs``
     sample_map = {}  # Record sample_map for genomicsDBImport
     with open(kwargs.gvcflist) as I:
-        # Format in gvcfilist: [chromosome_id  sampleid  gvcf_file_path]
+        # Format in gvcflist: [chromosome_id  sample_id  gvcf_file_path]
         for line in I:
             if line.startswith("#"):
                 continue
+
             try:
                 interval, sample, gvcf = line.strip().split()
             except ValueError:
-                raise ValueError(f"Input format error in '{kwargs.gvcflist}'. Expected: 3 columns \n\n"
+                raise ValueError(f"Input format error in '{kwargs.gvcflist}'. "
+                                 f"Expected: 3 columns \n\n"
                                  f"-- column 1: chromosome ID \n"
                                  f"-- column 2: sample ID\n"
                                  f"-- column 3: gvcf file path)\n\n"

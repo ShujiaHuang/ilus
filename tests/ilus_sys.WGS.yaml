@@ -68,6 +68,7 @@ verifyBamID2:
 bgzip: /path/to/bgzip
 tabix: /path/to/tabix
 
+
 gatk:
   gatk: /path/to/BioSoftware/gatk
   markdup_java_options: [-Xmx10G, -Djava.io.tmpdir=/your_path/cache]
@@ -91,6 +92,7 @@ gatk:
   # VQSR
   vqsr_snp_options: [
     -an QD,
+    -an MQ,
     -an MQRankSum,
     -an ReadPosRankSum,
     -an FS,
@@ -110,6 +112,9 @@ gatk:
   # maximum number of Gaussians that will be used for the positive recalibration model in VQSR
   vqsr_snp_max_gaussians: 8
   vqsr_indel_max_gaussians: 4
+  apply_snp_vqsr_options: [--truth-sensitivity-filter-level 99.5]
+  apply_indel_vqsr_options: [--truth-sensitivity-filter-level 99.5]
+
 
 # Setting parameter for Sentieon. Optional
 sentieon:

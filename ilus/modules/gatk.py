@@ -160,6 +160,14 @@ class GATK(object):
                              "`vqsr_snp_options` and `vqsr_indel_options`"
                              "in your configuration file (.yaml)")
 
+        apply_snp_vqsr_options = " ".join([str(x) for x in self.gatk_options.get("apply_snp_vqsr_options", [])])
+        apply_indel_vqsr_options = " ".join([str(x) for x in self.gatk_options.get("apply_indel_vqsr_options", [])])
+        if '-mode' in vqsr_snp_options + vqsr_indel_options + \
+                apply_snp_vqsr_options + apply_indel_vqsr_options:
+            raise ValueError("[ERROR] Do not set '-mode' in `vqsr_snp_options` or "
+                             "`vqsr_indel_options` or `apply_snp_vqsr_options` or "
+                             "`apply_indel_vqsr_options` in configuration file")
+
         # Set name
         out_prefix = output_vcf_fname.replace(".gz", "").replace(".vcf", "")  # delete .vcf.gz
         out_snp_vqsr_fname = out_prefix + ".SNPs.vcf.gz"
@@ -172,47 +180,51 @@ class GATK(object):
         resource_1000G_known_indel = self.resources_bundle["1000G_known_indel"]
 
         # SNP VQSR
-        snp_vqsr_cmd = (f"time {self.gatk} {java_options} VariantRecalibrator "
-                        f"-R {self.reference_fasta} "
-                        f"-V {input_vcf} "
-                        f"--resource:hapmap,known=false,training=true,truth=true,prior=15.0 {resource_hapmap} "
-                        f"--resource:omini,known=false,training=true,truth=true,prior=12.0 {resource_omni} "
-                        f"--resource:1000G,known=false,training=true,truth=false,prior=10.0 {resource_1000G} "
-                        f"--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 {resource_dbsnp} "
-                        f"{vqsr_snp_options} "
-                        f"-mode SNP "
-                        f"--max-gaussians {self.gatk_options['vqsr_snp_max_gaussians']}"
-                        f"--tranches-file {out_prefix}.SNPs.tranches.csv "
-                        f"-O {out_prefix}.SNPs.recal")
-        apply_snp_vqsr_cmd = (f"time {self.gatk} {java_options} ApplyVQSR "
+        snp_vqsr_cmd = (
+            f"time {self.gatk} {java_options} VariantRecalibrator "
+            f"-R {self.reference_fasta} "
+            f"-V {input_vcf} "
+            f"--resource:hapmap,known=false,training=true,truth=true,prior=15.0 {resource_hapmap} "
+            f"--resource:omini,known=false,training=true,truth=true,prior=12.0 {resource_omni} "
+            f"--resource:1000G,known=false,training=true,truth=false,prior=10.0 {resource_1000G} "
+            f"--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 {resource_dbsnp} "
+            f"{vqsr_snp_options} "
+            f"-mode SNP "
+            f"--max-gaussians {self.gatk_options['vqsr_snp_max_gaussians']}"
+            f"--tranches-file {out_prefix}.SNPs.tranches.csv "
+            f"-O {out_prefix}.SNPs.recal"
+        )
+        apply_snp_vqsr_cmd = (f"time {self.gatk} {java_options} ApplyVQSR {apply_snp_vqsr_options} "
                               f"-R {self.reference_fasta} "
                               f"-V {input_vcf} "
                               f"--tranches-file {out_prefix}.SNPs.tranches.csv "
                               f"--recal-file {out_prefix}.SNPs.recal "
-                              f"--truth-sensitivity-filter-level 99.5 "
                               f"-mode SNP "
                               f"-O {out_snp_vqsr_fname}")
 
         # Indel VQSR after SNP
-        indel_vqsr_cmd = (f"time {self.gatk} {java_options} VariantRecalibrator "
-                          f"-R {self.reference_fasta} "
-                          f"-V {out_snp_vqsr_fname} "
-                          f"--resource:mills,known=false,training=true,truth=true,prior=12.0 {resource_mills_gold_indels} "
-                          f"--resource:1000G,known=false,training=true,truth=true,prior=10.0 {resource_1000G_known_indel} "
-                          f"--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 {resource_dbsnp} "
-                          f"{vqsr_indel_options} "
-                          f"--tranches-file {out_prefix}.INDELs.tranches.csv "
-                          f"-mode INDEL "
-                          f"--max-gaussians {self.gatk_options['vqsr_indel_max_gaussians']}"
-                          f"-O {out_prefix}.INDELs.recal")
-        apply_indel_vqsr_cmd = (f"time {self.gatk} {java_options} ApplyVQSR "
-                                f"-R {self.reference_fasta} "
-                                f"-V {out_snp_vqsr_fname} "
-                                f"--truth-sensitivity-filter-level 99.5 "
-                                f"--tranches-file {out_prefix}.INDELs.tranches.csv "
-                                f"--recal-file {out_prefix}.INDELs.recal "
-                                f"-mode INDEL "
-                                f"-O {output_vcf_fname} && rm -f {out_snp_vqsr_fname}")
+        indel_vqsr_cmd = (
+            f"time {self.gatk} {java_options} VariantRecalibrator "
+            f"-R {self.reference_fasta} "
+            f"-V {out_snp_vqsr_fname} "
+            f"--resource:mills,known=false,training=true,truth=true,prior=12.0 {resource_mills_gold_indels} "
+            f"--resource:1000G,known=false,training=true,truth=true,prior=10.0 {resource_1000G_known_indel} "
+            f"--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 {resource_dbsnp} "
+            f"{vqsr_indel_options} "
+            f"--tranches-file {out_prefix}.INDELs.tranches.csv "
+            f"-mode INDEL "
+            f"--max-gaussians {self.gatk_options['vqsr_indel_max_gaussians']}"
+            f"-O {out_prefix}.INDELs.recal"
+        )
+        apply_indel_vqsr_cmd = (
+            f"time {self.gatk} {java_options} ApplyVQSR {apply_indel_vqsr_options} "
+            f"-R {self.reference_fasta} "
+            f"-V {out_snp_vqsr_fname} "
+            f"--tranches-file {out_prefix}.INDELs.tranches.csv "
+            f"--recal-file {out_prefix}.INDELs.recal "
+            f"-mode INDEL "
+            f"-O {output_vcf_fname} && rm -f {out_snp_vqsr_fname}"
+        )
 
         return " && ".join([snp_vqsr_cmd, apply_snp_vqsr_cmd, indel_vqsr_cmd, apply_indel_vqsr_cmd])
 
