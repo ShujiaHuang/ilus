@@ -181,16 +181,15 @@ class GATK(object):
 
         # SNP VQSR
         snp_vqsr_cmd = (
-            f"time {self.gatk} {java_options} VariantRecalibrator "
+            f"time {self.gatk} {java_options} VariantRecalibrator {vqsr_snp_options} "
             f"-R {self.reference_fasta} "
             f"-V {input_vcf} "
             f"--resource:hapmap,known=false,training=true,truth=true,prior=15.0 {resource_hapmap} "
             f"--resource:omini,known=false,training=true,truth=true,prior=12.0 {resource_omni} "
             f"--resource:1000G,known=false,training=true,truth=false,prior=10.0 {resource_1000G} "
             f"--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 {resource_dbsnp} "
-            f"{vqsr_snp_options} "
             f"-mode SNP "
-            f"--max-gaussians {self.gatk_options['vqsr_snp_max_gaussians']}"
+            f"--max-gaussians {self.gatk_options['vqsr_snp_max_gaussians']} "
             f"--tranches-file {out_prefix}.SNPs.tranches.csv "
             f"-O {out_prefix}.SNPs.recal"
         )
@@ -204,16 +203,15 @@ class GATK(object):
 
         # Indel VQSR after SNP
         indel_vqsr_cmd = (
-            f"time {self.gatk} {java_options} VariantRecalibrator "
+            f"time {self.gatk} {java_options} VariantRecalibrator {vqsr_indel_options} "
             f"-R {self.reference_fasta} "
             f"-V {out_snp_vqsr_fname} "
             f"--resource:mills,known=false,training=true,truth=true,prior=12.0 {resource_mills_gold_indels} "
             f"--resource:1000G,known=false,training=true,truth=true,prior=10.0 {resource_1000G_known_indel} "
             f"--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 {resource_dbsnp} "
-            f"{vqsr_indel_options} "
             f"--tranches-file {out_prefix}.INDELs.tranches.csv "
             f"-mode INDEL "
-            f"--max-gaussians {self.gatk_options['vqsr_indel_max_gaussians']}"
+            f"--max-gaussians {self.gatk_options['vqsr_indel_max_gaussians']} "
             f"-O {out_prefix}.INDELs.recal"
         )
         apply_indel_vqsr_cmd = (
