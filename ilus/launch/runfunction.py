@@ -47,7 +47,7 @@ def _create_cmd_file(out_shell_file: Path, cmd: List[str] = None):
 
 def run_bwamem(kwargs, out_folder_name: str, aione: dict = None,
                is_dry_run: bool = False):
-    """Create bwamem aligment shell scripts for fastq to BAM.
+    """Create bwamem alignment shell scripts for fastq to BAM.
     """
     output_directory = Path(kwargs.outdir).joinpath(out_folder_name, "output")
     shell_directory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "bwa")
@@ -121,11 +121,10 @@ def run_bwamem(kwargs, out_folder_name: str, aione: dict = None,
                 cmd.append(f"rm -f {lane_bam_file}.bai")
         else:
             samtools_merge_options = " ".join([str(x) for x in aione["config"]["samtools"].get("merge_options", [])])
-
             lane_bam_files = " ".join([f for f, _ in sample_bamfiles_by_lane[sample]])
             lane_bai_files = " ".join([f"{f}.bai" for f, _ in sample_bamfiles_by_lane[sample]])
-            cmd = [c for _, c in sample_bamfiles_by_lane[sample]]
 
+            cmd = [c for _, c in sample_bamfiles_by_lane[sample]]
             # merge lane_bam_files together to be one big BAM file and rm lane_bam_files
             cmd.append(f"{samtools} merge {samtools_merge_options} {sample_final_bamfile} "
                        f"{lane_bam_files} && rm -f {lane_bam_files} {lane_bai_files}")
@@ -136,7 +135,6 @@ def run_bwamem(kwargs, out_folder_name: str, aione: dict = None,
             cmd.append(bam.verifyBamID2(aione["config"],
                                         sample_final_bamfile,
                                         out_verifybamid_stat_prefix))
-
         # alignment metrics
         if kwargs.use_sentieon:
             # 当使用 Sentieon 时才计算这些 alignment metrics
@@ -269,9 +267,9 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
                              is_dry_run: bool = False):
     """Create gvcf shell.
     """
+
     def _create_sub_shell(sample, in_sample_bam, bqsr_recal_table, sample_shell_dir,
                           sample_output_dir, interval=None, is_dry_run=False):
-
         sample_shell_fname_ = sample_shell_dir.joinpath(f"{sample}.{interval}.gvcf.sh")
         sample_gvcf_fname_ = sample_output_dir.joinpath(f"{sample}.{interval}.g.vcf.gz")
 
@@ -316,7 +314,7 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
             safe_makedir(sample_output_dir)
             safe_makedir(sample_shell_dir)
 
-        for chrommosome in aione["config"]["gvcf_interval"]:
+        for chrommosome in aione["config"]["gvcf_interval"]:  # 按照染色体为单位生成 gvcf
             sample_shell_fname, sample_gvcf_fname = _create_sub_shell(
                 sample, sample_bqsr_bam, bqsr_recal_table, sample_shell_dir, sample_output_dir,
                 interval=chrommosome,  # 'all' => whole genome, take a lot of time for WGS, not suggested
@@ -347,10 +345,15 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
     return gvcf_shell_files_list
 
 
-def _yield_gatk_combineGVCFs(project_name, variant_calling_intervals, output_directory: Path,
-                             shell_directory: Path, is_use_gDBI: bool, aione: dict = None):
+def _yield_gatk_combineGVCFs(project_name,
+                             variant_calling_intervals,
+                             output_directory: Path,
+                             shell_directory: Path,
+                             is_use_gDBI: bool,
+                             aione: dict = None):
+    """A generator for combine GVCFs."""
     for interval in variant_calling_intervals:
-        # get chromosome id
+        # get chromosome id for gvcf
         interval_id = interval[0] if type(interval) is list else interval.split(":")[0]
 
         if interval_id in aione["gvcf"]:
@@ -358,21 +361,20 @@ def _yield_gatk_combineGVCFs(project_name, variant_calling_intervals, output_dir
             sample_gvcf_list = [aione["sample_map"][interval_id]] \
                 if is_use_gDBI else aione["gvcf"][interval_id]
         else:
+            sys.stderr.write(f"[WARNING] {interval_id} is not founded in gvcf files.\n")
             continue
 
         if not sample_gvcf_list:
             raise ValueError("[Error] Interval parameters in configuration file may be different "
                              "from that input gvcf file list in ``gatk_combineGVCFs`` function.")
 
+        # Create commandline for combining GVCFs
         interval_n = "_".join(interval) if type(interval) is list else interval.replace(":", "_")  # chr:s -> chr_s
+        calling_interval = f"{interval[0]}:{interval[1]}-{interval[2]}" if type(interval) is list else interval
+
         sub_shell_fname = shell_directory.joinpath(f"{project_name}.{interval_n}.combineGVCFs.sh")
         combineGVCF_fname = output_directory.joinpath(f"{project_name}.{interval_n}.genomics_db") \
             if is_use_gDBI else output_directory.joinpath(f"{project_name}.{interval_n}.g.vcf.gz")
-
-        # Create commandline for combining GVCFs
-        calling_interval = f"{interval[0]}:{interval[1]}-{interval[2]}" \
-            if type(interval) is list else interval
-
         combineGVCFs_cmd = GATK(aione["config"]).combineGVCFs(sample_gvcf_list,
                                                               combineGVCF_fname,
                                                               interval=calling_interval)
@@ -391,13 +393,15 @@ def gatk_combineGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
     combineGVCFs_shell_files_list = []
     aione["combineGVCFs"] = {}
 
-    variant_calling_intervals = aione["config"]["variant_calling_interval"]
+    # 如果是 capture sequencing （如 WES），则按照染色体合并 gvcf 即可，否则按 `variant_calling_interval` 区间合并
+    v_calling_intervals = aione["config"]["gvcf_interval"] \
+        if "capture_interval_file" in aione["config"] else aione["config"]["variant_calling_interval"]
     for (combineGVCFs_cmd,
          combineGVCF_fname,
          sub_shell_fname,
          interval_n,  # interval marker
          calling_interval) in _yield_gatk_combineGVCFs(kwargs.project_name,
-                                                       variant_calling_intervals,
+                                                       v_calling_intervals,
                                                        output_directory,
                                                        shell_directory,
                                                        is_use_gDBI,
@@ -421,15 +425,24 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
     genotype_vcf_shell_files_list = []
     aione["genotype_vcf_list"] = []
 
-    for interval in aione["config"]["variant_calling_interval"]:
-        interval_n = "_".join(interval) if type(interval) is list else interval.replace(":", "_")  # chr:s -> chr_s
+    # Todo: 对于 WES 这里有错，因为不需要 variant_calling_intervals，想想怎么改
+    v_calling_intervals = aione["config"]["gvcf_interval"] \
+        if "capture_interval_file" in aione["config"] else aione["config"]["variant_calling_interval"]
+
+    for interval in v_calling_intervals:
+        if "capture_interval_file" in aione["config"]:
+            # capture_fname + chromosome id
+            interval_n = Path(aione["config"]["capture_interval_file"]).stem + f".{interval}"
+            calling_interval = aione["config"]["capture_interval_file"]
+        else:
+            interval_n = "_".join(interval) if type(interval) is list else interval.replace(":", "_")  # chr:s -> chr_s
+            calling_interval = f"{interval[0]}:{interval[1]}-{interval[2]}" \
+                if type(interval) is list else interval
+
         sub_shell_fname = shell_directory.joinpath(f"{kwargs.project_name}.{interval_n}.genotype.sh")
         genotype_vcf_fname = str(output_directory.joinpath(f"{kwargs.project_name}.{interval_n}.vcf.gz"))
         genotype_vcf_shell_files_list.append([kwargs.project_name + "." + interval_n, sub_shell_fname])
         aione["genotype_vcf_list"].append(genotype_vcf_fname)
-
-        calling_interval = f"{interval[0]}:{interval[1]}-{interval[2]}" \
-            if type(interval) is list else interval
 
         # Create commandline for genotype joint-calling process
         if kwargs.use_sentieon:
@@ -438,8 +451,7 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
             genotype_cmd = Sentieon(config=aione["config"]).genotypeGVCFs(
                 aione["gvcf"][interval_id],  # input the whole gvcf list
                 genotype_vcf_fname,
-                interval=calling_interval
-            )
+                interval=calling_interval)
         else:
             # GATK must have combineGVCFs
             if interval_n not in aione["combineGVCFs"]:
@@ -448,12 +460,10 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
             genotype_cmd = GATK(aione["config"]).genotypeGVCFs(
                 aione["combineGVCFs"][interval_n],
                 genotype_vcf_fname,
-                interval=calling_interval
-            )
+                interval=calling_interval)
 
         echo_mark_done = f"echo \"[Genotype] {calling_interval} done\""
         cmd = [genotype_cmd, echo_mark_done]  # [genotype_cmd, delete_cmd, echo_mark_done]
-
         if (not is_dry_run) and (not sub_shell_fname.exists() or kwargs.overwrite):
             _create_cmd_file(sub_shell_fname, cmd)
 
@@ -517,11 +527,10 @@ def gatk_genotype(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: 
 
 
 def run_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None,
-                            is_dry_run: bool = False):
+                            is_dry_run: bool = False, is_rm_raw_vcfs: bool = False):
     """Create shell scripts for VQSR.
     """
-    output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
-                                            is_dry_run=is_dry_run)
+    output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name), is_dry_run=is_dry_run)
     genotype_vqsr_fname = str(output_directory.joinpath(f"{kwargs.project_name}.VQSR.vcf.gz"))
     combine_vcf_fname = str(output_directory.joinpath(f"{kwargs.project_name}.raw.vcf.gz"))
     shell_fname = shell_directory.joinpath(f"{kwargs.project_name}.VQSR.sh")
@@ -538,12 +547,16 @@ def run_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None,
     else:
         combine_vcf_fname = str(aione["genotype_vcf_list"][0])
 
+    if is_rm_raw_vcfs:
+        cmd.append(f"rm -f {' '.join(aione['genotype_vcf_list'])}")
+
     # VQSR process
     if kwargs.use_sentieon:
         cmd.append(Sentieon(config=aione["config"]).variantrecalibrator(
             combine_vcf_fname, genotype_vqsr_fname))
     else:
-        cmd.append(GATK(aione["config"]).variantrecalibrator(combine_vcf_fname, genotype_vqsr_fname))
+        cmd.append(GATK(aione["config"]).variantrecalibrator(
+            combine_vcf_fname, genotype_vqsr_fname))
 
     cmd.append(f"echo \"[VQSR] {genotype_vqsr_fname} done\"")
     if not is_dry_run and (not shell_fname.exists() or kwargs.overwrite):

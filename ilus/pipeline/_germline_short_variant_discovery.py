@@ -146,8 +146,10 @@ def _variant_discovery_common_processes(kwargs, processes_set: set = None):
     return wgs_pipeline_processes, runner_module
 
 
-def WGS(kwargs, aione: dict = None) -> dict:
+def WGS(kwargs, aione: dict = None, is_capture_seq: bool = False) -> dict:
     """Create the WGS data analysis pipeline.
+
+        ``is_capture_seq``: WES or other capture sequencing.
     """
     # Create project directory and return the abspath.
     # [Important] abspath will remove the last '/' of the path. e.g.: '/a/' -> '/a'
@@ -161,12 +163,15 @@ def WGS(kwargs, aione: dict = None) -> dict:
 
     # Variant calling interval for WGS process must exist.
     if kwargs.interval and ("all" in kwargs.interval.split(",")) and (kwargs.interval != "all"):
-        sys.stderr.write("[ERROR]: Do not add any other interval in --interval if 'all' in it.")
+        sys.stderr.write("[ERROR]: Do not add any other interval in '--interval' if 'all' in it.")
         sys.exit(1)
 
     # Fetch variant calling intervals for WGS
     if kwargs.interval:
         aione["config"]["variant_calling_interval"] = get_variant_calling_intervals(kwargs.interval)
+        if is_capture_seq:
+            # 如果是 capture sequence 比如 WES，把该文件记录起来，该 key 只为种情况而添加。
+            aione["config"]["capture_interval_file"] = kwargs.interval
 
         # Reset the chromosomes only appear in variant calling interval
         aione["config"]["gvcf_interval"] = []
@@ -176,13 +181,14 @@ def WGS(kwargs, aione: dict = None) -> dict:
             d = c[0] if type(c) is list else c.split(":")[0]   # chr:s-end
             if d not in id_set:
                 id_set.add(d)
+                # 确保可以按照以染色体为单位和顺序生成 gvcf
                 aione["config"]["gvcf_interval"].append(d)
     else:
         aione["config"]["variant_calling_interval"] = aione["config"]["gvcf_interval"]
 
     # Todo: Need a program to validate whether the tools, arguments and the order of processes are
     #  appropriate or not for the pipeline.
-    processes_set = set(kwargs.wgs_processes.split(","))  # 因为顺序不重要
+    processes_set = set(kwargs.wgs_processes.split(","))  # 顺序不重要，所以存为 set，确保不重复
     wgs_pipeline_processes, runner_module = _variant_discovery_common_processes(kwargs, processes_set)
 
     # record the input file path of fastqlist
@@ -202,44 +208,7 @@ def WGS(kwargs, aione: dict = None) -> dict:
 def WES(kwargs, aione: dict = None) -> dict:
     """Create WES pipeline.
     """
-    # Create project directory and return the abspath.
-    # [Important] abspath will remove the last '/' of the path. e.g.: '/a/' -> '/a'
-    kwargs.outdir = Path(kwargs.outdir).resolve()
-    shell_directory = kwargs.outdir.joinpath("00.shell")
-    shell_log_directory = shell_directory.joinpath("loginfo")
-    if not kwargs.dry_run:
-        safe_makedir(kwargs.outdir)
-        safe_makedir(shell_directory)
-        safe_makedir(shell_log_directory)
-
-    # Record the capture interval file of WES
-    aione["config"]["capture_interval"] = kwargs.capture_interval  # File name
-
-    # Reset the chromosomes only appear in WES capture regions
-    aione["config"]["gvcf_interval"] = []
-    id_set = set()
-    for c in get_variant_calling_intervals(kwargs.capture_interval):
-        # Keep the original order
-        d = c[0] if type(c) is list else c.split(":")[0]  # chr:s-end
-        if d not in id_set:
-            id_set.add(d)
-            aione["config"]["gvcf_interval"].append(d)
-
-    processes_set = set(kwargs.wgs_processes.split(","))
-    wgs_pipeline_processes, runner_module = _variant_discovery_common_processes(kwargs, processes_set)
-
-    # record the input file path of fastqlist
-    aione["fastqlist"] = kwargs.fastqlist
-    for p in wgs_pipeline_processes:
-        is_dry_run = True if kwargs.dry_run or (p not in processes_set) else False
-        func, shell_fname, shell_log_folder, output_folder = runner_module[p]
-        _make_process_shell(output_shell_fname=shell_directory.joinpath(shell_fname),
-                            shell_log_directory=shell_log_directory.joinpath(shell_log_folder),
-                            process_shells=func(kwargs, output_folder, aione, is_dry_run=is_dry_run),
-                            is_overwrite=kwargs.overwrite,
-                            is_dry_run=is_dry_run)
-
-    return aione
+    return WGS(kwargs, aione, is_capture_seq=True)
 
 
 def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):

@@ -191,8 +191,7 @@ class GATK(object):
             f"-mode SNP "
             f"--max-gaussians {self.gatk_options['vqsr_snp_max_gaussians']} "
             f"--tranches-file {out_prefix}.SNPs.tranches.csv "
-            f"-O {out_prefix}.SNPs.recal"
-        )
+            f"-O {out_prefix}.SNPs.recal")
         apply_snp_vqsr_cmd = (f"time {self.gatk} {java_options} ApplyVQSR {apply_snp_vqsr_options} "
                               f"-R {self.reference_fasta} "
                               f"-V {input_vcf} "
@@ -212,8 +211,7 @@ class GATK(object):
             f"--tranches-file {out_prefix}.INDELs.tranches.csv "
             f"-mode INDEL "
             f"--max-gaussians {self.gatk_options['vqsr_indel_max_gaussians']} "
-            f"-O {out_prefix}.INDELs.recal"
-        )
+            f"-O {out_prefix}.INDELs.recal")
         apply_indel_vqsr_cmd = (
             f"time {self.gatk} {java_options} ApplyVQSR {apply_indel_vqsr_options} "
             f"-R {self.reference_fasta} "
@@ -221,7 +219,7 @@ class GATK(object):
             f"--tranches-file {out_prefix}.INDELs.tranches.csv "
             f"--recal-file {out_prefix}.INDELs.recal "
             f"-mode INDEL "
-            f"-O {output_vcf_fname} && rm -f {out_snp_vqsr_fname}"
+            f"-O {output_vcf_fname} && rm -f {out_snp_vqsr_fname}* "
         )
 
         return " && ".join([snp_vqsr_cmd, apply_snp_vqsr_cmd, indel_vqsr_cmd, apply_indel_vqsr_cmd])

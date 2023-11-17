@@ -93,28 +93,28 @@ def _add_germline_short_variant_discovery_argument(command):
              "Possible values: %(default)s"
     )
 
-    # Specific variant calling intervals.
-    # The value could be a file in bed format (I show you a example bellow) or a interval of list.
-    # Bed format of interval file only contain three columns: ``Sequencing ID``, ``region start``
-    # and ``region end``, e.g.:
-    #   chr1    10001   207666
-    #   chr1    257667  297968
-    #
-    # These invertals could be any regions alone the genome as you wish or just set the same as
-    # ``--interval`` argument above.
-    #
-    # If the calling interval is changed to include only the exon-calling regions,
-    # this pipeline could be applied to detect variants of WES data.
-    command.add_argument(
-        "--interval",
-        dest="interval",
-        type=str,
-        required=False,
-        help="Interval strings (separate by comma) or a file (BED/Picard,1-based) that "
-             "will be used in variants calling. "
-             "e.g: '--interval chr1:1-2,chr2,chr3:4-5' "
-             "or '--interval interval_file.bed'."
-    )
+    # # Specific variant calling intervals.
+    # # The value could be a file in bed format (I show you a example bellow) or a interval of list.
+    # # Bed format of interval file only contain three columns: ``Sequencing ID``, ``region start``
+    # # and ``region end``, e.g.:
+    # #   chr1    10001   207666
+    # #   chr1    257667  297968
+    # #
+    # # These invertals could be any regions alone the genome as you wish or just set the same as
+    # # ``--interval`` argument above.
+    # #
+    # # If the calling interval is changed to include only the exon-calling regions,
+    # # this pipeline could be applied to detect variants of WES data.
+    # command.add_argument(
+    #     "--interval",
+    #     dest="interval",
+    #     type=str,
+    #     required=False,
+    #     help="Interval strings (separate by comma) or a file (BED/Picard,1-based) that "
+    #          "will be used in variants calling. "
+    #          "e.g: '--interval chr1:1-2,chr2,chr3:4-5' "
+    #          "or '--interval interval_file.bed'."
+    # )
 
     # Todo: Write a dry run function for testing the pipeline without truely run the pipeline.
     command.add_argument(
@@ -136,27 +136,49 @@ def create_wgs_pipeline_command(commands):
             parents=[_get_parent_parser()],
             help="Create aaa pipeline for WGS (from FASTQ to genotype VCF).")
     )
+
+    # Specific variant calling intervals.
+    # The value could be a file in bed format (I show you a example bellow) or a interval of list.
+    # Bed format of interval file only contain three columns: ``Sequencing ID``, ``region start``
+    # and ``region end``, e.g.:
+    #   chr1    10001   207666
+    #   chr1    257667  297968
+    #
+    # These invertals could be any regions alone the genome as you wish or just set the same as
+    # ``--interval`` argument above.
+    #
+    # If the calling interval is changed to include only the exon-calling regions,
+    # this pipeline could be applied to detect variants of WES data.
+    wgs_cmd.add_argument(
+        "--interval",
+        dest="interval",
+        type=str,
+        required=False,
+        help="Interval strings (separate by comma) or a file (BED/Picard,1-based) that "
+             "will be used in variants calling. "
+             "e.g: '--interval chr1:1-2,chr2,chr3:4-5' "
+             "or '--interval interval_file.bed'."
+    )
+
     return wgs_cmd
 
 
 def create_wes_pipeline_command(commands):
     """All the arguments for creating WES pipeline."""
-    wes_cmd = commands.add_parser(
-        "WES",
-        parents=[_get_parent_parser()],
-        help="Create aaa pipeline for WGS (from FASTQ to genotype VCF)."
+    wes_cmd = _add_germline_short_variant_discovery_argument(
+        commands.add_parser(
+            "WES",
+            parents=[_get_parent_parser()],
+            help="Create aaa pipeline for WGS (from FASTQ to genotype VCF).")
     )
 
     wes_cmd.add_argument(
         "--capture-interval",
-        dest="capture_interval",
+        dest="interval",  # WES capture region file (BED/Picard,1-based)
         type=str,
         required=True,
         help="WES capture intervals: string or file (BED/Picard)"
     )
-
-    # Add other arguments
-    _add_germline_short_variant_discovery_argument(wes_cmd)
 
     return wes_cmd
 

@@ -15,6 +15,7 @@ from datetime import datetime
 # Import specific functions of ilus
 from ilus.pipeline import (
     create_wgs_pipeline_command, WGS,
+    create_wes_pipeline_command, WES,
     create_genotype_joint_calling_command, genotypeGVCFs,
     create_vqsr_command, variantrecalibrator
 )
@@ -97,6 +98,9 @@ def parse_commandline_args():
     # The arguments for the whole pipeline of WGS.
     create_wgs_pipeline_command(commands)
 
+    # The arguments for the whole pipeline of WES.
+    create_wes_pipeline_command(commands)
+
     # The arguments for joint-calling process
     create_genotype_joint_calling_command(commands)
 
@@ -120,6 +124,7 @@ def run_command(args):
     """
     runner = {
         "WGS": WGS,
+        "WES": WES,
         "genotype-joint-calling": genotypeGVCFs,
         "VQSR": variantrecalibrator,
     }

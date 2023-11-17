@@ -22,6 +22,7 @@ class Sentieon(object):
     """A class for Sentieon.
     Sentieon doc: https://support.sentieon.com/manual
     """
+
     def __init__(self, config):
         """Constructor.
         """
@@ -64,8 +65,11 @@ class Sentieon(object):
         if len(adapter_seq) == 0:
             adapter_seq = "' '"
 
+        driver_options = self.driver_options + f" --interval {self.config['capture_interval_file']}" \
+            if "capture_interval_file" in self.config else self.driver_options
+
         coverage_options = " ".join([str(x) for x in self.sent_options.get("coverage_options", [])])
-        align_metrics_cmd = (f"time {self.sentieon} driver {self.driver_options} "
+        align_metrics_cmd = (f"time {self.sentieon} driver {driver_options} "
                              f"-r {self.reference_fasta} "
                              f"-i {input_bam} "
                              f"--algo MeanQualityByCycle {out_prefix}.mq_metrics.txt "
@@ -116,16 +120,31 @@ class Sentieon(object):
 
         known_Mills_indels = self.resources_bundle["mills"]
         known_1000G_indels = self.resources_bundle["1000G_known_indel"]
-        return (f"time {self.sentieon} driver {self.driver_options} "
-                f"-r {self.reference_fasta} "
-                f"-i {input_bam} "
-                f"--algo Realigner {indel_realigner_options} "
-                f"-k {known_Mills_indels} "
-                f"-k {known_1000G_indels} {output_realig_bam} "
+        if "capture_interval_file" in self.config:
+            cmd = (f"time {self.sentieon} driver {self.driver_options} "
+                   f"-r {self.reference_fasta} "
+                   f"-i {input_bam} "
+                   f"--algo Realigner {indel_realigner_options} "
+                   f"-k {known_Mills_indels} "
+                   f"-k {known_1000G_indels} {output_realig_bam} && "
+                   
+                   # 对于 capture sequencing，coverage 需要单独设置 interval 计算 
+                   f"time {self.sentieon} driver {self.driver_options} "
+                   f"--interval {self.config['capture_interval_file']} "
+                   f"--algo CoverageMetrics {coverage_options} {cvg_metrics_fn}")
+        else:
+            cmd = (f"time {self.sentieon} driver {self.driver_options} "
+                   f"-r {self.reference_fasta} "
+                   f"-i {input_bam} "
+                   f"--algo Realigner {indel_realigner_options} "
+                   f"-k {known_Mills_indels} "
+                   f"-k {known_1000G_indels} {output_realig_bam} "
 
-                # '--omit_base_output' skip the output of the per locus coverage with no partition.
-                # This option can be used when you do not use intervals to save space.
-                f"--algo CoverageMetrics {coverage_options} {cvg_metrics_fn}")
+                   # '--omit_base_output' skip the output of the per locus coverage with no partition.
+                   # This option can be used when you do not use intervals to save space.
+                   f"--algo CoverageMetrics {coverage_options} {cvg_metrics_fn}")
+
+        return cmd
 
     def baserecalibrator(self, input_bam, out_bqsr_recal_table):
         """Base quality recalibration.
@@ -232,12 +251,8 @@ class Sentieon(object):
 
         vqsr_snp_options = " ".join([str(x) for x in self.sent_options.get("vqsr_snp_options", [])])
         vqsr_indel_options = " ".join([str(x) for x in self.sent_options.get("vqsr_indel_options", [])])
-        apply_snp_vqsr_options = " ".join([
-            str(x) for x in self.sent_options.get("apply_snp_vqsr_options", [])
-        ])
-        apply_indel_vqsr_options = " ".join([
-            str(x) for x in self.sent_options.get("apply_indel_vqsr_options", [])
-        ])
+        apply_snp_vqsr_options = " ".join([str(x) for x in self.sent_options.get("apply_snp_vqsr_options", [])])
+        apply_indel_vqsr_options = " ".join([str(x) for x in self.sent_options.get("apply_indel_vqsr_options", [])])
 
         if '--var_type' in vqsr_snp_options + vqsr_indel_options + \
                 apply_snp_vqsr_options + apply_indel_vqsr_options:
@@ -253,7 +268,7 @@ class Sentieon(object):
             f"-r {self.reference_fasta} "
             f"--algo VarCal {vqsr_snp_options} "
             f"-v {input_vcf} "
-            f"--resource {hapmap} --resource_param hapmap,known=false,training=true,truth=true,prior=15.0  "
+            f"--resource {hapmap} --resource_param hapmap,known=false,training=true,truth=true,prior=15.0 "
             f"--resource {omni} --resource_param omini,known=false,training=true,truth=true,prior=12.0 "
             f"--resource {k_1000G} --resource_param 1000G,known=false,training=true,truth=false,prior=10.0 "
             f"--resource {dbsnp} --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 "
@@ -292,7 +307,7 @@ class Sentieon(object):
                                 f"--var_type INDEL "
                                 f"--recal {out_prefix}.INDELs.recal "
                                 f"--tranches_file {out_prefix}.INDELs.tranches.csv "
-                                f"{output_vcf_fname} && rm -f {out_snp_vqsr_fname}")
+                                f"{output_vcf_fname} && rm -f {out_snp_vqsr_fname}* ")
 
         tabix = self.config["tabix"]
         vcf_index_cmd = f"time {tabix} -f -p vcf {output_vcf_fname}"
