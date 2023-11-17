@@ -385,8 +385,7 @@ def _yield_gatk_combineGVCFs(project_name,
 def gatk_combineGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: bool = False):
     """Combine GVCFs by GATK genomicsDBImport or CombineGVCFs module.
     """
-    output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
-                                            is_dry_run=is_dry_run)
+    output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name), is_dry_run=is_dry_run)
     is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
         if "use_genomicsDBImport" in aione["config"]["gatk"] else False
 
@@ -425,7 +424,6 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
     genotype_vcf_shell_files_list = []
     aione["genotype_vcf_list"] = []
 
-    # Todo: 对于 WES 这里有错，因为不需要 variant_calling_intervals，想想怎么改
     v_calling_intervals = aione["config"]["gvcf_interval"] \
         if "capture_interval_file" in aione["config"] else aione["config"]["variant_calling_interval"]
 
@@ -436,8 +434,7 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
             calling_interval = aione["config"]["capture_interval_file"]
         else:
             interval_n = "_".join(interval) if type(interval) is list else interval.replace(":", "_")  # chr:s -> chr_s
-            calling_interval = f"{interval[0]}:{interval[1]}-{interval[2]}" \
-                if type(interval) is list else interval
+            calling_interval = f"{interval[0]}:{interval[1]}-{interval[2]}" if type(interval) is list else interval
 
         sub_shell_fname = shell_directory.joinpath(f"{kwargs.project_name}.{interval_n}.genotype.sh")
         genotype_vcf_fname = str(output_directory.joinpath(f"{kwargs.project_name}.{interval_n}.vcf.gz"))
@@ -462,7 +459,7 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
                 genotype_vcf_fname,
                 interval=calling_interval)
 
-        echo_mark_done = f"echo \"[Genotype] {calling_interval} done\""
+        echo_mark_done = f"echo \"[Genotype] {interval_n} done\""
         cmd = [genotype_cmd, echo_mark_done]  # [genotype_cmd, delete_cmd, echo_mark_done]
         if (not is_dry_run) and (not sub_shell_fname.exists() or kwargs.overwrite):
             _create_cmd_file(sub_shell_fname, cmd)
@@ -506,7 +503,7 @@ def gatk_genotype(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: 
         aione["genotype_vcf_list"].append(genotype_vcf_fname)
 
         # Generate the genotype joint-calling process according to the input file
-        # ``combineGVCF_fname`` which create in  ``_yield_gatk_CombineGVCFs``
+        # ``combineGVCF_fname`` which create in ``_yield_gatk_CombineGVCFs``
         genotype_cmd = GATK(aione["config"]).genotypeGVCFs(combineGVCF_fname,
                                                            genotype_vcf_fname,
                                                            interval=calling_interval)
@@ -536,8 +533,6 @@ def run_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None,
     shell_fname = shell_directory.joinpath(f"{kwargs.project_name}.VQSR.sh")
 
     cmd = []
-    # Todo: 把这个 concat 提前到 genotypeGVCFs? 但是 WES 区间过多，
-    #  文件过多会不会有句柄问题？考虑不对 WES 进行区间拆分
     if len(aione["genotype_vcf_list"]) > 1:
         # concat-vcf
         concat_vcf_cmd = vcfconcat(aione["config"],
