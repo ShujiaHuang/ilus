@@ -438,7 +438,7 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
 
         sub_shell_fname = shell_directory.joinpath(f"{kwargs.project_name}.{interval_n}.genotype.sh")
         genotype_vcf_fname = str(output_directory.joinpath(f"{kwargs.project_name}.{interval_n}.vcf.gz"))
-        genotype_vcf_shell_files_list.append([kwargs.project_name + "." + interval_n, sub_shell_fname])
+        genotype_vcf_shell_files_list.append([f"{kwargs.project_name}.{interval_n}", sub_shell_fname])
         aione["genotype_vcf_list"].append(genotype_vcf_fname)
 
         # Create commandline for genotype joint-calling process
