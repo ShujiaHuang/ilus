@@ -193,6 +193,7 @@ def WGS(kwargs, aione: dict = None, is_capture_seq: bool = False) -> dict:
 
     # record the input file path of fastqlist
     aione["fastqlist"] = kwargs.fastqlist
+    aione["is_rm_sub_vcf_after_concat"] = True  # 删掉 VQSR 之后已被 concat 的 vcf 子文件
     for p in wgs_pipeline_processes:
         is_dry_run = True if kwargs.dry_run or (p not in processes_set) else False
         func, shell_fname, shell_log_folder, output_folder = runner_module[p]
@@ -208,6 +209,7 @@ def WGS(kwargs, aione: dict = None, is_capture_seq: bool = False) -> dict:
 def WES(kwargs, aione: dict = None) -> dict:
     """Create WES pipeline.
     """
+    aione["is_rm_sub_vcf_after_concat"] = True  # 删掉 VQSR 之后已被 concat 的 vcf 子文件
     return WGS(kwargs, aione, is_capture_seq=True)
 
 
@@ -237,9 +239,9 @@ def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
     aione["intervals"] = []
     aione["gvcf"] = {}  # will be called in ``gatk_genotypeGVCFs``
     sample_map = {}  # Record sample_map for genomicsDBImport
-    with open(kwargs.gvcflist) as I:
+    with open(kwargs.gvcflist) as IN:
         # Format in gvcflist: [chromosome_id  sample_id  gvcf_file_path]
-        for line in I:
+        for line in IN:
             if line.startswith("#"):
                 continue
 
@@ -306,7 +308,8 @@ def variantrecalibrator(kwargs, aione: dict = None) -> dict:
             aione["genotype_vcf_list"].append(line.strip().split()[0])
 
     shell_fname, shell_log_folder = [
-        f"{kwargs.project_name}.step7.VQSR.sh", "07.VQSR"
+        f"{kwargs.project_name}.step6.VQSR.sh" if kwargs.use_sentieon else f"{kwargs.project_name}.step7.VQSR.sh",
+        "06.VQSR" if kwargs.use_sentieon else "07.VQSR"
     ] if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.vqsr.sh", "genotype"]
 
     _f(kwargs, aione, shell_fname, shell_log_folder, run_variantrecalibrator)

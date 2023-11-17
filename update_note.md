@@ -1,5 +1,7 @@
 ## Update
 
+- [2023-11-17] 为流程添加一个参数，自动将 WGS/WES 无必要的子 vcf 删除
+- [2023-11-17] 设计出了 WES 模块，并将它和 WGS 融合，成为其子集
 - [2023-11-09] 为 WGS 增加 --interval 参数作为 variant-calling-interval 
 - [2023-11-08] 用 -I 代表输入参数，而不是原来的 -L
 - [2023-11-06] 将 gatk 模块封装为 GATK class

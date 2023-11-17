@@ -523,8 +523,7 @@ def gatk_genotype(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: 
     return genotype_vcf_shell_files_list
 
 
-def run_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None,
-                            is_dry_run: bool = False, is_rm_raw_vcfs: bool = False):
+def run_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: bool = False):
     """Create shell scripts for VQSR.
     """
     output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name), is_dry_run=is_dry_run)
@@ -542,7 +541,7 @@ def run_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None,
     else:
         combine_vcf_fname = str(aione["genotype_vcf_list"][0])
 
-    if is_rm_raw_vcfs:
+    if "is_rm_sub_vcf_after_concat" in aione and aione["is_rm_sub_vcf_after_concat"]:
         cmd.append(f"rm -f {' '.join(aione['genotype_vcf_list'])}")
 
     # VQSR process
