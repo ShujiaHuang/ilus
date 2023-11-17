@@ -131,6 +131,8 @@ class Sentieon(object):
                    # 对于 capture sequencing，coverage 需要单独设置 interval 计算 
                    f"time {self.sentieon} driver {self.driver_options} "
                    f"--interval {self.config['capture_interval_file']} "
+                   f"-r {self.reference_fasta} "
+                   f"-i {input_bam} "
                    f"--algo CoverageMetrics {coverage_options} {cvg_metrics_fn}")
         else:
             cmd = (f"time {self.sentieon} driver {self.driver_options} "
