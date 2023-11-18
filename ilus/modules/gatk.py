@@ -90,15 +90,14 @@ class GATK(object):
         # set overwite existing genomicsdb workspace by default
         if "genomicsDBImport_options" not in self.gatk_options:
             self.gatk_options["genomicsDBImport_options"] = ["--overwrite-existing-genomicsdb-workspace true"]
-
         elif (("--overwrite-existing-genomicsdb-workspace false" not in self.gatk_options["genomicsDBImport_options"])
               and
               ("--overwrite-existing-genomicsdb-workspace true" not in self.gatk_options["genomicsDBImport_options"])):
-
             self.gatk_options["genomicsDBImport_options"].append("--overwrite-existing-genomicsdb-workspace true")
 
         genomicsDBImport_options = "%s" % " ".join(self.gatk_options["genomicsDBImport_options"])
-        use_gDBI = self.gatk_options["use_genomicsDBImport"] if "use_genomicsDBImport" in self.gatk_options else False
+        use_gDBI = self.gatk_options["use_genomicsDBImport"] \
+            if "use_genomicsDBImport" in self.gatk_options else False
 
         # Create command line for GenomicsDBImport or CombineGVCFs
         if use_gDBI:
@@ -130,6 +129,9 @@ class GATK(object):
         genotypeGVCFs_options = " ".join(self.gatk_options["genotypeGVCFs_options"]) \
             if "genotypeGVCFs_options" in self.gatk_options else ""
 
+        if interval:
+            genotypeGVCFs_options += f" -L {interval}"
+
         # Creat command line for genotypeGVCF
         if use_gDBI:
             genotype_cmd = (f"time {self.gatk} {java_options} GenotypeGVCFs "
@@ -143,9 +145,6 @@ class GATK(object):
                             f"--dbsnp {self.resources_bundle['dbsnp']} "
                             f"-V {input_combine_gvcf_fname} "
                             f"-O {output_vcf_fname}")
-        if interval:
-            genotype_cmd += f" -L {interval}"
-
         return genotype_cmd
 
     def variantrecalibrator(self, input_vcf, output_vcf_fname):
@@ -222,7 +221,13 @@ class GATK(object):
             f"-O {output_vcf_fname} && rm -f {out_snp_vqsr_fname}* "
         )
 
-        return " && ".join([snp_vqsr_cmd, apply_snp_vqsr_cmd, indel_vqsr_cmd, apply_indel_vqsr_cmd])
+        tabix = self.config["tabix"]
+        vcf_index_cmd = f"time {tabix} -f -p vcf {output_vcf_fname}"
+        return " && ".join([snp_vqsr_cmd,
+                            apply_snp_vqsr_cmd,
+                            indel_vqsr_cmd,
+                            apply_indel_vqsr_cmd,
+                            vcf_index_cmd])
 
     def collect_alignment_summary_metrics(self, input_bam, output_fname):
         java_options = f"--java-options {' '.join(self.gatk_options['CollectAlignmentSummaryMetrics_jave_options'])}" \
