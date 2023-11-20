@@ -19,12 +19,7 @@ from ilus.pipeline import (
     create_genotype_joint_calling_command, genotypeGVCFs,
     create_vqsr_command, variantrecalibrator
 )
-from ilus.modules.utils import (
-    get_chromosome_list_from_fai,
-    split_jobs,
-    check_jobs_status,
-    file_exists
-)
+from ilus.modules.utils import split_jobs, check_jobs_status
 
 PROG_NAME = "ilus"
 VERSION = "1.3.2"
