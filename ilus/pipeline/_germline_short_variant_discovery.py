@@ -11,6 +11,7 @@ from typing import List, Tuple
 
 from ilus.modules.utils import (
     get_variant_calling_intervals,
+    get_chromosome_list_from_fai,
     safe_makedir,
     file_exists,
     check_input_sheet
@@ -140,8 +141,8 @@ def _variant_discovery_common_processes(kwargs, processes_set: set = None):
         raise ValueError(f"[ERROR] {kwargs.fastqlist} is not a file or empty.\n")
 
     if check_input_sheet(kwargs.fastqlist):
-        print(f"\n[INFO] Input sheet is properly. The format of '{kwargs.fastqlist}' "
-              f"has been verified.")
+        print(f"\n[INFO] Input sheet is properly. The format of "
+              f"'{kwargs.fastqlist}' has been verified.")
 
     return wgs_pipeline_processes, runner_module
 
@@ -152,7 +153,8 @@ def WGS(kwargs, aione: dict = None, is_capture_seq: bool = False) -> dict:
         ``is_capture_seq``: WES or other capture sequencing.
     """
     # Create project directory and return the abspath.
-    # [Important] abspath will remove the last '/' of the path. e.g.: '/a/' -> '/a'
+    # [Important] abspath will remove the last '/' of the path.
+    # e.g.: '/a/' -> '/a'
     kwargs.outdir = Path(kwargs.outdir).resolve()
     shell_directory = kwargs.outdir.joinpath("00.shell")
     shell_log_directory = shell_directory.joinpath("loginfo")
@@ -166,29 +168,29 @@ def WGS(kwargs, aione: dict = None, is_capture_seq: bool = False) -> dict:
         sys.stderr.write("[ERROR]: Do not add any other interval in '--interval' if 'all' in it.")
         sys.exit(1)
 
-    # Fetch variant calling intervals for WGS
-    if kwargs.interval:
+    # Fetch variant calling intervals
+    if kwargs.interval and kwargs.interval != "all":
         aione["config"]["variant_calling_interval"] = get_variant_calling_intervals(kwargs.interval)
         if is_capture_seq:
             # 如果是 capture sequence 比如 WES，把该文件记录起来，该 key 只为种情况而添加。
             aione["config"]["capture_interval_file"] = kwargs.interval
 
-        # Reset the chromosomes only appear in variant calling interval
-        aione["config"]["gvcf_interval"] = []
-        id_set = set()
-        for c in aione["config"]["variant_calling_interval"]:
-            # Keep the original order
-            d = c[0] if type(c) is list else c.split(":")[0]   # chr:s-end
-            if d not in id_set:
-                id_set.add(d)
-                # 确保可以按照以染色体为单位和顺序生成 gvcf
-                aione["config"]["gvcf_interval"].append(d)
     else:
-        aione["config"]["variant_calling_interval"] = aione["config"]["gvcf_interval"]
+        # Loading chromosome id for variant calling
+        reference_file = aione["config"]["resources"]["reference"]
+        if file_exists(reference_file + ".fai"):
+            fai = reference_file + ".fai"
+        elif file_exists(reference_file.replace(".fasta", ".fa").replace(".fa", ".fai")):
+            fai = reference_file.replace(".fasta", ".fa").replace(".fa", ".fai")
+        else:
+            sys.stderr.write(f"[Error] Need to create an index (.fai) for reference file: "
+                             f"{reference_file}.\n")
+            sys.exit(1)
+        aione["config"]["variant_calling_interval"] = get_chromosome_list_from_fai(fai)
 
     # Todo: Need a program to validate whether the tools, arguments and the order of processes are
     #  appropriate or not for the pipeline.
-    processes_set = set(kwargs.wgs_processes.split(","))  # 顺序不重要，所以存为 set，确保不重复
+    processes_set = set(kwargs.wgs_processes.split(","))  # 顺序不重要，所以存为 set，确保不重复即可
     wgs_pipeline_processes, runner_module = _variant_discovery_common_processes(kwargs, processes_set)
 
     # record the input file path of fastqlist
@@ -209,7 +211,7 @@ def WGS(kwargs, aione: dict = None, is_capture_seq: bool = False) -> dict:
 def WES(kwargs, aione: dict = None) -> dict:
     """Create WES pipeline.
     """
-    aione["is_rm_sub_vcf_after_concat"] = True  # 删掉 VQSR 之后已被 concat 的 vcf 子文件
+    aione["is_rm_sub_vcf_after_concat"] = True  # 删掉已被 concat 的 vcf 子文件
     return WGS(kwargs, aione, is_capture_seq=True)
 
 
@@ -235,7 +237,6 @@ def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
 
 def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
     """GenotypeGVCFs by GATK."""
-
     aione["intervals"] = []
     aione["gvcf"] = {}  # will be called in ``gatk_genotypeGVCFs``
     sample_map = {}  # Record sample_map for genomicsDBImport
@@ -266,7 +267,8 @@ def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
             sample_map[interval].append(f"{sample}\t{gvcf}")
 
     if aione["config"]["gatk"]["use_genomicsDBImport"]:
-        # [Important] return abspath and abspath will remove the last '/' in the path. e.g.: '/a/' -> '/a'
+        # [Important] return abspath and abspath will remove the last '/' in the path.
+        # e.g.: '/a/' -> '/a'
         kwargs.outdir = Path(kwargs.outdir).resolve()
         safe_makedir(kwargs.outdir)
 
@@ -280,18 +282,21 @@ def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
     if kwargs.use_sentieon:
         # For sentieon: create shell scripts for genotype joint-calling
         genotype_shell_fname, genotype_shell_log_folder = [
-            f"{kwargs.project_name}.step5.genotype.sh", "05.genotype"
+            f"{kwargs.project_name}.step5.genotype.sh",
+            "05.genotype"
         ] if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.genotype.sh", "genotype"]
     else:
         # For GATK: create shell scripts for genomicsDBImport or CombineGVCFs
         combineGVCF_shell_fname, combineGVCF_shell_log_folder = [
-            f"{kwargs.project_name}.step5.combineGVCFs.sh", "05.combineGVCFs"
+            f"{kwargs.project_name}.step5.combineGVCFs.sh",
+            "05.combineGVCFs"
         ] if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.combineGVCFs.sh", "combineGVCFs"]
         _f(kwargs, aione, combineGVCF_shell_fname, combineGVCF_shell_log_folder, gatk_combineGVCFs)
 
         # create shell scripts for genotype joint-calling
         genotype_shell_fname, genotype_shell_log_folder = [
-            f"{kwargs.project_name}.step6.genotype.sh", "06.genotype"
+            f"{kwargs.project_name}.step6.genotype.sh",
+            "06.genotype"
         ] if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.genotype.sh", "genotype"]
 
     _f(kwargs, aione, genotype_shell_fname, genotype_shell_log_folder, run_genotypeGVCFs)

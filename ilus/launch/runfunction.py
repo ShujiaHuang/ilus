@@ -313,9 +313,6 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
     is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
         if "use_genomicsDBImport" in aione["config"]["gatk"] else False
 
-    if "gvcf_interval" not in aione["config"]:
-        raise ValueError("ERROR: Missing interval in config dict, which may be a bug.")
-
     gvcf_shell_files_list = []
     sample_map = {}  # Record sample_map for GATK genomicsDBImport
     aione["gvcf"] = {}
@@ -405,7 +402,7 @@ def gatk_combineGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
     combineGVCFs_shell_files_list = []
     aione["combineGVCFs"] = {}
 
-    # 如果是 capture sequencing （如 WES），则按照染色体合并 gvcf 即可，否则按 `variant_calling_interval` 区间合并
+    # 如果是 capture sequencing （如 WES），仍然按 `variant_calling_interval` 区间处理
     v_calling_intervals = [aione["config"]["capture_interval_file"]] \
         if "capture_interval_file" in aione["config"] else aione["config"]["variant_calling_interval"]
     for (combineGVCFs_cmd,
@@ -485,14 +482,15 @@ def gatk_genotype(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: 
     genotype_vcf_shell_files_list = []
     aione["genotype_vcf_list"] = []
 
-    # Create commandline for combineGVCFs and genotypeGVCFs process for specific calling intervals
-    variant_calling_intervals = aione["config"]["variant_calling_interval"]
+    # 如果是 capture sequencing （如 WES），仍然按 `variant_calling_interval` 区间处理
+    v_calling_intervals = [aione["config"]["capture_interval_file"]] \
+        if "capture_interval_file" in aione["config"] else aione["config"]["variant_calling_interval"]
     for (combineGVCFs_cmd,
          combineGVCF_fname,
          _,  # no need the sub_shell_fname in _yield_gatk_combineGVCFs
          interval_n,  # interval marker
          calling_interval) in _yield_gatk_combineGVCFs(kwargs.project_name,
-                                                       variant_calling_intervals,
+                                                       v_calling_intervals,
                                                        output_directory,
                                                        shell_directory,
                                                        is_use_gDBI,
