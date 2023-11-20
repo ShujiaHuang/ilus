@@ -267,20 +267,22 @@ def _c(interval):
     """处理 interval id """
     if interval and file_exists(interval):
         interval_n = Path(interval).stem
+        calling_interval = interval
     else:
-        interval_n = interval[0] if type(interval) is list else interval.split(":")[0]
+        interval_n = "_".join(interval) if type(interval) is list else interval.replace(":", "_")  # chr:s -> chr_s
+        calling_interval = f"{interval[0]}:{interval[1]}-{interval[2]}" if type(interval) is list else interval
 
-    return interval_n
+    return interval_n, calling_interval
 
 
 def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
                              is_dry_run: bool = False):
     """Create gvcf shell.
     """
-
     def _create_sub_shell(sample, in_sample_bam, bqsr_recal_table, sample_shell_dir,
                           sample_output_dir, interval=None, is_dry_run=False):
-        interval_n = _c(interval)
+
+        interval_n, calling_interval = _c(interval)
         sample_shell_fname_ = sample_shell_dir.joinpath(f"{sample}.{interval_n}.gvcf.sh")
         sample_gvcf_fname_ = sample_output_dir.joinpath(f"{sample}.{interval_n}.g.vcf.gz")
 
@@ -289,10 +291,10 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
                 in_sample_bam,  # 这里的 BAM 实际上是 Markduplicates 之后的 BAM，Sentieon 不需要单独输出 BQSR BAM
                 bqsr_recal_table,  # HC will apply calibration table on the fly
                 sample_gvcf_fname_,
-                interval=interval) if kwargs.use_sentieon
+                interval=calling_interval) if kwargs.use_sentieon
                    else GATK(aione["config"]).haplotypecaller_gvcf(in_sample_bam,  # GATK 这里的 BAM 则是 ApplyBQSR 之后的。
                                                                    sample_gvcf_fname_,
-                                                                   interval=interval)]
+                                                                   interval=calling_interval)]
         else:
             cmd = [Sentieon(config=aione["config"]).haplotypecaller(
                 in_sample_bam,
@@ -330,12 +332,12 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
             if "capture_interval_file" in aione["config"] else aione["config"]["variant_calling_interval"]
 
         for interval in v_calling_intervals:
+            interval_n, calling_interval = _c(interval)
             sample_shell_fname, sample_gvcf_fname = _create_sub_shell(
                 sample, sample_bqsr_bam, bqsr_recal_table, sample_shell_dir, sample_output_dir,
-                interval=interval,  # 'all' => whole genome, take a lot of time for WGS, not suggested
+                interval=calling_interval,  # 'all' => whole genome, take a lot of time for WGS, not suggested
                 is_dry_run=is_dry_run)
 
-            interval_n = _c(interval)
             if interval_n not in aione["gvcf"]:
                 aione["gvcf"][interval_n] = []
 
@@ -369,13 +371,13 @@ def _yield_gatk_combineGVCFs(project_name,
                              aione: dict = None):
     """A generator for combine GVCFs."""
     for interval in variant_calling_intervals:
-        interval_id = _c(interval)
-        if interval_id in aione["gvcf"]:
+        interval_n, calling_interval = _c(interval)
+        if interval_n in aione["gvcf"]:
             # load gvcf '.sample_map' file if using genomicsDBImport module to combine all the gvcf
-            sample_gvcf_list = [aione["sample_map"][interval_id]] \
-                if is_use_gDBI else aione["gvcf"][interval_id]
+            sample_gvcf_list = [aione["sample_map"][interval_n]] \
+                if is_use_gDBI else aione["gvcf"][interval_n]
         else:
-            sys.stderr.write(f"[WARNING] {interval_id} is not founded in gvcf files.\n")
+            sys.stderr.write(f"[WARNING] {interval_n} is not founded in gvcf files.\n")
             continue
 
         if not sample_gvcf_list:
@@ -383,13 +385,6 @@ def _yield_gatk_combineGVCFs(project_name,
                              "from that input gvcf file list in ``gatk_combineGVCFs`` function.")
 
         # Create commandline for combining GVCFs
-        if "capture_interval_file" in aione["config"]:
-            interval_n = Path(interval).stem
-            calling_interval = aione["config"]["capture_interval_file"]
-        else:
-            interval_n = "_".join(interval) if type(interval) is list else interval.replace(":", "_")  # chr:s -> chr_s
-            calling_interval = f"{interval[0]}:{interval[1]}-{interval[2]}" if type(interval) is list else interval
-
         sub_shell_fname = shell_directory.joinpath(f"{project_name}.{interval_n}.combineGVCFs.sh")
         combineGVCF_fname = output_directory.joinpath(f"{project_name}.{interval_n}.genomics_db") \
             if is_use_gDBI else output_directory.joinpath(f"{project_name}.{interval_n}.g.vcf.gz")
@@ -446,12 +441,7 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
         if "capture_interval_file" in aione["config"] else aione["config"]["variant_calling_interval"]
 
     for interval in v_calling_intervals:
-        if "capture_interval_file" in aione["config"]:
-            interval_n = Path(interval).stem
-            calling_interval = aione["config"]["capture_interval_file"]
-        else:
-            interval_n = "_".join(interval) if type(interval) is list else interval.replace(":", "_")  # chr:s -> chr_s
-            calling_interval = f"{interval[0]}:{interval[1]}-{interval[2]}" if type(interval) is list else interval
+        interval_n, calling_interval = _c(interval)
 
         sub_shell_fname = shell_directory.joinpath(f"{kwargs.project_name}.{interval_n}.genotype.sh")
         genotype_vcf_fname = str(output_directory.joinpath(f"{kwargs.project_name}.{interval_n}.vcf.gz"))
@@ -460,10 +450,8 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
 
         # Create commandline for genotype joint-calling process
         if kwargs.use_sentieon:
-            # get chromosome ID
-            interval_id = _c(interval)
             genotype_cmd = Sentieon(config=aione["config"]).genotypeGVCFs(
-                aione["gvcf"][interval_id],  # input the whole gvcf list
+                aione["gvcf"][interval_n],  # input the whole gvcf list
                 genotype_vcf_fname,
                 interval=calling_interval)
         else:

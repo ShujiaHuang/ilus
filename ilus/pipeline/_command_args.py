@@ -6,7 +6,7 @@ Date:   2023-02-16
 import argparse
 
 
-def _get_parent_parser():
+def _parent_parser():
     """Serves as a parent parser to record all the common arguments for ilus.
     """
     parser = argparse.ArgumentParser(add_help=False)
@@ -93,29 +93,6 @@ def _add_germline_short_variant_discovery_argument(command):
              "Possible values: %(default)s"
     )
 
-    # # Specific variant calling intervals.
-    # # The value could be a file in bed format (I show you a example bellow) or a interval of list.
-    # # Bed format of interval file only contain three columns: ``Sequencing ID``, ``region start``
-    # # and ``region end``, e.g.:
-    # #   chr1    10001   207666
-    # #   chr1    257667  297968
-    # #
-    # # These invertals could be any regions alone the genome as you wish or just set the same as
-    # # ``--interval`` argument above.
-    # #
-    # # If the calling interval is changed to include only the exon-calling regions,
-    # # this pipeline could be applied to detect variants of WES data.
-    # command.add_argument(
-    #     "--interval",
-    #     dest="interval",
-    #     type=str,
-    #     required=False,
-    #     help="Interval strings (separate by comma) or a file (BED/Picard,1-based) that "
-    #          "will be used in variants calling. "
-    #          "e.g: '--interval chr1:1-2,chr2,chr3:4-5' "
-    #          "or '--interval interval_file.bed'."
-    # )
-
     # Todo: Write a dry run function for testing the pipeline without truely run the pipeline.
     command.add_argument(
         "-dr", "--dry-run",
@@ -133,7 +110,7 @@ def create_wgs_pipeline_command(commands):
     wgs_cmd = _add_germline_short_variant_discovery_argument(
         commands.add_parser(
             "WGS",
-            parents=[_get_parent_parser()],
+            parents=[_parent_parser()],
             help="Create aaa pipeline for WGS (from FASTQ to genotype VCF).")
     )
 
@@ -168,7 +145,7 @@ def create_wes_pipeline_command(commands):
     wes_cmd = _add_germline_short_variant_discovery_argument(
         commands.add_parser(
             "WES",
-            parents=[_get_parent_parser()],
+            parents=[_parent_parser()],
             help="Create aaa pipeline for WGS (from FASTQ to genotype VCF).")
     )
 
@@ -187,7 +164,7 @@ def create_genotype_joint_calling_command(commands):
     """Add arguments to create genotype joint calling command."""
     genotype_cmd = commands.add_parser(
         "genotype-joint-calling",
-        parents=[_get_parent_parser()],
+        parents=[_parent_parser()],
         help="Genotype from GVCFs."
     )
 
@@ -214,7 +191,7 @@ def create_genotype_joint_calling_command(commands):
 def create_vqsr_command(commands):
     """Add arguments to create VQSR command."""
     vqsr_cmd = commands.add_parser("VQSR",
-                                   parents=[_get_parent_parser()],
+                                   parents=[_parent_parser()],
                                    help="VQSR")
 
     vqsr_cmd.add_argument(
