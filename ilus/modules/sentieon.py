@@ -156,6 +156,8 @@ class Sentieon(object):
             2. Applying the ReadWriter algo is optional, the next step in
                HC will apply calibration table on the fly.
         """
+        # Todo: 思考一个问题，这里是否应该为 WES 添加 interval 区间？或者是，
+        #  对于 WES 数据，添加 interval 与否是否会影响结果？
         known_Mills_indels = self.resources_bundle['mills']
         known_1000G_indels = self.resources_bundle['1000G_known_indel']
         bqsr_recaltable_options = " ".join([str(x) for x in self.sent_options.get(
