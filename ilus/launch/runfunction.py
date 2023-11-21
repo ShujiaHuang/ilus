@@ -452,14 +452,25 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
                 genotype_vcf_fname,
                 interval=calling_interval)
         else:
+            is_use_gDBI = aione["config"]["gatk"]["use_genomicsDBImport"] \
+                if "use_genomicsDBImport" in aione["config"]["gatk"] else False
+
             # GATK must have combineGVCFs
-            genotype_cmd = GATK(aione["config"]).genotypeGVCFs(
+            gatk_cmd = GATK(aione["config"]).genotypeGVCFs(
                 aione["combineGVCFs"][interval_n],
                 genotype_vcf_fname,
                 interval=calling_interval)
 
+            # delete the genomicsdb workspace (or the combine GVCF file).
+            delete_cmd = f"rm -rf {aione['combineGVCFs'][interval_n]}" \
+                if is_use_gDBI else f"rm -rf {aione['combineGVCFs'][interval_n]} " \
+                                    f"{aione['combineGVCFs'][interval_n]}.tbi"
+
+            # Todo: 思考一下，（只对 GATK）这个删除是否必要（可有可无）
+            genotype_cmd = f"{gatk_cmd} && rm -rf {delete_cmd}"
+
         echo_mark_done = f"echo \"[Genotype] {interval_n} done\""
-        cmd = [genotype_cmd, echo_mark_done]  # [genotype_cmd, delete_cmd, echo_mark_done]
+        cmd = [genotype_cmd, echo_mark_done]
         if (not is_dry_run) and (not sub_shell_fname.exists() or kwargs.overwrite):
             _create_cmd_file(sub_shell_fname, cmd)
 

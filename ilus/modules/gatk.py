@@ -145,7 +145,11 @@ class GATK(object):
                             f"--dbsnp {self.resources_bundle['dbsnp']} "
                             f"-V {input_combine_gvcf_fname} "
                             f"-O {output_vcf_fname}")
-        return genotype_cmd
+
+        # reindex with tabix for containing count metadata
+        vcf_index_cmd = f"time {self.config['tabix']} -f -p vcf {output_vcf_fname}"
+
+        return f"{genotype_cmd} && {vcf_index_cmd}"
 
     def variantrecalibrator(self, input_vcf, output_vcf_fname):
         java_options = "--java-options \"%s\"" % " ".join(self.gatk_options["vqsr_java_options"]) \
