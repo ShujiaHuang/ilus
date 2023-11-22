@@ -146,7 +146,7 @@ def create_wes_pipeline_command(commands):
         commands.add_parser(
             "WES",
             parents=[_parent_parser()],
-            help="Create pipeline scripts for WGS (from FASTQ to genotype VCF).")
+            help="Create pipeline scripts for WES (from FASTQ to genotype VCF).")
     )
 
     wes_cmd.add_argument(
@@ -169,7 +169,7 @@ def create_genotype_joint_calling_command(commands):
     )
 
     genotype_cmd.add_argument(
-        "-L", "--gvcflist",
+        "-I", "--gvcflist",
         dest="gvcflist",
         type=str,
         required=True,
@@ -195,7 +195,7 @@ def create_vqsr_command(commands):
                                    help="VQSR")
 
     vqsr_cmd.add_argument(
-        "-L", "--vcflist",
+        "-I", "--vcflist",
         dest="vcflist",
         type=str,
         required=True,
