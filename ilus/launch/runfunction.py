@@ -549,12 +549,12 @@ def run_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None, is
                                    aione["genotype_vcf_list"],
                                    combine_vcf_fname)
         cmd.append(concat_vcf_cmd)
+        if "is_rm_sub_vcf_after_concat" in aione and aione["is_rm_sub_vcf_after_concat"]:
+            cmd.append(f"rm -f {' '.join(aione['genotype_vcf_list'])}")
+            cmd.append(f"rm -f {' '.join([f + '.tbi' for f in aione['genotype_vcf_list']])}")
+
     else:
         combine_vcf_fname = str(aione["genotype_vcf_list"][0])
-
-    if "is_rm_sub_vcf_after_concat" in aione and aione["is_rm_sub_vcf_after_concat"]:
-        cmd.append(f"rm -f {' '.join(aione['genotype_vcf_list'])}")
-        cmd.append(f"rm -f {' '.join([f + '.tbi' for f in aione['genotype_vcf_list']])}")
 
     # VQSR process
     if kwargs.use_sentieon:
