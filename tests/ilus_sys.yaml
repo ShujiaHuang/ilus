@@ -113,7 +113,7 @@ gatk:
   vqsr_snp_max_gaussians: 8
   vqsr_indel_max_gaussians: 4
   apply_snp_vqsr_options: [--truth-sensitivity-filter-level 99.5]
-  apply_indel_vqsr_options: [--truth-sensitivity-filter-level 99.5]
+  apply_indel_vqsr_options: [--truth-sensitivity-filter-level 99.0]
 
 
 # Setting parameter for Sentieon. Optional
@@ -176,7 +176,7 @@ sentieon:
   vqsr_snp_max_gaussians: 8
   vqsr_indel_max_gaussians: 4
   apply_snp_vqsr_options: [--sensitivity 99.5]
-  apply_indel_vqsr_options: [--sensitivity 99.5]
+  apply_indel_vqsr_options: [--sensitivity 99.0]
 
   # Option for alignment metrics
   # '--omit_base_output' skip the output of the per locus coverage with no partition.
