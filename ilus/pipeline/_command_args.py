@@ -111,7 +111,7 @@ def create_wgs_pipeline_command(commands):
         commands.add_parser(
             "WGS",
             parents=[_parent_parser()],
-            help="Create aaa pipeline for WGS (from FASTQ to genotype VCF).")
+            help="Create pipeline scripts for WGS (from FASTQ to genotype VCF).")
     )
 
     # Specific variant calling intervals.
@@ -146,7 +146,7 @@ def create_wes_pipeline_command(commands):
         commands.add_parser(
             "WES",
             parents=[_parent_parser()],
-            help="Create aaa pipeline for WGS (from FASTQ to genotype VCF).")
+            help="Create pipeline scripts for WGS (from FASTQ to genotype VCF).")
     )
 
     wes_cmd.add_argument(

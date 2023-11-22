@@ -46,7 +46,7 @@ def _create_cmd_file(out_shell_file: Path, cmd: List[str] = None):
 
 
 def run_bwamem(kwargs, out_folder_name: str, aione: dict = None,
-               is_dry_run: bool = False):
+               is_dry_run: bool = False) -> List[List]:
     """Create bwamem alignment shell scripts for fastq to BAM.
     """
     output_directory = Path(kwargs.outdir).joinpath(out_folder_name, "output")
@@ -152,7 +152,7 @@ def run_bwamem(kwargs, out_folder_name: str, aione: dict = None,
 
 
 def run_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
-                       is_dry_run: bool = False):
+                       is_dry_run: bool = False) -> List[List]:
     """Create shell scripts for Markduplicates by GATK4.
     """
     shell_directory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "markdup")
@@ -188,11 +188,6 @@ def run_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
         if IS_RM_SUBBAM:
             cmd.append(f"rm -f {sample_sorted_bam}*")  # save disk space
 
-        # It's time consuming to calculate alignment metrics by GATK
-        # out_alignment_summary_metric = dirname.joinpath(f"{f_name_stem}.AlignmentSummaryMetrics.txt")
-        # cmd.append(gatk.collect_alignment_summary_metrics(
-        #     aione["config"], out_markdup_bam_fname, out_alignment_summary_metric))
-
         out_bamstats_fname = dirname.joinpath(f"{f_name_stem}.markdup.stats")
         genome_cvg_fname = dirname.joinpath(f"{f_name_stem}.markdup.depth.bed.gz")
         cmd.append(bam.stats(aione["config"], out_markdup_bam_fname, out_bamstats_fname))
@@ -210,7 +205,7 @@ def run_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
 def run_baserecalibrator(kwargs,
                          out_folder_name: str,
                          aione: dict = None,
-                         is_dry_run: bool = False):
+                         is_dry_run: bool = False) -> List[List]:
     shell_directory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "bqsr")
     if not is_dry_run:
         safe_makedir(shell_directory)
@@ -275,25 +270,25 @@ def _c(interval):
     return interval_n, calling_interval
 
 
-def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
-                             is_dry_run: bool = False):
+def run_haplotypecaller_gvcf(kwargs,
+                             out_folder_name: str,
+                             aione: dict = None,
+                             is_dry_run: bool = False) -> List[List]:
     """Create gvcf shell.
     """
-
     def _create_sub_shell(sample, in_sample_bam, bqsr_recal_table, sample_shell_dir,
                           sample_output_dir, interval=None, is_dry_run=False):
-
         interval_n, calling_interval = _c(interval)
         sample_shell_fname_ = sample_shell_dir.joinpath(f"{sample}.{interval_n}.gvcf.sh")
         sample_gvcf_fname_ = sample_output_dir.joinpath(f"{sample}.{interval_n}.g.vcf.gz")
 
         if interval:
             cmd = [Sentieon(config=aione["config"]).haplotypecaller(
-                in_sample_bam,  # 这里的 BAM 实际上是 Markduplicates 之后的 BAM，Sentieon 不需要单独输出 BQSR BAM
+                in_sample_bam,     # 这里的 BAM 实际上是 Markduplicates 之后的 BAM，Sentieon 不需要单独输出 BQSR BAM
                 bqsr_recal_table,  # HC will apply calibration table on the fly
                 sample_gvcf_fname_,
                 interval=calling_interval) if kwargs.use_sentieon
-                   else GATK(aione["config"]).haplotypecaller_gvcf(in_sample_bam,  # GATK 这里的 BAM 则是 ApplyBQSR 之后的。
+                   else GATK(aione["config"]).haplotypecaller_gvcf(in_sample_bam,  # GATK 这里的 BAM 则是 ApplyBQSR 之后的
                                                                    sample_gvcf_fname_,
                                                                    interval=calling_interval)]
         else:
@@ -324,8 +319,7 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
             safe_makedir(sample_output_dir)
             safe_makedir(sample_shell_dir)
 
-        # Todo: 思考再三，对于 capture seq 的数据，还是应该按照 interval 跑 gvcf，
-        #  否则可能会受到 off-cap 的区间的影响
+        # 思考再三，对于 capture seq 的数据，还是应该按照 interval 跑 gvcf，否则可能会受到 off-cap 的区间的影响
         v_calling_intervals = [aione["config"]["capture_interval_file"]] \
             if "capture_interval_file" in aione["config"] else aione["config"]["variant_calling_interval"]
 
@@ -333,7 +327,8 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
             interval_n, calling_interval = _c(interval)
             sample_shell_fname, sample_gvcf_fname = _create_sub_shell(
                 sample, sample_bqsr_bam, bqsr_recal_table, sample_shell_dir, sample_output_dir,
-                interval=calling_interval,  # 'all' => whole genome, take a lot of time for WGS, not suggested
+                # 'all' => whole genome, take a lot of time for WGS, not suggested
+                interval=calling_interval,
                 is_dry_run=is_dry_run)
 
             if interval_n not in aione["gvcf"]:
@@ -353,7 +348,6 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
             # create sample_map file for next process
             out_sample_map_fname = output_directory.joinpath(f"{interval}.gvcf.sample_map")
             aione["sample_map"][interval] = out_sample_map_fname
-
             if (not is_dry_run) and (not out_sample_map_fname.exists() or kwargs.overwrite):
                 with open(str(out_sample_map_fname), "w") as OUT:
                     OUT.write("\n".join(value))
@@ -393,7 +387,10 @@ def _yield_gatk_combineGVCFs(project_name,
         yield combineGVCFs_cmd, combineGVCF_fname, sub_shell_fname, interval_n, calling_interval
 
 
-def gatk_combineGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: bool = False):
+def gatk_combineGVCFs(kwargs,
+                      out_folder_name: str,
+                      aione: dict = None,
+                      is_dry_run: bool = False) -> List[List]:
     """Combine GVCFs by GATK genomicsDBImport or CombineGVCFs module.
     """
     output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name), is_dry_run=is_dry_run)
@@ -427,7 +424,10 @@ def gatk_combineGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
     return combineGVCFs_shell_files_list
 
 
-def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: bool = False):
+def run_genotypeGVCFs(kwargs,
+                      out_folder_name: str,
+                      aione: dict = None,
+                      is_dry_run: bool = False) -> List[List]:
     """Create shell for genotypeGVCFs.
     """
     output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
@@ -440,7 +440,6 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
 
     for interval in v_calling_intervals:
         interval_n, calling_interval = _c(interval)
-
         sub_shell_fname = shell_directory.joinpath(f"{kwargs.project_name}.{interval_n}.genotype.sh")
         genotype_vcf_fname = str(output_directory.joinpath(f"{kwargs.project_name}.{interval_n}.vcf.gz"))
         genotype_vcf_shell_files_list.append([f"{kwargs.project_name}.{interval_n}", sub_shell_fname])
@@ -483,7 +482,10 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
     return genotype_vcf_shell_files_list
 
 
-def gatk_genotype(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: bool = False):
+def gatk_genotype(kwargs,
+                  out_folder_name: str,
+                  aione: dict = None,
+                  is_dry_run: bool = False) -> List[List]:
     """CombineGVCFs and genotypeGVCFs into one function (not use).
     """
     output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
@@ -535,7 +537,10 @@ def gatk_genotype(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: 
     return genotype_vcf_shell_files_list
 
 
-def run_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: bool = False):
+def run_variantrecalibrator(kwargs,
+                            out_folder_name: str,
+                            aione: dict = None,
+                            is_dry_run: bool = False) -> List[List]:
     """Create shell scripts for VQSR.
     """
     output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name), is_dry_run=is_dry_run)
@@ -545,12 +550,12 @@ def run_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None, is
 
     cmd = []
     if len(aione["genotype_vcf_list"]) > 1:
-        # concat-vcf
+        # concat-vcf first.
         concat_vcf_cmd = vcfconcat(aione["config"],
                                    aione["genotype_vcf_list"],
                                    combine_vcf_fname)
         cmd.append(concat_vcf_cmd)
-        # 只有多于一个 gvcf 需要 concat，才需要删除子文件
+        # 如果有该参数且为 True（比如 WGS/WES 流程模块），则在完成 concat 后删除子文件
         if "is_rm_sub_vcf_after_concat" in aione and aione["is_rm_sub_vcf_after_concat"]:
             cmd.append(f"rm -f {' '.join(aione['genotype_vcf_list'])}")
             cmd.append(f"rm -f {' '.join([f + '.tbi' for f in aione['genotype_vcf_list']])}")
