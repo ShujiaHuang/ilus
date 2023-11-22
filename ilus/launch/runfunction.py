@@ -7,7 +7,7 @@ import sys
 import stat
 import gzip
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from ilus.modules.utils import safe_makedir, file_exists
 from ilus.modules.summary import bam
@@ -45,8 +45,10 @@ def _create_cmd_file(out_shell_file: Path, cmd: List[str] = None):
     return
 
 
-def run_bwamem(kwargs, out_folder_name: str, aione: dict = None,
-               is_dry_run: bool = False) -> List[List]:
+def run_bwamem(kwargs,
+               out_folder_name: str,
+               aione: dict = None,
+               is_dry_run: bool = False) -> List[List[Union[str, Path]]]:
     """Create bwamem alignment shell scripts for fastq to BAM.
     """
     output_directory = Path(kwargs.outdir).joinpath(out_folder_name, "output")
