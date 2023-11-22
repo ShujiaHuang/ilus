@@ -217,7 +217,7 @@ def WES(kwargs, aione: dict = None) -> dict:
 
 def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
     # [Important] abspath will remove the last '/' in the path. e.g.: '/a/' -> '/a'
-    kwargs.outdir = safe_makedir(kwargs.outdir.resolve())  # return abspath
+    kwargs.outdir = safe_makedir(Path(kwargs.outdir).resolve())  # return abspath
     root_path, output_folder_name = kwargs.outdir.parent, kwargs.outdir.name
 
     tmp_dir = kwargs.outdir
