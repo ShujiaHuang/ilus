@@ -182,7 +182,7 @@ def run_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
             out_markdup_bam_fname = out_markdup_reagliner_bam_fname
         else:
             # No isolated module to apply Indelrealigner in GATK4
-            cmd = [GATK(aione["config"]).markduplicates(sample_sorted_bam, out_markdup_bam_fname)]
+            cmd = [GATK(config=aione["config"]).markduplicates(sample_sorted_bam, out_markdup_bam_fname)]
 
         aione["sample_final_markdup_bam"].append([sample, out_markdup_bam_fname])
         if IS_RM_SUBBAM:
@@ -239,9 +239,9 @@ def run_baserecalibrator(kwargs,
         else:
             # 对于 GATK 而言，需要生成 ApplyBQSR 之后的新 BAM
             out_bqsr_bam_fname = dirname.joinpath(f"{f_name_stem}.BQSR.bam")
-            cmd = [GATK(aione["config"]).baserecalibrator(sample_markdup_bam,
-                                                          out_bqsr_bam_fname,
-                                                          out_bqsr_recal_table)]
+            cmd = [GATK(config=aione["config"]).baserecalibrator(sample_markdup_bam,
+                                                                 out_bqsr_bam_fname,
+                                                                 out_bqsr_recal_table)]
             if IS_RM_SUBBAM:  # Only use in GATK
                 cmd.append(f"rm -f {sample_markdup_bam}*")
 
@@ -279,6 +279,7 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
                              is_dry_run: bool = False):
     """Create gvcf shell.
     """
+
     def _create_sub_shell(sample, in_sample_bam, bqsr_recal_table, sample_shell_dir,
                           sample_output_dir, interval=None, is_dry_run=False):
 
@@ -300,7 +301,7 @@ def run_haplotypecaller_gvcf(kwargs, out_folder_name: str, aione: dict = None,
                 in_sample_bam,
                 bqsr_recal_table,
                 sample_gvcf_fname_) if kwargs.use_sentieon
-                   else GATK(aione["config"]).haplotypecaller_gvcf(in_sample_bam, sample_gvcf_fname_)]
+                   else GATK(config=aione["config"]).haplotypecaller_gvcf(in_sample_bam, sample_gvcf_fname_)]
 
         echo_mark_done = f"echo \"[GVCF] {sample} {interval_n} done\""
         cmd.append(echo_mark_done)
@@ -385,9 +386,9 @@ def _yield_gatk_combineGVCFs(project_name,
         sub_shell_fname = shell_directory.joinpath(f"{project_name}.{interval_n}.combineGVCFs.sh")
         combineGVCF_fname = output_directory.joinpath(f"{project_name}.{interval_n}.genomics_db") \
             if is_use_gDBI else output_directory.joinpath(f"{project_name}.{interval_n}.g.vcf.gz")
-        combineGVCFs_cmd = GATK(aione["config"]).combineGVCFs(sample_gvcf_list,
-                                                              combineGVCF_fname,
-                                                              interval=calling_interval)
+        combineGVCFs_cmd = GATK(config=aione["config"]).combineGVCFs(sample_gvcf_list,
+                                                                     combineGVCF_fname,
+                                                                     interval=calling_interval)
 
         yield combineGVCFs_cmd, combineGVCF_fname, sub_shell_fname, interval_n, calling_interval
 
@@ -456,7 +457,7 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
                 if "use_genomicsDBImport" in aione["config"]["gatk"] else False
 
             # GATK must have combineGVCFs
-            gatk_cmd = GATK(aione["config"]).genotypeGVCFs(
+            gatk_cmd = GATK(config=aione["config"]).genotypeGVCFs(
                 aione["combineGVCFs"][interval_n],
                 genotype_vcf_fname,
                 interval=calling_interval)
@@ -467,7 +468,7 @@ def run_genotypeGVCFs(kwargs, out_folder_name: str, aione: dict = None, is_dry_r
                                     f"{aione['combineGVCFs'][interval_n]}.tbi"
 
             # Todo: 思考一下，（只对 GATK）这个删除是否必要（可有可无）
-            genotype_cmd = f"{gatk_cmd} && rm -rf {delete_cmd}"
+            genotype_cmd = f"{gatk_cmd} && {delete_cmd}"
 
         echo_mark_done = f"echo \"[Genotype] {interval_n} done\""
         cmd = [genotype_cmd, echo_mark_done]
@@ -515,9 +516,9 @@ def gatk_genotype(kwargs, out_folder_name: str, aione: dict = None, is_dry_run: 
 
         # Generate the genotype joint-calling process according to the input file
         # ``combineGVCF_fname`` which create in ``_yield_gatk_CombineGVCFs``
-        genotype_cmd = GATK(aione["config"]).genotypeGVCFs(combineGVCF_fname,
-                                                           genotype_vcf_fname,
-                                                           interval=calling_interval)
+        genotype_cmd = GATK(config=aione["config"]).genotypeGVCFs(combineGVCF_fname,
+                                                                  genotype_vcf_fname,
+                                                                  interval=calling_interval)
 
         # delete the genomicsdb workspace (or the combine GVCF file).
         delete_cmd = f"rm -rf {combineGVCF_fname}" \
@@ -562,7 +563,7 @@ def run_variantrecalibrator(kwargs, out_folder_name: str, aione: dict = None, is
         cmd.append(Sentieon(config=aione["config"]).variantrecalibrator(
             combine_vcf_fname, genotype_vqsr_fname))
     else:
-        cmd.append(GATK(aione["config"]).variantrecalibrator(
+        cmd.append(GATK(config=aione["config"]).variantrecalibrator(
             combine_vcf_fname, genotype_vqsr_fname))
 
     cmd.append(f"echo \"[VQSR] {genotype_vqsr_fname} done\"")
