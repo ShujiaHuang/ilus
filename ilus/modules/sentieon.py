@@ -240,7 +240,7 @@ class Sentieon(object):
         # reindex with tabix for containing count metadata
         vcf_index_cmd = f"time {self.config['tabix']} -f -p vcf {output_vcf_fname}"
         return (f"time {self.sentieon} driver {driver_options} "
-                f"-r {self.reference_fasta}  "
+                f"-r {self.reference_fasta} "
                 f"--algo GVCFtyper {gvcftyper_options} "
                 f"-d {self.resources_bundle['dbsnp']} "
                 f"{in_gvcf_arguments} {output_vcf_fname} && {vcf_index_cmd}")

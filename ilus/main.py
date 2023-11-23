@@ -14,8 +14,7 @@ from datetime import datetime
 
 # Import specific functions of ilus
 from ilus.pipeline import (
-    create_wgs_pipeline_command, WGS,
-    create_wes_pipeline_command, WES,
+    create_wgs_pipeline_command, create_wes_pipeline_command, WGS,
     create_genotype_joint_calling_command, genotypeGVCFs,
     create_vqsr_command, variantrecalibrator
 )
@@ -117,35 +116,40 @@ def load_config(config_file):
 def run_command(args):
     """ Main function for pipeline.
     """
-    runner = {
-        "WGS": WGS,
-        "WES": WES,
-        "genotype-joint-calling": genotypeGVCFs,
-        "VQSR": variantrecalibrator,
-    }
-
     if args.version:
         print(f"{PROG_NAME} {VERSION}", file=sys.stderr)
         sys.exit(1)
 
     if args.command is None:
-        print(f"Please type: {PROG_NAME} -h or {PROG_NAME} "
-              f"--help to show the help message.\n",
-              file=sys.stderr)
+        print(f"Please type: {PROG_NAME} -h or {PROG_NAME} --help "
+              f"to show the help message.\n", file=sys.stderr)
         sys.exit(1)
+
+    # Create WGS pipeline.
+    elif args.command == "WGS":
+        # loaded global configuration file and record all information into one single dict.
+        aione = {"config": load_config(args.sysconf)}
+        WGS(args, aione)
+
+    # Create WES pipeline. WES could re-use the same processes of WGS.
+    elif args.command == "WES":
+        aione = {"config": load_config(args.sysconf)}
+        WGS(args, aione, is_capture_seq=True)
+
+    elif args.command == "genotype-joint-calling":
+        aione = {"config": load_config(args.sysconf)}
+        genotypeGVCFs(args, aione)
+
+    elif args.command == "VQSR":
+        aione = {"config": load_config(args.sysconf)}
+        variantrecalibrator(args, aione)
 
     elif args.command == "split-jobs":
         split_jobs(args.input, args.number, args.t, prefix=args.prefix)
-        return
 
     elif args.command == "check-jobs":
         check_jobs_status(args.input)
-        return
 
-    elif args.command in runner:
-        # loaded global configuration file and record all information into one single dict.
-        aione = {"config": load_config(args.sysconf)}
-        runner[args.command](args, aione)  # Run the processes
     else:
         raise ValueError(f"Invalid command: {args.command}")
 

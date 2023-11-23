@@ -123,9 +123,6 @@ def create_wgs_pipeline_command(commands):
     #
     # These invertals could be any regions alone the genome as you wish or just set the same as
     # ``--interval`` argument above.
-    #
-    # If the calling interval is changed to include only the exon-calling regions,
-    # this pipeline could be applied to detect variants of WES data.
     wgs_cmd.add_argument(
         "--interval",
         dest="interval",

@@ -23,7 +23,8 @@ from ilus.launch.runfunction import (
     run_haplotypecaller_gvcf,
     gatk_combineGVCFs,
     run_genotypeGVCFs,
-    run_variantrecalibrator
+    run_variantrecalibrator,
+    _c
 )
 
 
@@ -147,22 +148,7 @@ def _variant_discovery_common_processes(kwargs, processes_set: set = None):
     return wgs_pipeline_processes, runner_module
 
 
-def WGS(kwargs, aione: dict = None, is_capture_seq: bool = False) -> dict:
-    """Create the WGS data analysis pipeline.
-
-        ``is_capture_seq``: WES or other capture sequencing.
-    """
-    # Create project directory and return the abspath.
-    # [Important] abspath will remove the last '/' of the path.
-    # e.g.: '/a/' -> '/a'
-    kwargs.outdir = Path(kwargs.outdir).resolve()
-    shell_directory = kwargs.outdir.joinpath("00.shell")
-    shell_log_directory = shell_directory.joinpath("loginfo")
-    if not kwargs.dry_run:
-        safe_makedir(kwargs.outdir)
-        safe_makedir(shell_directory)
-        safe_makedir(shell_log_directory)
-
+def _fetch_calling_variants_interval(kwargs, aione: dict = None, is_capture_seq: bool = False) -> None:
     # Variant calling interval for WGS process must exist.
     if kwargs.interval and ("all" in kwargs.interval.split(",")) and (kwargs.interval != "all"):
         sys.stderr.write("[ERROR]: Do not add any other interval in '--interval' if 'all' in it.")
@@ -186,12 +172,35 @@ def WGS(kwargs, aione: dict = None, is_capture_seq: bool = False) -> dict:
             sys.stderr.write(f"[Error] Need to create an index (.fai) for reference file: "
                              f"{reference_file}.\n")
             sys.exit(1)
+
         aione["config"]["variant_calling_interval"] = get_chromosome_list_from_fai(fai)
+
+    # calling interval 的信息将自动记录在输入参数 aione 这个 dict 中，所以无需重新返回该值。
+    return
+
+
+def WGS(kwargs, aione: dict = None, is_capture_seq: bool = False) -> dict:
+    """Create the WGS data analysis pipeline.
+
+        ``is_capture_seq``: WES or other capture sequencing.
+    """
+    # Create project directory and return the abspath.
+    # [Important] abspath will remove the last '/' of the path.
+    # e.g.: '/a/' -> '/a'
+    kwargs.outdir = Path(kwargs.outdir).resolve()
+    shell_directory = kwargs.outdir.joinpath("00.shell")
+    shell_log_directory = shell_directory.joinpath("loginfo")
+    if not kwargs.dry_run:
+        safe_makedir(kwargs.outdir)
+        safe_makedir(shell_directory)
+        safe_makedir(shell_log_directory)
 
     # Todo: Need a program to validate whether the tools, arguments and the order of processes are
     #  appropriate or not for the pipeline.
     processes_set = set(kwargs.wgs_processes.split(","))  # 顺序不重要，所以存为 set，确保不重复即可
     wgs_pipeline_processes, runner_module = _variant_discovery_common_processes(kwargs, processes_set)
+
+    _fetch_calling_variants_interval(kwargs, aione, is_capture_seq)
 
     # record the input file path of fastqlist
     aione["fastqlist"] = kwargs.fastqlist
@@ -208,13 +217,6 @@ def WGS(kwargs, aione: dict = None, is_capture_seq: bool = False) -> dict:
     return aione
 
 
-def WES(kwargs, aione: dict = None) -> dict:
-    """Create WES pipeline.
-    """
-    aione["is_rm_sub_vcf_after_concat"] = True  # 删掉已被 concat 的 vcf 子文件
-    return WGS(kwargs, aione, is_capture_seq=True)
-
-
 def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
     # [Important] abspath will remove the last '/' in the path. e.g.: '/a/' -> '/a'
     kwargs.outdir = safe_makedir(Path(kwargs.outdir).resolve())  # return abspath
@@ -225,7 +227,6 @@ def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
 
     shell_directory = root_path.joinpath("00.shell" if kwargs.as_pipe_shell_order else "shell")
     safe_makedir(shell_directory)
-
     _make_process_shell(output_shell_fname=shell_directory.joinpath(shell_fname),
                         shell_log_directory=shell_directory.joinpath("loginfo", shell_log_folder),
                         process_shells=function_name(kwargs, output_folder_name, aione),
@@ -236,35 +237,37 @@ def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
 
 
 def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
-    """GenotypeGVCFs by GATK."""
-    aione["intervals"] = []
+    """GenotypeGVCFs"""
+
+    aione["config"]["variant_calling_interval"] = []
     aione["gvcf"] = {}  # will be called in ``gatk_genotypeGVCFs``
-    sample_map = {}  # Record sample_map for genomicsDBImport
+    sample_map = {}     # Record sample_map for genomicsDBImport
     with open(kwargs.gvcflist) as IN:
-        # Format in gvcflist: [chromosome_id  sample_id  gvcf_file_path]
+        # Format in gvcflist: [interval_id  sample_id  gvcf_file_path]
         for line in IN:
             if line.startswith("#"):
                 continue
 
             try:
                 interval, sample, gvcf = line.strip().split()
+                interval_n, calling_interval = _c(interval)
             except ValueError:
                 raise ValueError(f"Input format error in '{kwargs.gvcflist}'. "
                                  f"Expected: 3 columns \n\n"
-                                 f"-- column 1: chromosome ID \n"
+                                 f"-- column 1: interval ID\n"
                                  f"-- column 2: sample ID\n"
                                  f"-- column 3: gvcf file path)\n\n"
                                  f"got error here: '{line.strip()}').")
 
-            if interval not in aione["gvcf"]:
-                aione["intervals"].append(interval)
-                aione["gvcf"][interval] = []
+            if interval_n not in aione["gvcf"]:
+                aione["config"]["variant_calling_interval"].append(calling_interval)
+                aione["gvcf"][interval_n] = []
 
-            aione["gvcf"][interval].append(gvcf)
-            if interval not in sample_map:
-                sample_map[interval] = []
+            aione["gvcf"][interval_n].append(gvcf)
+            if interval_n not in sample_map:
+                sample_map[interval_n] = []
 
-            sample_map[interval].append(f"{sample}\t{gvcf}")
+            sample_map[interval_n].append(f"{sample}\t{gvcf}")
 
     if aione["config"]["gatk"]["use_genomicsDBImport"]:
         # [Important] return abspath and abspath will remove the last '/' in the path.
