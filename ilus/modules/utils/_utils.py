@@ -29,7 +29,8 @@ def file_exists(fname):
     """Check if a file exists and is non-empty.
     """
     try:
-        return (type(fname) is str) and Path(fname).is_file() and (Path(fname).stat().st_size > 0)
+        # return (type(fname) is str) and Path(fname).is_file() and (Path(fname).stat().st_size > 0)
+        return (type(fname) is str) and Path(fname).is_file()
     except OSError:
         return False
 

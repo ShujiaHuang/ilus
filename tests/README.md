@@ -19,7 +19,6 @@ ilus genotype-joint-calling -C ilus_sys.yaml -I gvcf.list -O tmp/03.genotype
 ```bash
 ilus genotype-joint-calling -C ilus_sys.yaml -I gvcf.list -O tmp/03.genotype --as_pipe_shell_order -f
 ilus genotype-joint-calling -C ilus_sys.yaml -I gvcf.list -O tmp/03.genotype --as_pipe_shell_order -f --use-sentieon
-ilus genotype-joint-calling -C ilus_sys.yaml -I gvcf.list -O tmp/03.genotype --as_pipe_shell_order -f --use-sentieon --interval human_GRCh38.calling_interval.bed
 ```
 
 ```bash

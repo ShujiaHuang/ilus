@@ -2,3 +2,5 @@ chr1	sample1	sample1/sample1.chr1.g.vcf.gz
 chr1:2-10	sample2	sample2/sample2.chr1.g.vcf.gz
 chr2	sample1	sample1/sample1.chr2.g.vcf.gz
 chr2:3-5	sample2	sample2/sample2.chr2.g.vcf.gz
+interval_fn.bed	sample1	sample2/sample2.interval_fn.g.vcf.gz
+interval_fn.bed	sample2	sample2/sample2.interval_fn.g.vcf.gz
