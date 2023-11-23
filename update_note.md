@@ -1,5 +1,6 @@
 ## Update
 
+- [2023-11-23] 改写了 `genotype-joint-calling` 模块，输入参数 gvcf.list 第一列可以是任意区间信息，包括 chromosome ID，chr:start-end 或者 bed 文件
 - [2023-11-17] 为流程添加一个参数，自动将 WGS/WES 无必要的子 vcf 删除
 - [2023-11-17] 设计出了 WES 模块，并将它和 WGS 融合，成为其子集
 - [2023-11-09] 为 WGS 增加 --interval 参数作为 variant-calling-interval 
