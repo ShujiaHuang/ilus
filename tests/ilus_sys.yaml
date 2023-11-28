@@ -82,7 +82,7 @@ gatk:
   CollectAlignmentSummaryMetrics_options: []
 
   hc_gvcf_options: []
-  use_genomicsDBImport: true  # Use genomicsDBImport to combine GVCFs by default
+  use_genomicsDBImport: false  # Use genomicsDBImport to combine GVCFs
   genomicsDBImport_options: [--tmp-dir /your_path/cache,
                              --batch-size 100,
                              --reader-threads 12,
