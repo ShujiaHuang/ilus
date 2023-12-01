@@ -65,7 +65,7 @@ class Sentieon(object):
         if len(adapter_seq) == 0:
             adapter_seq = "' '"
 
-        driver_options = self.driver_options + f" --interval {self.config['capture_interval_file']}" \
+        driver_options = f"{self.driver_options} --interval {self.config['capture_interval_file']}" \
             if "capture_interval_file" in self.config else self.driver_options
 
         coverage_options = " ".join([str(x) for x in self.sent_options.get("coverage_options", [])])
@@ -113,38 +113,16 @@ class Sentieon(object):
         """
         indel_realigner_options = " ".join([str(x) for x in self.sent_options.get(
             "indel_realigner_options", [])])
-
-        # CoverageMetrics 的计算合并到 Indelrealigner 过程中，可以节省单独计算的时间，同样是计算 input_bam 的覆盖度
-        coverage_options = " ".join([str(x) for x in self.sent_options.get("coverage_options", [])])
-        cvg_metrics_fn = str(input_bam).replace(".bam", ".coverage_metrics")
-
         known_Mills_indels = self.resources_bundle["mills"]
         known_1000G_indels = self.resources_bundle["1000G_known_indel"]
-        if "capture_interval_file" in self.config:
-            cmd = (f"time {self.sentieon} driver {self.driver_options} "
-                   f"-r {self.reference_fasta} "
-                   f"-i {input_bam} "
-                   f"--algo Realigner {indel_realigner_options} "
-                   f"-k {known_Mills_indels} "
-                   f"-k {known_1000G_indels} {output_realig_bam} && "
-                   
-                   # 对于 capture sequencing，coverage 需要单独设置 interval 计算 
-                   f"time {self.sentieon} driver {self.driver_options} "
-                   f"--interval {self.config['capture_interval_file']} "
-                   f"-r {self.reference_fasta} "
-                   f"-i {input_bam} "
-                   f"--algo CoverageMetrics {coverage_options} {cvg_metrics_fn}")
-        else:
-            cmd = (f"time {self.sentieon} driver {self.driver_options} "
-                   f"-r {self.reference_fasta} "
-                   f"-i {input_bam} "
-                   f"--algo Realigner {indel_realigner_options} "
-                   f"-k {known_Mills_indels} "
-                   f"-k {known_1000G_indels} {output_realig_bam} "
 
-                   # '--omit_base_output' skip the output of the per locus coverage with no partition.
-                   # This option can be used when you do not use intervals to save space.
-                   f"--algo CoverageMetrics {coverage_options} {cvg_metrics_fn}")
+        # Realigner: interval is not supported
+        cmd = (f"time {self.sentieon} driver {self.driver_options} "
+               f"-r {self.reference_fasta} "
+               f"-i {input_bam} "
+               f"--algo Realigner {indel_realigner_options} "
+               f"-k {known_Mills_indels} "
+               f"-k {known_1000G_indels} {output_realig_bam}")
 
         return cmd
 
@@ -156,25 +134,36 @@ class Sentieon(object):
             2. Applying the ReadWriter algo is optional, the next step in
                HC will apply calibration table on the fly.
         """
-        # Todo: 思考一个问题，这里是否应该为 WES 添加 interval 区间？或者是，
-        #  对于 WES 数据，添加 interval 与否是否会影响结果？
+        # CoverageMetrics 的计算合并到该过程中，可以节省单独计算的时间，同样是计算 input_bam 的覆盖度
+        coverage_options = " ".join([str(x) for x in self.sent_options.get("coverage_options", [])])
+        cvg_metrics_fn = str(input_bam).replace(".bam", ".coverage_metrics")
+
         known_Mills_indels = self.resources_bundle['mills']
         known_1000G_indels = self.resources_bundle['1000G_known_indel']
         bqsr_recaltable_options = " ".join([str(x) for x in self.sent_options.get(
             "bqsr_recaltable_options", [])])
 
+        # Todo: 思考一个问题，这里是否应该为 WES 添加 interval 区间？或者是，
+        #  对于 WES 数据，添加 interval 与否是否会影响结果？ (添加：2023-12-01)
+        driver_options = f"{self.driver_options} --interval {self.config['capture_interval_file']}" \
+            if "capture_interval_file" in self.config else self.driver_options
+
         # Create recalibrate table file for BQSR
-        recal_table_cmd = (f"time {self.sentieon} driver {self.driver_options} "
+        recal_table_cmd = (f"time {self.sentieon} driver {driver_options} "
                            f"-r {self.reference_fasta} "
                            f"-i {input_bam} "
                            f"--algo QualCal {bqsr_recaltable_options} "
                            f"-k {self.resources_bundle['dbsnp']} "
                            f"-k {known_Mills_indels} "
-                           f"-k {known_1000G_indels} {out_bqsr_recal_table}")
+                           f"-k {known_1000G_indels} {out_bqsr_recal_table}"
+
+                           # '--omit_base_output' skip the output of the per locus coverage with no partition.
+                           # This option can be used when you do not use intervals to save space.
+                           f"--algo CoverageMetrics {coverage_options} {cvg_metrics_fn}")
 
         # Apply BQSR
         recal_table_post_fn = f"{out_bqsr_recal_table}.post"
-        apply_bqsr_cmd = (f"time {self.sentieon} driver {self.driver_options} "
+        apply_bqsr_cmd = (f"time {self.sentieon} driver {driver_options} "
                           f"-r {self.reference_fasta} "
                           f"-i {input_bam} "
                           f"-q {out_bqsr_recal_table} "
@@ -192,7 +181,7 @@ class Sentieon(object):
         # Plot report
         recal_report_table = f"{out_bqsr_recal_table}.report.csv"
         bqsrreport_plot_fn = f"{out_bqsr_recal_table}.bqsrreport.pdf"
-        plot_cmd = (f"time {self.sentieon} driver {self.driver_options} "
+        plot_cmd = (f"time {self.sentieon} driver {driver_options} "
                     f"--algo QualCal --plot "
                     f"--before {out_bqsr_recal_table} "
                     f"--after {recal_table_post_fn} {recal_report_table} && "
@@ -211,7 +200,6 @@ class Sentieon(object):
         :return:
         """
         hc_options = " ".join([str(x) for x in self.sent_options.get("hc_options", [])])
-
         if ("gvcf" in hc_options) and (".g.vcf" not in str(output_vcf_fname)):
             raise ValueError(f"[ERROR] {output_vcf_fname} missing .g.vcf in file name")
 
@@ -313,7 +301,7 @@ class Sentieon(object):
                                 f"--var_type INDEL "
                                 f"--recal {out_prefix}.INDELs.recal "
                                 f"--tranches_file {out_prefix}.INDELs.tranches.csv "
-                                f"{output_vcf_fname} && rm -f {out_snp_vqsr_fname}* ")
+                                f"{output_vcf_fname} && rm -f {out_snp_vqsr_fname}*")
 
         tabix = self.config["tabix"]
         vcf_index_cmd = f"time {tabix} -f -p vcf {output_vcf_fname}"

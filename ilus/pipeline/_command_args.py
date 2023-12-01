@@ -133,6 +133,13 @@ def create_wgs_pipeline_command(commands):
              "e.g: '--interval chr1:1-2,chr2,chr3:4-5' "
              "or '--interval interval_file.bed'."
     )
+    wgs_cmd.add_argument(
+        # 添加一个参数，用于设置不分开 interval 区间，当做是一个整体
+        "--collapse",
+        dest="collapse",
+        action="store_true",
+        help="."
+    )
 
     return wgs_cmd
 
