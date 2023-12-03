@@ -34,7 +34,7 @@ class GATK(object):
                 f"-M {out_metrics_fname} "
                 f"-O {output_markdup_bam}")
 
-    def baserecalibrator(self, input_bam, output_bqsr_bam, out_bqsr_recal_table):
+    def baserecalibrator(self, input_bam, output_bqsr_bam, out_bqsr_recal_table, interval=None):
         java_options = "--java-options \"%s\"" % " ".join(self.gatk_options["bqsr_java_options"]) \
             if "bqsr_java_options" in self.gatk_options \
                and len(self.gatk_options["bqsr_java_options"]) else ""
@@ -58,6 +58,10 @@ class GATK(object):
                           f"--bqsr-recal-file {out_bqsr_recal_table} "
                           f"-I {input_bam} "
                           f"-O {output_bqsr_bam}")
+
+        if interval:
+            recal_data_cmd += f" -L {interval}"
+            apply_bqsr_cmd += f" -L {interval}"
 
         return recal_data_cmd + " && " + apply_bqsr_cmd
 

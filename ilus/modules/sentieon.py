@@ -97,6 +97,7 @@ class Sentieon(object):
         output_markdup_bam = str(output_markdup_bam)
         score_info_file = output_markdup_bam.replace(".bam", ".score.txt")
         dedup_metrics_f = output_markdup_bam.replace(".bam", ".metrics.txt")
+        # dedup: interval is not supported
         dedup_cmd = (f"time {self.sentieon} driver {self.driver_options} "
                      f"-i {input_bam} "
                      f"--algo LocusCollector {locus_collector_options} "
@@ -155,7 +156,7 @@ class Sentieon(object):
                            f"--algo QualCal {bqsr_recaltable_options} "
                            f"-k {self.resources_bundle['dbsnp']} "
                            f"-k {known_Mills_indels} "
-                           f"-k {known_1000G_indels} {out_bqsr_recal_table}"
+                           f"-k {known_1000G_indels} {out_bqsr_recal_table} "
 
                            # '--omit_base_output' skip the output of the per locus coverage with no partition.
                            # This option can be used when you do not use intervals to save space.
