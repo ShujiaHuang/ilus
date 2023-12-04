@@ -133,19 +133,21 @@ def create_wgs_pipeline_command(commands):
              "e.g: '--interval chr1:1-2,chr2,chr3:4-5' "
              "or '--interval interval_file.bed'."
     )
-    wgs_cmd.add_argument(
-        # 添加一个参数，用于设置不分开 interval 区间，当做是一个整体
-        "--collapse",
-        dest="collapse",
-        action="store_true",
-        help="."
-    )
+    # Todo: 该参数暂时不执行，后面要写一个统一 capture-seq 的功能，这样就可以统一处理这个功能了
+    # wgs_cmd.add_argument(
+    #     # 如果设置了这个参数，则不对 interval 进行拆分，而是作为一个整体
+    #     "--fold-interval",
+    #     dest="fold_interval",
+    #     action="store_true",
+    #     help="If set this option, the intervals are not split into parts."
+    # )
 
     return wgs_cmd
 
 
 def create_wes_pipeline_command(commands):
     """All the arguments for creating WES pipeline."""
+    # Todo: 思考要不要把这个参数改为 capseq，意思就是这个功能泛化为捕获测序数据分析流程，WES 只是捕获测序的一个特例？
     wes_cmd = _add_germline_short_variant_discovery_argument(
         commands.add_parser(
             "WES",

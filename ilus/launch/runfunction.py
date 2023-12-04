@@ -185,6 +185,8 @@ def run_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
         else:
             # No isolated module to apply Indelrealigner in GATK4
             cmd = [GATK(config=aione["config"]).markduplicates(sample_sorted_bam, out_markdup_bam_fname)]
+            samtools = aione["config"]["samtools"]["samtools"]
+            cmd.append(f"{samtools} index -@ 8 {out_markdup_bam_fname}")
 
         aione["sample_final_markdup_bam"].append([sample, out_markdup_bam_fname])
         if IS_RM_SUBBAM:
