@@ -145,25 +145,27 @@ def create_wgs_pipeline_command(commands):
     return wgs_cmd
 
 
-def create_wes_pipeline_command(commands):
+def create_capseq_pipeline_command(commands):
     """All the arguments for creating WES pipeline."""
     # Todo: 思考要不要把这个参数改为 capseq，意思就是这个功能泛化为捕获测序数据分析流程，WES 只是捕获测序的一个特例？
-    wes_cmd = _add_germline_short_variant_discovery_argument(
+    capseq_cmd = _add_germline_short_variant_discovery_argument(
         commands.add_parser(
-            "WES",
+            "capseq",
             parents=[_parent_parser()],
-            help="Create pipeline scripts for WES (from FASTQ to genotype VCF).")
+            help="Create pipeline scripts for capture sequencing data (from FASTQ to genotype VCF). "
+                 "Whole-exome sequencing (WES) belong to capture sequencing, which only captures "
+                 "the coding regions of the genome.")
     )
 
-    wes_cmd.add_argument(
+    capseq_cmd.add_argument(
         "--capture-interval",
         dest="interval",  # WES capture region file (BED/Picard,1-based)
         type=str,
         required=True,
-        help="WES capture intervals: string or file (BED/Picard)"
+        help="Capture intervals, must be a file path: (BED/Picard) file"
     )
 
-    return wes_cmd
+    return capseq_cmd
 
 
 def create_genotype_joint_calling_command(commands):

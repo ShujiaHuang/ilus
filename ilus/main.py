@@ -14,7 +14,7 @@ from datetime import datetime
 
 # Import specific functions of ilus
 from ilus.pipeline import (
-    create_wgs_pipeline_command, create_wes_pipeline_command, WGS,
+    create_wgs_pipeline_command, create_capseq_pipeline_command, WGS,
     create_genotype_joint_calling_command, genotypeGVCFs,
     create_vqsr_command, variantrecalibrator
 )
@@ -93,7 +93,7 @@ def parse_commandline_args():
     create_wgs_pipeline_command(commands)
 
     # The arguments for the whole pipeline of WES.
-    create_wes_pipeline_command(commands)
+    create_capseq_pipeline_command(commands)
 
     # The arguments for joint-calling process
     create_genotype_joint_calling_command(commands)
@@ -131,8 +131,8 @@ def run_command(args):
         aione = {"config": load_config(args.sysconf)}
         WGS(args, aione)
 
-    # Create WES pipeline. WES could re-use the same processes of WGS.
-    elif args.command == "WES":
+    elif args.command == "capseq":
+        # Create pipeline for capture-sequencing. WES is one kind of capture sequencing.
         aione = {"config": load_config(args.sysconf)}
         WGS(args, aione, is_capture_seq=True)
 

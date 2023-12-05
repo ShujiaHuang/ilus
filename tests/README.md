@@ -46,5 +46,5 @@ ilus WGS -c -n my_wgs -C ilus_sys.yaml -I sample_fastq.list -O ./tmp --use-senti
 ilus WGS -c -n my_wgs -C ilus_sys.yaml -I sample_fastq.list -O ./tmp -f --interval human_GRCh38.calling_interval.bed
 
 ## WES
-ilus WES -c -n my_wgs -C ilus_sys.yaml -I sample_fastq.list --capture-interval human_GRCh38.calling_interval.bed -O ./tmp -f
-ilus WES -c -n my_wgs -C ilus_sys.yaml -I sample_fastq.list --capture-interval human_GRCh38.calling_interval.bed -O ./tmp -f --use-sentieon
+ilus capseq -c -n my_wgs -C ilus_sys.yaml -I sample_fastq.list --capture-interval wes.test_interval.bed -O ./tmp -f
+ilus capseq -c -n my_wgs -C ilus_sys.yaml -I sample_fastq.list --capture-interval wes.test_interval.bed -O ./tmp -f --use-sentieon

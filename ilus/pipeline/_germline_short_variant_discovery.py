@@ -160,7 +160,8 @@ def _fetch_calling_variants_interval(kwargs, aione: dict = None, is_capture_seq:
         if is_capture_seq:
             # 如果是 capture sequence 比如 WES，把该文件记录起来，该 key 只为种情况而添加。
             if (type(kwargs.interval) is not str) or (not Path(kwargs.interval).is_file()):
-                sys.stderr.write(f"[Error] --capture-interval must be a file, but got {kwargs.interval}\n")
+                sys.stderr.write(f"[Error] --capture-interval must be a file, "
+                                 f"but got {kwargs.interval}\n")
                 sys.exit(1)
 
             aione["config"]["capture_interval_file"] = kwargs.interval
