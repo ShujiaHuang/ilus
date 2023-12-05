@@ -1,6 +1,6 @@
 ## Update
 
-- [2023-12-01] 把 interval 置于 Realigner 中
+- [2023-12-05] WES 改名为 capseq，反正 WES 也是 capseq 的一种，这样改更好
 - [2023-11-23] 改写了 `genotype-joint-calling` 模块，输入参数 `gvcf.list` 第一列可以是任意区间信息，包括 `chromosome ID`，`chr:start-end` 或者 `.bed` 文件
 - [2023-11-17] 为流程添加一个参数，自动将 WGS/WES 无必要的子 vcf 删除
 - [2023-11-17] 设计出了 WES 模块，并将它和 WGS 融合，成为其子集
