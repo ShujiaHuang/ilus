@@ -6,71 +6,64 @@ Cut genome region from N.
 Author: Shujia Huang
 Date: 2016-06-26
 """
-import os
 import sys
 import optparse
 
-MAXSIZE = 4550000 # 4.6Mb
+MAXSIZE = 4550000  # 4.6Mb
 SLOWCHUNKSIZE = 500000  # 0.5 Mb
 
+
 def main(opts):
+    """main function
     """
-    """
-    #accbed, accidx = load_accbed(opts.accbed_file)
+    # accbed, accidx = load_accbed(opts.accbed_file)
     fa = get_fasta_size_from_faifile(opts.ref_fa_file)
 
     # get non N region
     call_region = get_nonN_region(opts.n_reg_file, opts.nsize, fa)
     slow_reg, s_idx = load_slow(opts.slow_region_file)
-
     for chrom in call_region:
-        if chrom[:2] == 'GL': continue
+        if chrom[:2] == "GL":
+            continue
 
         for start_pos, end_pos in call_region[chrom]:
-
             reg = []
-            for pos in range(start_pos, end_pos+1, MAXSIZE):
+            for pos in range(start_pos, end_pos + 1, MAXSIZE):
                 s = pos
-                e = end_pos if pos + MAXSIZE >= end_pos else pos+MAXSIZE-1
+                e = end_pos if pos + MAXSIZE >= end_pos else pos + MAXSIZE - 1
 
                 flag = True
                 ovlp_regs = []
                 if chrom in s_idx:
                     for i in range(s_idx[chrom], len(slow_reg[chrom])):
-                        
-                        if s > slow_reg[chrom][i][1]: 
-                            continue
 
-                        if e < slow_reg[chrom][i][0]: 
+                        if s > slow_reg[chrom][i][1]:
+                            continue
+                        if e < slow_reg[chrom][i][0]:
                             break
 
                         if flag:
                             flag = False
                             s_idx[chrom] = i
 
-                        o_s, o_e = overlap_region(s, e, slow_reg[chrom][i][0],
-                                                  slow_reg[chrom][i][1])
+                        o_s, o_e = overlap_region(s, e, slow_reg[chrom][i][0], slow_reg[chrom][i][1])
                         ovlp_regs.append([o_s, o_e])
 
-
                 if len(ovlp_regs) > 0:
-
-                    is_first = True
                     pre_pos = s
-
                     for start, end in ovlp_regs:
 
                         if pre_pos < start:
                             reg.append([chrom, pre_pos, start - 1])
 
-                        #reg.append([chrom, start, end])
-                        for j in range(start-1, end, SLOWCHUNKSIZE):
+                        # reg.append([chrom, start, end])
+                        for j in range(start - 1, end, SLOWCHUNKSIZE):
                             tmp_s = j
                             if j + SLOWCHUNKSIZE > end:
                                 tmp_e = end
                             else:
                                 tmp_e = j + SLOWCHUNKSIZE
-                            reg.append([chrom, tmp_s+1, tmp_e])
+                            reg.append([chrom, tmp_s + 1, tmp_e])
 
                         pre_pos = end + 1
 
@@ -81,7 +74,7 @@ def main(opts):
                     reg.append([chrom, s, e])
 
             for c, s, e in reg:
-                print('%s\t%d\t%d' % (c, s, e))
+                print("%s\t%d\t%d" % (c, s, e))
 
 
 def get_fasta_size_from_faifile(infile):
@@ -96,7 +89,6 @@ def get_fasta_size_from_faifile(infile):
         5       180915260       896320740       60      61
         6       171115067       1080251307      60      61
     """
-
     fa = {}
     with open(infile) as I:
         for r in I:
@@ -107,12 +99,10 @@ def get_fasta_size_from_faifile(infile):
 
 
 def load_accbed(infile):
-    """
-    """
     region, index = {}, {}
     with open(infile) as I:
         for r in I:
-            col = r.strip('\n').split()
+            col = r.strip("\n").split()
             if col[0] not in region:
                 region[col[0]] = []
                 index[col[0]] = 0
@@ -123,11 +113,10 @@ def load_accbed(infile):
 
 
 def get_nonN_region(infile, thd_n_size, fa):
-    """
-    Read N region to get non-n region
+    """Read N region to get non-n region.
     """
     reg, pos = {}, {}
-    pre_id, pre_end, curr_start = '', 0, 0
+    pre_id, pre_end, curr_start = "", 0, 0
     with open(infile) as I:
         # dealing with N region file
 
@@ -135,7 +124,7 @@ def get_nonN_region(infile, thd_n_size, fa):
 
             col = r.strip().split()
             n_start, n_end = map(int, (col[1], col[2]))
-            n_region_size = n_end-n_start+1
+            n_region_size = n_end - n_start + 1
 
             if col[0] not in reg:
 
@@ -143,7 +132,7 @@ def get_nonN_region(infile, thd_n_size, fa):
                 pos[col[0]] = 0
 
                 if len(pre_id):
-                    reg[pre_id].append([pos[pre_id]+1, fa[pre_id]])
+                    reg[pre_id].append([pos[pre_id] + 1, fa[pre_id]])
 
                 pre_id, pre_end = col[0], n_end
 
@@ -152,7 +141,7 @@ def get_nonN_region(infile, thd_n_size, fa):
                 pass
 
             else:
-                reg[pre_id].append([pos[pre_id]+1, n_start-1])
+                reg[pre_id].append([pos[pre_id] + 1, n_start - 1])
                 pre_id, pre_end = col[0], n_end
 
             if n_region_size >= thd_n_size:
@@ -173,8 +162,10 @@ def load_slow(infile):
     with open(infile) as I:
         for line in I:
             # Y  11234914  14674573
-            if line[0] == '#': continue
-            col = line.strip('\n').split()
+            if line[0] == "#":
+                continue
+
+            col = line.strip("\n").split()
             if col[0] not in reg:
                 reg[col[0]] = []
                 idx[col[0]] = 0
@@ -182,6 +173,7 @@ def load_slow(infile):
             reg[col[0]].append(map(int, [col[1], col[2]]))
 
     return reg, idx
+
 
 def overlap_region(start1, end1, start2, end2):
     """
@@ -192,57 +184,53 @@ def overlap_region(start1, end1, start2, end2):
 
     elif end1 <= end2 and start1 > start2:
         if end1 < start1:
-            print >> sys.stderr, '[ERROR] Start1 > end1:', start1, end1
+            sys.stderr.write(f"[ERROR] Start1({start1}) > End1({end1})\n")
             sys.exit(1)
         s, e = start1, end1
 
     elif start1 <= start2 and end1 > end2:
         if end2 < start2:
-            print >> sys.stderr, '[ERROR] Start2 > end2:', start2, end2
+            sys.stderr.write(f"[ERROR] Start2 ({start2}) > end2 ({end2})\n")
             sys.exit(1)
         s, e = start2, end2
 
-    elif start1 <= end2 and end1 > end2:
+    elif start1 <= end2 < end1:
         s, e = start1, end2
 
     else:
-        print >> sys.stderr, '[ERROR] Region not right.'
+        sys.stderr.write("[ERROR] Region not right.\n")
 
     return s, e
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     """
     loading all the command options.
     """
-    usage = '\nUsage: python %prog [options] -f <fastafile> > Output'
+    usage = "\nUsage: python %prog [options] -f <fastafile> > Output"
     optp = optparse.OptionParser(usage=usage)
-    optp.add_option('-f', '--fa', dest='ref_fa_file', metavar='STR',
-                    help='The reference fasta file.', default='')
-    #optp.add_option('-b', '--bed', dest='accbed_file', metavar='STR',
-    #                help = 'The accessible region bed file.', default='')
-    optp.add_option('-s', '--slow', dest='slow_region_file', metavar='STR',
-                    help='The alow region bed file.', default='')
-    optp.add_option('-n', '--nbed', dest='n_reg_file', metavar='STR',
-                    help='The N-base region bed file.', default='')
-    optp.add_option('-N', '--nbase', dest='nsize', metavar='int',
-                    help='The biggest continue N size could be allow '
-                         'in one region.', default=1000)
-    #optp.add_option('-w', '--win', dest='win', metavar='int',
-    #                help = 'The window size.', default=100000)
+    optp.add_option("-f", "--fa", dest="ref_fa_file", metavar="STR",
+                    help="The reference fasta file.", default="")
+    # optp.add_option("-b", "--bed", dest="accbed_file", metavar="STR",
+    #                help = "The accessible region bed file.", default="")
+    optp.add_option("-s", "--slow", dest="slow_region_file", metavar="STR",
+                    help="The alow region bed file.", default="")
+    optp.add_option("-n", "--nbed", dest="n_reg_file", metavar="STR",
+                    help="The N-base region bed file.", default="")
+    optp.add_option("-N", "--nbase", dest="nsize", metavar="int",
+                    help="The biggest continue N size could be allow "
+                         "in one region.", default=1000)
+    # optp.add_option("-w", "--win", dest="win", metavar="int",
+    #                help = "The window size.", default=100000)
 
     opt, _ = optp.parse_args()
-    if not opt.ref_fa_file: 
-        optp.error('Required [-f ref_fa_file]\n')
+    if not opt.ref_fa_file:
+        optp.error("Required [-f ref_fa_file]\n")
 
     if not opt.slow_region_file:
-        optp.error('Required [-s slow_region_file]\n')
-    #if not opt.accbed_file: optp.error('Required [-b accessible bed file.\n]')
+        optp.error("Required [-s slow_region_file]\n")
+    # if not opt.accbed_file: optp.error("Required [-b accessible bed file.\n]")
 
     main(opt)
-    sys.stderr.write('>> For the flowers bloom in the desert <<')
-
-
-
-
-
+    sys.stderr.write(">> For the flowers bloom in the desert <<")
