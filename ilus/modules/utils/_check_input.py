@@ -26,7 +26,7 @@ def check_input_sheet(input_fname):
     HL003  "@RG\tID:HL003_HL003_L01_68\tPL:COMPLETE\tPU:HL003_L01_68_HL003\tLB:HL003_L01\tSM:HL003"  HL003_L01_68_1.fq.gz  HL003_L01_68_2.fq.gz  HL003_L01_68
     """
 
-    with gzip.open(input_fname, "rt") if input_fname.endswith(".gz") else open(input_fname) as f:
+    with gzip.open(input_fname, "rt") if str(input_fname).endswith(".gz") else open(input_fname) as f:
         HEADER = ["#SAMPLE", "RGID", "FASTQ1", "FASTQ2", "LANE"]
         header = f.readline().strip().split()
         if header[:len(HEADER)] != HEADER:

@@ -4,6 +4,7 @@ Author: Shujia Huang
 Date:   2023-02-16
 """
 import argparse
+from pathlib import Path
 
 
 def _parent_parser():
@@ -29,7 +30,7 @@ def _parent_parser():
     parser.add_argument(
         "-O", "--outdir",
         dest="outdir",
-        type=str,
+        type=Path,
         required=True,
         help="Output directory for results."
     )
@@ -58,7 +59,7 @@ def _add_germline_short_variant_discovery_argument(command):
     command.add_argument(
         "-I", "--fastqlist",
         dest="fastqlist",
-        type=str,
+        type=Path,
         required=True,
         help="Input the list of FASTQ files."
     )
@@ -179,7 +180,7 @@ def create_genotype_joint_calling_command(commands):
     genotype_cmd.add_argument(
         "-I", "--gvcflist",
         dest="gvcflist",
-        type=str,
+        type=Path,
         required=True,
         help="List of GVCF files. One gvcf_file per-row and the format should looks like: "
              "[interval\tgvcf_file_path]. Column [1] is a symbol which could represent "
@@ -205,7 +206,7 @@ def create_vqsr_command(commands):
     vqsr_cmd.add_argument(
         "-I", "--vcflist",
         dest="vcflist",
-        type=str,
+        type=Path,
         required=True,
         help="VCFs file list. One file per-row."
     )
