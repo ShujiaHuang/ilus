@@ -42,6 +42,7 @@ ilus WGS -c -n my_wgs -C ilus_sys.yaml -I sample_fastq.list -O ./tmp --use-senti
 
 ## Use sentieon to call variants
 ilus WGS -c -n my_wgs -C ilus_sys.yaml -I sample_fastq.list -O ./tmp --use-sentieon -f
+ilus WGS -c -n my_wgs -C ilus_sys.yaml -I sample_fastq.list -O ./tmp --use-sentieon --clean-raw-data --delete-clean-fastq -f
 ilus WGS -c -n my_wgs -C ilus_sys.yaml -I sample_fastq.list -O ./tmp --use-sentieon -f --interval wgs.calling_interval.bed 
 ilus WGS -c -n my_wgs -C ilus_sys.yaml -I sample_fastq.list -O ./tmp -f --interval wgs.calling_interval.bed
 
