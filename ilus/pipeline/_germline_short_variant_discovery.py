@@ -290,8 +290,7 @@ def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
     if kwargs.use_sentieon:
         # For sentieon: create shell scripts for genotype joint-calling
         genotype_shell_fname, genotype_shell_log_folder = [
-            f"{kwargs.project_name}.step5.genotype.sh",
-            "05.genotype"
+            f"{kwargs.project_name}.step5.genotype.sh", "05.genotype"
         ] if kwargs.as_pipe_shell_order else [f"{kwargs.project_name}.genotype.sh", "genotype"]
     else:
         # For GATK: create shell scripts for genomicsDBImport or CombineGVCFs

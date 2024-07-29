@@ -434,8 +434,7 @@ def run_genotypeGVCFs(kwargs,
                       is_dry_run: bool = False) -> List[List[Union[str, Path]]]:
     """Create shell for genotypeGVCFs.
     """
-    output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name),
-                                            is_dry_run=is_dry_run)
+    output_directory, shell_directory = _md(Path(kwargs.outdir).joinpath(out_folder_name), is_dry_run=is_dry_run)
     genotype_vcf_shell_files_list = []
     aione["genotype_vcf_list"] = []
 

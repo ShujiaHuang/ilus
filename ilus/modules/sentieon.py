@@ -144,8 +144,7 @@ class Sentieon(object):
         bqsr_recaltable_options = " ".join([str(x) for x in self.sent_options.get(
             "bqsr_recaltable_options", [])])
 
-        # Todo: 思考一个问题，这里是否应该为 WES 添加 interval 区间？或者是，
-        #  对于 WES 数据，添加 interval 与否是否会影响结果？ (添加：2023-12-01)
+        # Todo: 思考一个问题，这里为 WES 添加一个 interval 区间是必要的吗？
         driver_options = f"{self.driver_options} --interval {self.config['capture_interval_file']}" \
             if "capture_interval_file" in self.config else self.driver_options
 
