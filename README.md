@@ -12,6 +12,9 @@ Ilus
 Introduction
 ------------
 
+![ilus-pipe-chart](https://static.fungenomics.com/images/2024/08/image-20240821141414510.png)
+
+
 **ilus** is a pipeline generator, which used to generate WGS/WES analysis pipeline，but **ilus** can't excute the jobs, which means users needs to submit the jobs by hands, and the processing don't rely on **ilus** any more，that's why we called it as a semi-automated tools.
 
 
