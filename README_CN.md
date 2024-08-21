@@ -13,7 +13,7 @@ sequencing，WES）分析流程生成器.
 简介
 ----
 
-![ilus-pipe-chart](https://static.fungenomics.com/images/2024/08/image-20240821141414510.png)
+![ilus-pipe-chart](https://static.fungenomics.com/images/2024/08/image-20240821161316052.png)
 
 **ilus** 是一个流程生成器，用途是生成 WGS/WES 分析流程，但 **ilus**
 不执行流程的具体步骤。用户需要自己手动操作，而且执行过程不再 依赖
