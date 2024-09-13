@@ -6,7 +6,7 @@ Ilus
 
 **English** | [简体中文](./README_CN.md)
 
-**Ilus** is a lightweight, scalable, handy **semi-automated** variant calling pipeline generator for Whole-genome sequencing (WGS) and Whole exom sequencing (WES) analysis.
+**Ilus** (/i:ləs/) is a lightweight, scalable, handy **semi-automated** variant calling pipeline generator for Whole-genome sequencing (WGS) and Whole exom sequencing (WES) analysis.
 
 
 Introduction
