@@ -422,4 +422,10 @@ Other parameters is the same as `genotype-joint-calling`. Also, the vcf in the f
 $ ilus VQSR -C ilus_sys.yaml -L vcf.list -O genotype --as_pipe_shell_order
 ```
 
+Citation
+--------
+
+> Huang, S., Liu, S., Huang, M. et al. The Born in Guangzhou Cohort Study enables generational genetic discoveries. Nature 626, 565–573 (2024). [doi:10.1038/s41586-023-06988-4](https://doi.org/10.1038/s41586-023-06988-4)
+
+
 -- The End --
