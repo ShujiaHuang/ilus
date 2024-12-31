@@ -1,72 +1,101 @@
-Ilus
-====
+# Ilus
 
 [![DOI](https://zenodo.org/badge/254013599.svg)](https://zenodo.org/badge/latestdoi/254013599)
-
 
 **English** | [简体中文](./README_CN.md)
 
 **Ilus** (/'i:loʊs/) is a lightweight, scalable, handy **semi-automated** variant calling pipeline generator for Whole-genome sequencing (WGS) and Whole exom sequencing (WES) analysis.
 
 
-Introduction
-------------
+## Introduction
 
 ![ilus-pipe-chart](https://static.fungenomics.com/images/2024/08/image-20240821161316052.png)
 
-**ilus** is a pipeline generator, which used to generate WGS/WES analysis pipeline，but **ilus** can't excute the jobs, which means users needs to submit the jobs by hands, and the processing don't rely on **ilus** any more，that's why we called it as a semi-automated tools.
+**ilus** is a *semi-automated* pipeline generator designed for WGS/WES analysis. While it facilitates the creation of analysis pipelines, it does not excute the jobs automatically. Instead, users are required to manually submit the generated jobs. This approach allows for flexibility in managing the workflow, but it means that the overall processing does not depend on **ilus** for execution，that's why we called it as a semi-automated tools. This design can be beneficial for users who prefer to maintain control over their job submissions and processing.
 
 
-**ilus** has 3 main modelues：
+```bash
+$ ilus -h
+usage: ilus [-h] [-v] {WGS,capseq,genotype-joint-calling,VQSR,split-jobs,check-jobs} ...
 
--   First、`WGS` analysis module. This module based on [GATK Best Practice](https://gatk.broadinstitute.org/hc/en-us/sections/360007226651-Best-Practices-Workflows)，use 
-`bwa-mem + GATK` , the most mainstream way to build an analysis process. It integrates 5 complete processes, including alignment, sorting, and multi-lane merging of the same sample, Markduplicates, HaplotypeCaller gvcf, Joint-calling ,and Variant quality  score recalibrator (VQSR). This module also works for WES analysis, Just set the configuration file `variant_calling_interval`  parameter to the exon capture interval of WES (detailed below).
+ilus (Version = 2.0.0): A WGS/WES analysis pipeline generator.
 
-By default, the pipeline currently performs the follwing:
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --version         show the version of ilus and exit.
 
-    - Map reads to reference by `bwa mem`;
-    - Mark duplicates by `GATK MarkDuplicates`;
-    - Base quality score recalibration by `GATK BaseRecalibrator` and `GATK ApplyBQSR`;
-    - Preprocessing quality control by `samtools stats`;
-    - Calculatiing the base coverage by `bedtools cvg`;
-    - Variant calling by `GATK HaplotypeCaller`;
-    - Variants join-calling by `GATK GenotypeGVCFs`;
-    - Variant quality recalibration by `GATK VariantRecalibrator` and `GATK ApplyVQSR`;
-    - Annotation by `ensembl VEP`.
+ilus commands:
+  {WGS,capseq,genotype-joint-calling,VQSR,split-jobs,check-jobs}
+    WGS                 Create pipeline scripts for WGS (from FASTQ to genotype VCF).
+    capseq              Create pipeline scripts for capture sequencing data (from FASTQ to genotype VCF). Whole-exome sequencing (WES) belong to capture sequencing, which only
+                        captures the coding regions of the genome.
+    genotype-joint-calling
+                        Genotype from GVCFs.
+    VQSR                VQSR
+    split-jobs          Split the whole shell into multiple jobs.
+    check-jobs          Check the jobs have finished or not.
 
--   Second, `genotype-joint-calling` module. This module is separate from **ilus WGS** ，in order to call genotype  from **gvcf** directly. Or when you need to complete the WGS/WES data analysis in multiple batches, you can generate **gvcf** in batches, and finally organize a total **gvcf** file list, and then use this function to complete the subsequent steps. this can increase the flexibility of the running process.
+```
 
 
--   Third, `VQSR` module，also separate from **ilus WGS**，to help us to quality control on the mutation results.
+### Main processes
 
-    > Note that ilus don’t include QC on raw fastq data.
+**ilus** has 4 main modelues designed for genomics analysis:
+
+
+**1. `WGS` analysis module** 
+
+
+Based on the [GATK Best Practice](https://gatk.broadinstitute.org/hc/en-us/sections/360007226651-Best-Practices-Workflows)，this mudule utilized `bwa-mem + GATK` for building a comprehensive analysis process. It includes:
+
+- Alignment of reads to a reference genomeusing `bwa mem`. 
+- Base quality score recalibration (BQSR) using `GATK BaseRecalibrator` and `GATK ApplyBQSR`.
+- Create alignment metrics via `samtools stats`.
+- Coverage calculation with `bedtools cvg`.
+- Variant calling or generating gvcf file for samples by `GATK HaplotypeCaller`.
+- Joint-calling of variants using `GATK GenotyeGVCFs`.
+- Variant quality score recalibration (VQSR) with `GATK VariantRecalibrator` and `GATK ApplyVQSR`.
+- Annotate variants by using Ensembl VEP.
+
+These processes also works for WES (`capseq`) analysis. 
+
 > By default, the sequencing data you input is clean data.
 
-**ilus** does not directly run tasks for the following two considerations:
+**2. `capseq` module**
 
-- First, avoid making optimizations about task scheduling outside of the core functionality of **ilus**. Different computing clusters (local and cloud), jobs are scheduled in various ways. If these situations are taken into account, **ilus** will become bloated and complicated, and it may not be possible to do it. Well, this will cause some people to be unable to use **ilus** effectively, and even easily lose the focus of **ilus** in the process of managing task delivery. As a lightweight tool, I designed **ilus** without the ability to automatically post and run tasks in mind from the start. I hope it can be used as a framework program to generate process scripts that meet your analysis needs strictly based on your input data and configuration file information.
-
-     > If you want to achieve automatic delivery and monitoring of jobs, **ilus**
-     > It is hoped that it can be implemented in the form of external plugins in the future, but currently these scripts need to be manually delivered.
-
-- Second, increase flexibility and maneuverability. The processes generated by **ilus** have a characteristic, that is, they are completely independent of **ilus** and will no longer rely on any functions of **ilus**. It doesn't matter if it is completely uninstalled and deleted. In addition, each line in the execution script (shell) generated by **ilus can run independently without affecting each other**.
-
-The advantage of this is that you can split the script into several sub-scripts according to the characteristics of the computer cluster (if you have few samples or insufficient cluster resources, you can not split them), and then deliver the tasks separately, which can greatly reduce the number of sub-scripts. Speed up the completion of tasks, **and, this is currently the only way to deliver ilus tasks in parallel**.
-
-How many subscripts to split into depends on your own specific situation. For example, if you have a total of 10 samples, the `xxx.step1.bwa.sh` comparison script in the first step has a total of 10 comparison commands, and each line is a `bwa` of a sample.
-
-Since these 10 commands are independent of each other, you can split this step into 10 (or less) subscripts and then manually post these tasks. As for how to split a complete execution script into multiple ones, you can either write your own program or use the [yhbatch_slurm_jobs](https://github.com/ShujiaHuang/ilus/blob/master/scripts/yhbatch_slurm_jobs.py), but note that the program I provide here is based on the slurm system, which may not meet your needs, if you think this the program does not directly meet your needs, you can modify it. Although **ilus** does not automate the delivery and execution of management tasks, this method can also increase the flexibility and control of process control.
-
-It is very important to monitor the task completion status, especially when there are thousands of samples to be analyzed. This process, if checked manually, would be inefficient and error-prone. **ilus** has taking this into account, an identifiable completion mark will be added to each task when the process is generated. We only need to check whether each task has this mark (for details, please refer to **WGS** below for details. example).
-
-Even so, once we have a large number of tasks, it would be too troublesome to manually open the file every time to check whether the corresponding task has been successfully completed. Therefore, I implemented a program in **ilus** that can be used to check the completion status of the task job. For the specific usage, please refer to the example of **WGS** below.
+This module creates pipeline for capture sequencing data (from FASTQ to genotype VCF). Whole-exome sequencing (WES) is a specific type of capture sequencing that focuses exclusively on the coding regions of the genome. This module streamlines the entire process, ensuring that users can efficiently analyze exome data and convert it into actionable genomic insights.
 
 
+**3. `genotype-joint-calling` module** 
 
-Installation
-------------
 
-**ilus** is based on Python and supports both Python2.7+ and Python3.7+. The stable version of the code has been released to PyPI. So to use **ilus**, install it directly through `pip` the Python package management tool:
+This module operates independently from the `WGS` and `capseq` modules, allowing users to call genotypes directly from gvcf files. It is particularly useful for analyzing WGS/WES data in batches. Users can generate gvcf files in bulk, compile a list, and use this module for subsequent processing, enhancing flexibility in the analysis workflow.
+
+**4. VQSR**
+
+This module is distinct from the WGS analysis and focuses on quality control of mutation results. 
+
+---------------------
+
+**ilus** does not directly execute tasks for two main reasons:
+
+- First, avoid making complexity in task scheduling. **ilus** is designed to remain lightweight and focused on its core functionality. Different computing clusters (local or cloud) have variaous job scheduling methods, which, if incorporated into **ilus**, could complicate its usability. This could lead to confusion for users and detract from ilus's primary purpose of generation tailored process scripts based on user input and configuration files. Currently, task must be submitted manually, although future plans may include external plugins for automation. I hope it can be used as a framework program to generate process scripts that meet your analysis needs strictly based on your input data and configuration file information.
+
+- Second, Enhancing flexibility and independence. The processes generated by **ilus** are characteristic, that is, they are completely independent from **ilus** and they will no longer rely on any functions of **ilus** in the execution process. Each command in the generated scripts could be run independently, allowing users to split larger scripts into sub-scripts base on their specific computational resource and sample size. This modularity facilitates efficient task delivery and management, which is crucial for parallel processing.
+
+
+### Task Splitting and Monitoring 
+
+When handling multiple samples, for instance, if a script contains 10 independent commands, users can split it into smaller sub-scripts and submit them manually. The `ilus split-jobs` can assist in this process, although it is tailored for SLURM systems.
+
+ilus also incorporates task completion monitoring by adding identifiable markers to each task. This feature simplifies the tracking of task statuses, particularly useful when analyzing large datasets. A dedicated program within ilus (`ilus check-jobs`) allows users to efficiently check the completion status of tasks, minimizing manual checks.
+
+Overall, while ilus refrains from automating task execution, its design promotes user flexibility and effective process management.
+
+
+## Installation
+
+**ilus** is based on Python and supports both Python 2.7+ and Python 3.X. The stable version of the code has been released to PyPI. So to use **ilus**, install it directly through `pip` the Python package management tool:
 
 
 ```bash
@@ -83,29 +112,31 @@ ilus: error: too few arguments
 ```
 
 
-Quick Start
------------
+## Quick Start
 
-By executing `ilus --help` you can see three function modules :`WGS`, `genotype-joint-calling` and `VQSR`.
+By executing `ilus --help` you can see three function modules : `WGS`, `capseq`, `genotype-joint-calling` and `VQSR`.
 
 ```bash
-$ ilus --help
-usage: ilus [-h] [-v] {WGS,genotype-joint-calling,VQSR,split-jobs,check-jobs} ...
+$ ilus -h
+usage: ilus [-h] [-v] {WGS,capseq,genotype-joint-calling,VQSR,split-jobs,check-jobs} ...
 
-ilus (Version = 1.3.2): A WGS/WES analysis pipeline generator.
+ilus (Version = 2.0.0): A WGS/WES analysis pipeline generator.
 
 optional arguments:
   -h, --help            show this help message and exit
   -v, --version         show the version of ilus and exit.
 
 ilus commands:
-  {WGS,genotype-joint-calling,VQSR,split-jobs,check-jobs}
-    WGS                 Create a pipeline for WGS (from FASTQ to genotype VCF).
+  {WGS,capseq,genotype-joint-calling,VQSR,split-jobs,check-jobs}
+    WGS                 Create pipeline scripts for WGS (from FASTQ to genotype VCF).
+    capseq              Create pipeline scripts for capture sequencing data (from FASTQ to genotype VCF). Whole-exome sequencing (WES) belong to capture sequencing, which only
+                        captures the coding regions of the genome.
     genotype-joint-calling
                         Genotype from GVCFs.
     VQSR                VQSR
     split-jobs          Split the whole shell into multiple jobs.
     check-jobs          Check the jobs have finished or not.
+
 
 That's how you can use ilus
 ```
@@ -118,8 +149,8 @@ The run scripts of the WGS Analysis Pipeline are generated by `ilus WGS` and are
 
 ```bash
 $ ilus WGS --help
-usage: ilus WGS [-h] [-n PROJECT_NAME] -C SYSCONF -O OUTDIR [-f] [--use-sentieon] -L FASTQLIST [-c]
-                [-P WGS_PROCESSES] [-dr]
+usage: ilus WGS [-h] [-n PROJECT_NAME] -C SYSCONF -O OUTDIR [-f] [--use-sentieon] -I FASTQLIST [--clean-raw-data]
+                [--delete-clean-fastq] [-c] [-P WGS_PROCESSES] [-dr] [--interval INTERVAL]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -132,13 +163,19 @@ optional arguments:
   -f, --force-overwrite
                         Force overwrite existing shell scripts and folders.
   --use-sentieon        Use sentieon (doc: https://support.sentieon.com/manual) to create analysis pipeline.
-  -L FASTQLIST, --fastqlist FASTQLIST
-                        List of alignment FASTQ files.
+  -I FASTQLIST, --fastqlist FASTQLIST
+                        Input the list of FASTQ files.
+  --clean-raw-data      Set this option to clean raw sequencing data (fastq).
+  --delete-clean-fastq  Set this option to delete clean fastq after aligning all reads to reference.
   -c, --cram            Convert BAM to CRAM after BQSR and save alignment file storage.
   -P WGS_PROCESSES, --process WGS_PROCESSES
                         Specify one or more processes (separated by comma) of WGS pipeline. Possible values:
                         align,markdup,BQSR,gvcf,combineGVCFs,genotype,VQSR
   -dr, --dry-run        Dry run the pipeline for testing.
+  --interval INTERVAL   Interval strings (separate by comma) or a file (BED/Picard,1-based) that will be used in
+                        variants calling. e.g: '--interval chr1:1-2,chr2,chr3:4-5' or '--interval
+                        interval_file.bed'.
+
 ```
 
 `-C`, `-L` and `-O` are **required parameters**, and the rest are optional parameters according to actual needs. The `-O` parameter is the output directory, if the directory does not exist, **ilus** will be created automatically. The most important are `-C` and `-L` parameters, the former is the configuration file of **ilus**, without this file **ilus** cannot generate the analysis process correctly, so it is very important; the latter is Input file, **The format of this file has fixed requirements**, a total of 5 columns, each column is the necessary information for the process.
@@ -327,6 +364,40 @@ If you have been using **ilus** then you don't need to worry about this problem,
 
 > -P
 > The analysis module specified by the parameter must belong to one or more of「align,markdup,BQSR,gvcf,genotype,VQSR」and be separated by commas.
+
+### capseq
+
+```bash
+$ ilus capseq -h
+usage: ilus capseq [-h] [-n PROJECT_NAME] -C SYSCONF -O OUTDIR [-f] [--use-sentieon] -I FASTQLIST [--clean-raw-data]
+                   [--delete-clean-fastq] [-c] [-P WGS_PROCESSES] [-dr] --capture-interval INTERVAL
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -n PROJECT_NAME, --name PROJECT_NAME
+                        Name of the project. (Default: test)
+  -C SYSCONF, --conf SYSCONF
+                        YAML configuration file specifying system details.
+  -O OUTDIR, --outdir OUTDIR
+                        Output directory for results.
+  -f, --force-overwrite
+                        Force overwrite existing shell scripts and folders.
+  --use-sentieon        Use sentieon (doc: https://support.sentieon.com/manual) to create analysis pipeline.
+  -I FASTQLIST, --fastqlist FASTQLIST
+                        Input the list of FASTQ files.
+  --clean-raw-data      Set this option to clean raw sequencing data (fastq).
+  --delete-clean-fastq  Set this option to delete clean fastq after aligning all reads to reference.
+  -c, --cram            Convert BAM to CRAM after BQSR and save alignment file storage.
+  -P WGS_PROCESSES, --process WGS_PROCESSES
+                        Specify one or more processes (separated by comma) of WGS pipeline. Possible values:
+                        align,markdup,BQSR,gvcf,combineGVCFs,genotype,VQSR
+  -dr, --dry-run        Dry run the pipeline for testing.
+  --capture-interval INTERVAL
+                        Capture intervals, must be a file path: (BED/Picard) file
+
+```
+
+The `capseq` module of ilus includes an additional parameter `--capture-interval` compared to the WGS Analysis Module. This parameter specifically allows users to define the intervals for exonic regions that are targeted during the capture sequencing process. Other than this addition, the overall structure and functionality of the capture sequencing module remain similar to those of the WGS module.
 
 
 ### genotype-joint-calling

@@ -5,6 +5,7 @@ venv3/
 *.egg-info/
 dist/
 build/
+learn_from/
 .ipynb_checkpoints/
 
 *.sh
