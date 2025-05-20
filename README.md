@@ -206,7 +206,7 @@ In the configuration file, `bwa`, `samtools`, `bcftools`, `bedtools`, `gatk`, `b
 
 Note that the `variant_calling_interval` parameter in the configuration file. This is a parameter specifically used to specify the variation detection interval. For example, in the example of the above configuration file, I gave 25 chromosomes from `chr1` to `chrM`, which means to tell the process to perform mutation detection on these 25 chromosomes . If you list only one chromosome in this parameter, or only give a chromosome interval, such as `chr1:1-10000`, then **ilus** will also only perform variant detection in the interval you give.
 
-This is a very flexible and useful parameter. The `variant_calling_interval` interval can be specified arbitrarily. In addition to the assignment method given in my example, you can also assign the interval **file path** to this parameter. **We know that many steps of WGS and WES are exactly the same, and there are only differences in the interval of variant detection ------ WES data is not necessary and cannot be** used for variant detection on the whole chromosome, only in the exon capture area. 
+This is a very flexible and useful parameter. The `variant_calling_interval` interval can be specified arbitrarily. In addition to the assignment method given in my example, you can also assign the interval **file path** to this parameter. **We know that many steps of WGS and WES are exactly the same, and there are only differences in the interval of variant detection - WES data is not necessary and cannot be** used for variant detection on the whole chromosome, only in the exon capture area. 
 
 You only need to put the file of the exon capture area,which in the `.bed` file format, the example is as follows:
 
