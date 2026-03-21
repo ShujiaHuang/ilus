@@ -183,8 +183,9 @@ def create_genotype_joint_calling_command(commands):
         type=Path,
         required=True,
         help="List of GVCF files. One gvcf_file per-row and the format should looks like: "
-             "[interval\tgvcf_file_path]. Column [1] is a symbol which could represent "
-             "the genome region of the gvcf_file and column [2] should be the path."
+             "[interval\tsample_id\tgvcf_file_path]. Column [1] is a symbol which could represent "
+             "the genome region of the gvcf_file, sample id column [2] and column [3] should be "
+             "the path of the gvcf_file."
     )
 
     genotype_cmd.add_argument(
