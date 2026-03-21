@@ -408,24 +408,20 @@ If we already have `gvcf` data for each sample, and now use these `gvcf` to do m
 
 ```bash
 $ ilus genotype-joint-calling --help
-usage: ilus genotype-joint-calling [-h] [-n PROJECT_NAME] -C SYSCONF -O OUTDIR [-f] [--use-sentieon] -L GVCFLIST
-                                   [--as_pipe_shell_order]
+usage: ilus genotype-joint-calling [-h] [-n PROJECT_NAME] -C SYSCONF -O OUTDIR [-f] [--use-sentieon] -I GVCFLIST [--as_pipe_shell_order]
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  -n PROJECT_NAME, --name PROJECT_NAME
+  -n, --name PROJECT_NAME
                         Name of the project. (Default: test)
-  -C SYSCONF, --conf SYSCONF
-                        YAML configuration file specifying system details.
-  -O OUTDIR, --outdir OUTDIR
-                        Output directory for results.
+  -C, --conf SYSCONF    YAML configuration file specifying system details.
+  -O, --outdir OUTDIR   Output directory for results.
   -f, --force-overwrite
                         Force overwrite existing shell scripts and folders.
   --use-sentieon        Use sentieon (doc: https://support.sentieon.com/manual) to create analysis pipeline.
-  -L GVCFLIST, --gvcflist GVCFLIST
-                        List of GVCF files. One gvcf_file per-row and the format should looks like: [interval
-                        gvcf_file_path]. Column [1] is a symbol which could represent the genome region of the
-                        gvcf_file and column [2] should be the path.
+  -I, --gvcflist GVCFLIST
+                        List of GVCF files. One gvcf_file per-row and the format should looks like: [interval sample_id gvcf_file_path]. Column [1] is a symbol which could represent the
+                        genome region of the gvcf_file, sample id column [2] and column [3] should be the path of the gvcf_file.
   --as_pipe_shell_order
                         Keep the shell name as the order of `WGS`.
 ```
@@ -440,14 +436,14 @@ $ ilus genotype-joint-calling -n my_project -C ilus_sys.yaml -L gvcf.list -O gen
 The format of `gvcf.list`:
 
 ```bash
-chr1    /path/sample1.chr1.g.vcf.gz
-chr1    /paht/sample2.chr1.g.vcf.gz
-chr2    /path/sample1.chr2.g.vcf.gz
-chr2    /path/sample2.chr2.g.vcf.gz
-...
-chrM    /path/sample1.chrM.g.vcf.gz
-chrM    /path/sample2.chrM.g.vcf.gz
+chr1  sample1 sample1/sample1.chr1.g.vcf.gz
+chr1:2-10 sample2 sample2/sample2.chr1.g.vcf.gz
+chr2  sample1 sample1/sample1.chr2.g.vcf.gz
+chr2:3-5  sample2 sample2/sample2.chr2.g.vcf.gz
+interval_fn.bed sample1 sample2/sample2.interval_fn.g.vcf.gz
+interval_fn.bed sample2 sample2/sample2.interval_fn.g.vcf.gz
 ```
+
 In this example `gvcf.list` has only two samples. The parameter `--as_pipe_shell_order` is optional(the default is not added), its only function is to output the name of the executed script according to the **ilus WGS** process, maintaining the same order and the same as the `WGS` process The output directory structure of .
 
 ### VQSR
