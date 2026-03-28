@@ -55,6 +55,7 @@ bcftools:
 
 bedtools:
   bedtools: /path/to/bedtools
+  thread_num: 16
   genomecov_options: [-bga -split]
 
 verifyBamID2:

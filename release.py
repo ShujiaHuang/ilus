@@ -3,7 +3,7 @@
 Author: Shujia Huang
 Date: 2021-04-30
 """
-import importlib
+import importlib.util
 from subprocess import call
 
 spec = importlib.util.spec_from_file_location("_", "./setup.py")

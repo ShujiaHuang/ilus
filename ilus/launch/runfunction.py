@@ -7,7 +7,7 @@ import sys
 import stat
 import gzip
 from pathlib import Path
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 
 from ilus.modules.utils import safe_makedir, file_exists
 from ilus.modules.summary import bam
@@ -153,7 +153,7 @@ def run_bwamem(kwargs,
     return bwa_shell_files_list  # [[sample, bwa_shell_file], ...]
 
 
-def run_markduplicates(kwargs, out_folder_name: str, aione: dict = None,
+def run_markduplicates(kwargs, out_folder_name: str, aione: Optional[dict] = None,
                        is_dry_run: bool = False) -> List[List[Union[str, Path]]]:
     """Create shell scripts for Markduplicates by GATK4.
     """

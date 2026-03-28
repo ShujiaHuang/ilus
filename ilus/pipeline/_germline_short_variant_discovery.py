@@ -7,7 +7,7 @@ Date: 2020-04-19
 import stat
 import sys
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from ilus.modules.utils import (
     get_variant_calling_intervals,
@@ -37,20 +37,17 @@ def _create_a_total_shell_file(shell_list: List[Tuple[str, str]],
 
         ``shell_list`` is a 2-D array: [[mark, shell_file], ...].
     """
-    sub_shell_log_dir = str(sub_shell_log_dir).rstrip("/")
+    sub_shell_log_dir_str = str(sub_shell_log_dir).rstrip("/")
     o_log_template = "{marker}\t{sub_shell_log_dir}/{marker}.o.log\t{sub_shell}\n"
     e_log_template = "{marker}\t{sub_shell_log_dir}/{marker}.e.log\t{sub_shell}\n"
     shell_template = "{sub_shell} 2> {sub_shell_log_dir}/{marker}.e.log > {sub_shell_log_dir}/{marker}.o.log\n"
-
     with open(str(out_shell_filename), "w") as out_file, open(o_log_file, "w") as o_log, open(e_log_file, "w") as e_log:
         out_file.write("#!/bin/bash\n")
         for marker, sub_shell in shell_list:
             # record all the path of log files into a single file
-            o_log.write(o_log_template.format(marker=marker, sub_shell_log_dir=sub_shell_log_dir, sub_shell=sub_shell))
-            e_log.write(e_log_template.format(marker=marker, sub_shell_log_dir=sub_shell_log_dir, sub_shell=sub_shell))
-
-            out_file.write(
-                shell_template.format(marker=marker, sub_shell=sub_shell, sub_shell_log_dir=sub_shell_log_dir))
+            o_log.write(o_log_template.format(marker=marker, sub_shell_log_dir=sub_shell_log_dir_str, sub_shell=sub_shell))
+            e_log.write(e_log_template.format(marker=marker, sub_shell_log_dir=sub_shell_log_dir_str, sub_shell=sub_shell))
+            out_file.write(shell_template.format(marker=marker, sub_shell=sub_shell, sub_shell_log_dir=sub_shell_log_dir_str))
 
     out_shell_filename.chmod(stat.S_IRWXU)  # 0700
     return
@@ -58,7 +55,7 @@ def _create_a_total_shell_file(shell_list: List[Tuple[str, str]],
 
 def _make_process_shell(output_shell_fname: Path,
                         shell_log_directory: Path,
-                        process_shells: List[Tuple[str, str]] = None,
+                        process_shells: Optional[List[Tuple[str, str]]] = None,
                         is_overwrite: bool = False,
                         is_dry_run: bool = False) -> None:
     if is_dry_run:
@@ -81,7 +78,7 @@ def _make_process_shell(output_shell_fname: Path,
     return
 
 
-def _variant_discovery_common_processes(kwargs, processes_set: set = None):
+def _variant_discovery_common_processes(kwargs, processes_set: set = set()):
     """
     :param kwargs:
     :param processes_set:

@@ -25,9 +25,16 @@ def genomecoverage(config, input_bamfile, output_cvg_fname):
         if "genomecov_options" in config["bedtools"] and \
            len(config["bedtools"]["genomecov_options"]) else ""
 
-    cmd = (f"time {bedtools} genomecov {genomecov_options} -ibam {input_bamfile} | "
-           f"{bgzip} > {output_cvg_fname} && {tabix} -f -p bed {output_cvg_fname}")
-
+    if ("thread_num" in config["bedtools"] and config["bedtools"]["thread_num"]):
+       samtools = config["samtools"]["samtools"]
+       thread_num = config["bedtools"]["thread_num"]
+       cmd = (f"time {samtools} -@ {thread_num} -b {input_bamfile} | "
+              f"{bedtools} genomecov {genomecov_options} -ibam stdin | "
+              f"{bgzip} > {output_cvg_fname} && {tabix} -f -p bed {output_cvg_fname}")
+    else:
+       cmd = (f"time {bedtools} genomecov {genomecov_options} -ibam {input_bamfile} | "
+              f"{bgzip} > {output_cvg_fname} && {tabix} -f -p bed {output_cvg_fname}")
+    
     return cmd
 
 
