@@ -61,6 +61,9 @@ def _make_process_shell(output_shell_fname: Path,
     if is_dry_run:
         return
 
+    if process_shells is None:
+        return
+
     safe_makedir(shell_log_directory)
     o_log_file = str(shell_log_directory).rstrip("/") + ".o.log.list"
     e_log_file = str(shell_log_directory).rstrip("/") + ".e.log.list"
@@ -145,7 +148,7 @@ def _variant_discovery_common_processes(kwargs, processes_set: set = set()):
     return wgs_pipeline_processes, runner_module
 
 
-def _fetch_calling_variants_interval(kwargs, aione: dict = None, is_capture_seq: bool = False) -> None:
+def _fetch_calling_variants_interval(kwargs, aione: dict, is_capture_seq: bool = False) -> None:
     # Variant calling interval for WGS process must exist.
     if kwargs.interval and ("all" in kwargs.interval.split(",")) and (kwargs.interval != "all"):
         sys.stderr.write("[ERROR]: Do not add any other interval in '--interval' if 'all' in it.")
@@ -181,7 +184,7 @@ def _fetch_calling_variants_interval(kwargs, aione: dict = None, is_capture_seq:
     return
 
 
-def WGS(kwargs, aione: dict = None, is_capture_seq: bool = False) -> dict:
+def WGS(kwargs, aione: dict, is_capture_seq: bool = False) -> dict:
     """Create the WGS data analysis pipeline.
 
         ``is_capture_seq``: WES or other capture sequencing.
@@ -238,7 +241,7 @@ def _f(kwargs, aione, shell_fname, shell_log_folder, function_name):
     return
 
 
-def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
+def genotypeGVCFs(kwargs, aione: dict) -> dict:
     """GenotypeGVCFs"""
 
     aione["config"]["variant_calling_interval"] = []
@@ -307,7 +310,7 @@ def genotypeGVCFs(kwargs, aione: dict = None) -> dict:
     return aione
 
 
-def variantrecalibrator(kwargs, aione: dict = None) -> dict:
+def variantrecalibrator(kwargs, aione: dict) -> dict:
     aione["genotype_vcf_list"] = []  # will be called in ``run_variantrecalibrator``
     with open(kwargs.vcflist) as f_in:
         # one file path per row

@@ -33,7 +33,7 @@ def _md(outdir: Path, is_dry_run: bool = False) -> Tuple[Path, Path]:
     return output_directory, shell_directory
 
 
-def _create_cmd_file(out_shell_file: Path, cmd: List[str] = None):
+def _create_cmd_file(out_shell_file: Path, cmd: Optional[List[str]] = None):
     if cmd is None:
         return
 
@@ -47,7 +47,7 @@ def _create_cmd_file(out_shell_file: Path, cmd: List[str] = None):
 
 def run_bwamem(kwargs,
                out_folder_name: str,
-               aione: dict = None,
+               aione: dict,
                is_dry_run: bool = False) -> List[List[Union[str, Path]]]:
     """Create bwamem alignment shell scripts for fastq to BAM.
     """
@@ -64,7 +64,7 @@ def run_bwamem(kwargs,
 
         # SAMPLE_ID RGID  FASTQ1  FASTQ2  LANE  LIBRARY PLATFORM   CENTER
         for line in f:
-            if line.startswith("#"):  # ignore header
+            if line.startswith("#"):  # ignore
                 continue
 
             sample_id, read_group_id, fq1, fq2, lane = line.strip().split()[:5]
@@ -97,7 +97,7 @@ def run_bwamem(kwargs,
 
             cmds.append(cmd)
             if kwargs.clean_raw_data and kwargs.delete_clean_fastq:
-                # 注意：这里不要用 fq1 和 fq2，故意要用 clean_fq1 和 clean_fq2 就是预防误删原始数据
+                # 注意：这里千万不要用 fq1 和 fq2！故意用 clean_fq1 和 clean_fq2 就是预防误删原始数据
                 cmds.append(f"rm -f {clean_fq1} {clean_fq2}")
 
             sample_bamfiles_by_lane[sample_id].append([lane_sorted_bam_file, " && ".join(cmds)])
@@ -153,7 +153,7 @@ def run_bwamem(kwargs,
     return bwa_shell_files_list  # [[sample, bwa_shell_file], ...]
 
 
-def run_markduplicates(kwargs, out_folder_name: str, aione: Optional[dict] = None,
+def run_markduplicates(kwargs, out_folder_name: str, aione: dict,
                        is_dry_run: bool = False) -> List[List[Union[str, Path]]]:
     """Create shell scripts for Markduplicates by GATK4.
     """
@@ -208,7 +208,7 @@ def run_markduplicates(kwargs, out_folder_name: str, aione: Optional[dict] = Non
 
 def run_baserecalibrator(kwargs,
                          out_folder_name: str,
-                         aione: dict = None,
+                         aione: dict,
                          is_dry_run: bool = False) -> List[List[Union[str, Path]]]:
     shell_directory = Path(kwargs.outdir).joinpath(out_folder_name, "shell", "bqsr")
     if not is_dry_run:
@@ -276,7 +276,7 @@ def _c(interval):
 
 def run_haplotypecaller_gvcf(kwargs,
                              out_folder_name: str,
-                             aione: dict = None,
+                             aione: dict,
                              is_dry_run: bool = False) -> List[List[Union[str, Path]]]:
     """Create gvcf shell.
     """
@@ -364,7 +364,7 @@ def _yield_gatk_combineGVCFs(project_name,
                              output_directory: Path,
                              shell_directory: Path,
                              is_use_gDBI: bool,
-                             aione: dict = None):
+                             aione: dict):
     """A generator for combine GVCFs."""
     for interval in variant_calling_intervals:
         interval_n, calling_interval = _c(interval)
@@ -393,7 +393,7 @@ def _yield_gatk_combineGVCFs(project_name,
 
 def gatk_combineGVCFs(kwargs,
                       out_folder_name: str,
-                      aione: dict = None,
+                      aione: dict,
                       is_dry_run: bool = False) -> List[List[Union[str, Path]]]:
     """Combine GVCFs by GATK genomicsDBImport or CombineGVCFs module.
     """
@@ -430,7 +430,7 @@ def gatk_combineGVCFs(kwargs,
 
 def run_genotypeGVCFs(kwargs,
                       out_folder_name: str,
-                      aione: dict = None,
+                      aione: dict,
                       is_dry_run: bool = False) -> List[List[Union[str, Path]]]:
     """Create shell for genotypeGVCFs.
     """
@@ -487,7 +487,7 @@ def run_genotypeGVCFs(kwargs,
 
 def gatk_genotype(kwargs,
                   out_folder_name: str,
-                  aione: dict = None,
+                  aione: dict,
                   is_dry_run: bool = False) -> List[List[Union[str, Path]]]:
     """CombineGVCFs and genotypeGVCFs into one function (not use).
     """
@@ -542,7 +542,7 @@ def gatk_genotype(kwargs,
 
 def run_variantrecalibrator(kwargs,
                             out_folder_name: str,
-                            aione: dict = None,
+                            aione: dict,
                             is_dry_run: bool = False) -> List[List[Union[str, Path]]]:
     """Create shell scripts for VQSR.
     """
