@@ -5,13 +5,7 @@ Copyright (c) 2020 Shujia Huang
 """
 from argparse import Namespace
 from pathlib import Path
-
-try:
-    from setuptools import setup, find_packages
-
-    _has_setuptools = True
-except ImportError:
-    from distutils.core import setup, find_packages
+from setuptools import setup, find_packages
 
 DESCRIPTION = "ilus: A handy tools for generating WGS/WES analysis pipeline."
 meta = Namespace(
@@ -21,7 +15,7 @@ meta = Namespace(
     __URL__="https://github.com/ShujiaHuang/ilus",
     __LICENSE__="BSD (3-clause)",
     __DOWNLOAD_URL__="https://github.com/ShujiaHuang/ilus",
-    __VERSION__="2.0.1",
+    __VERSION__="2.0.2",
 )
 
 if __name__ == "__main__":
