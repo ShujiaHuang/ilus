@@ -38,6 +38,8 @@ class Sentieon(object):
         self.resources_bundle = self.config["resources"]["bundle"]
         self.driver_options = " ".join(
             [str(x) for x in self.sent_options.get("sentieon_driver_options", [])])
+        
+        self.is_paird_end = True
 
     def bwamem(self, out_prefix, rgID, fastq1, fastq2=""):
         """Mapping reads with BWA-MEM and sorting BAM to coordinate.
@@ -46,8 +48,13 @@ class Sentieon(object):
             - sentieon bwa-mem alignment and output BAM
             - sentieon sort of BAM to coordinate
         """
+        
         if fastq2 == ".":
             fastq2 = ""
+
+        # If fastq2 is empty, it is single-end data, otherwise it is paired-end data.
+        # 每次都要更新一次，因为在 WGS/WES 的流程中，有些样本可能有 fastq2，而有些可能没有。
+        self.is_paird_end = True if fastq2 else False
 
         bwa_options = " ".join([str(x) for x in self.sent_options.get("bwamem_options", [])])
         util_sort_options = " ".join(
@@ -76,13 +83,15 @@ class Sentieon(object):
                              f"--algo QualDistribution {out_prefix}.qd_metrics.txt "
                              f"--algo GCBias --summary {out_prefix}.gc_summary.txt {out_prefix}.gc_metrics.txt "
                              f"--algo AlignmentStat --adapter_seq {adapter_seq} {out_prefix}.aln_metrics.txt "
-                             f"--algo InsertSizeMetricAlgo {out_prefix}.is_metrics.txt "
+                             f"--algo InsertSizeMetricAlgo {out_prefix}.is_metrics.txt " if self.is_paird_end else ""
                              f"--algo CoverageMetrics {coverage_options} {out_prefix}.coverage_metrics")
 
-        plot_cmd = (f"{self.sentieon} plot GCBias -o {out_prefix}.gc-report.pdf {out_prefix}.gc_metrics.txt && "
-                    f"{self.sentieon} plot QualDistribution -o {out_prefix}.qd-report.pdf {out_prefix}.qd_metrics.txt && "
-                    f"{self.sentieon} plot MeanQualityByCycle -o {out_prefix}.mq-report.pdf {out_prefix}.mq_metrics.txt && "
-                    f"{self.sentieon} plot InsertSizeMetricAlgo -o {out_prefix}.is-report.pdf {out_prefix}.is_metrics.txt")
+        plot_cmd = (
+            f"{self.sentieon} plot GCBias -o {out_prefix}.gc-report.pdf {out_prefix}.gc_metrics.txt "
+            f"&& {self.sentieon} plot QualDistribution -o {out_prefix}.qd-report.pdf {out_prefix}.qd_metrics.txt "
+            f"&& {self.sentieon} plot MeanQualityByCycle -o {out_prefix}.mq-report.pdf {out_prefix}.mq_metrics.txt "
+            f"&& {self.sentieon} plot InsertSizeMetricAlgo -o {out_prefix}.is-report.pdf {out_prefix}.is_metrics.txt" if self.is_paird_end else ""
+        )
 
         return align_metrics_cmd + " && " + plot_cmd
 
