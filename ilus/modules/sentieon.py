@@ -39,7 +39,7 @@ class Sentieon(object):
         self.driver_options = " ".join(
             [str(x) for x in self.sent_options.get("sentieon_driver_options", [])])
         
-        self.is_paird_end = True
+        # self.is_paird_end = False
 
     def bwamem(self, out_prefix, rgID, fastq1, fastq2=""):
         """Mapping reads with BWA-MEM and sorting BAM to coordinate.
@@ -54,7 +54,7 @@ class Sentieon(object):
 
         # If fastq2 is empty, it is single-end data, otherwise it is paired-end data.
         # 每次都要更新一次，因为在 WGS/WES 的流程中，有些样本可能有 fastq2，而有些可能没有。
-        self.is_paird_end = True if fastq2 else False
+        # self.is_paird_end = True if fastq2 else False
 
         bwa_options = " ".join([str(x) for x in self.sent_options.get("bwamem_options", [])])
         util_sort_options = " ".join(
@@ -83,14 +83,16 @@ class Sentieon(object):
                              f"--algo QualDistribution {out_prefix}.qd_metrics.txt "
                              f"--algo GCBias --summary {out_prefix}.gc_summary.txt {out_prefix}.gc_metrics.txt "
                              f"--algo AlignmentStat --adapter_seq {adapter_seq} {out_prefix}.aln_metrics.txt "
-                             f"--algo InsertSizeMetricAlgo {out_prefix}.is_metrics.txt " if self.is_paird_end else ""
+                             f"--algo InsertSizeMetricAlgo {out_prefix}.is_metrics.txt "
                              f"--algo CoverageMetrics {coverage_options} {out_prefix}.coverage_metrics")
 
+        # Todo: 1. 是否需要添加 InsertSizeMetricAlgo 的 plot 命令？如果是单端数据，插入片段长度的分布图就没有意义了。
+        #       2. 是否需要添加 AlignmentStat 的 plot 命令？目前 sentieon 没有提供 AlignmentStat 的 plot 命令，后续如果有了再添加。
         plot_cmd = (
             f"{self.sentieon} plot GCBias -o {out_prefix}.gc-report.pdf {out_prefix}.gc_metrics.txt "
             f"&& {self.sentieon} plot QualDistribution -o {out_prefix}.qd-report.pdf {out_prefix}.qd_metrics.txt "
             f"&& {self.sentieon} plot MeanQualityByCycle -o {out_prefix}.mq-report.pdf {out_prefix}.mq_metrics.txt "
-            f"&& {self.sentieon} plot InsertSizeMetricAlgo -o {out_prefix}.is-report.pdf {out_prefix}.is_metrics.txt" if self.is_paird_end else ""
+            # f"&& {self.sentieon} plot InsertSizeMetricAlgo -o {out_prefix}.is-report.pdf {out_prefix}.is_metrics.txt" if self.is_paird_end else ""
         )
 
         return align_metrics_cmd + " && " + plot_cmd
