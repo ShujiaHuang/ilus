@@ -59,40 +59,24 @@ def get_nonN_region(in_n_interval_file, thd_n_size, fa):
                 continue
 
             if chromid not in reg:
-                if len(pre_id) and pre_id in reg and reg[pre_id] and pre_pos.get(pre_id, 0) < fa[pre_id]:
+
+                if len(pre_id) and pre_pos[pre_id] < fa[pre_id]:
                     reg[pre_id][-1][1] = fa[pre_id]
 
                 reg[chromid] = []
                 if n_start > 1:
                     reg[chromid] = [[1, n_start - 1]]
-                elif n_end < fa[chromid]:
-                    # If N-region starts at 1 but does not extend to the
-                    # end of the chromosome, the non-N region begins at
-                    # n_end+1. Use condition n_end < fa to include the
-                    # single-base tail when n_end == fa-1.
+                elif n_end + 1 < fa[chromid]:
                     reg[chromid] = [[n_end + 1, 0]]
 
                 pre_id = chromid
 
             if n_region_size < thd_n_size:
                 # It's a small N-region, keep it.
-                if not reg[chromid]:
-                    # No current non-N region recorded yet; create one
-                    # spanning from 1 to this small N-end.
-                    reg[chromid] = [[1, n_end]]
-                else:
-                    # If the last region has no end yet (0), set it;
-                    # otherwise, extend the end if this N extends it.
-                    if reg[chromid][-1][1] == 0:
-                        reg[chromid][-1][1] = n_end
-                    elif n_end > reg[chromid][-1][1]:
-                        reg[chromid][-1][1] = n_end
+                if reg[chromid][-1][1] != 0:
+                    reg[chromid][-1][1] = n_end
 
             else:
-
-                if not reg[chromid]:
-                    # No non-N region started yet, create one up to n_start-1.
-                    reg[chromid] = [[1, n_start - 1]]
 
                 if reg[chromid][-1][1] == 0:
                     reg[chromid][-1][1] = n_start - 1
@@ -100,7 +84,7 @@ def get_nonN_region(in_n_interval_file, thd_n_size, fa):
                 if n_end + 1 == reg[chromid][-1][0]:
                     continue
 
-                if n_end < fa[chromid]:
+                if n_end + 1 < fa[chromid]:
                     reg[chromid].append([n_end + 1, 0])
 
     if pre_id in reg and pre_pos[pre_id] < fa[pre_id]:

@@ -44,9 +44,9 @@ def test_get_nonN_region_merge_small_N():
         'chr2\t20\t30',
     ]) + '\n')
     try:
-        # large threshold treats 11-base N as 'small' and merges regions
+        # With a very large threshold, treat all N as 'small' (ignored)
         reg = mod.get_nonN_region(nbed, 1000, fa)
-        assert reg['chr1'] == [[11, 100]]
+        assert reg['chr1'] == [[1, 100]]
         assert reg['chr2'] == [[1, 80]]
     finally:
         os.unlink(nbed)
