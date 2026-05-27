@@ -42,58 +42,103 @@ def get_nonN_region(in_n_interval_file, thd_n_size, fa):
         chr1	535989	585988
         chr1	2702782	2746290
     """
-    reg, pre_pos = {}, {}
-    pre_id, pre_end = "", 0
+    # New robust implementation:
+    # 1. Read N intervals per chromosome, normalize starts (treat start<=0 as 1).
+    # 2. Filter N intervals by threshold: only keep those with size >= thd_n_size
+    #    as "true N" regions that should be removed. Small N regions are
+    #    ignored (treated as non-N).
+    # 3. Merge overlapping/adjacent true N regions and compute the complement
+    #    (non-N regions) for each chromosome.
+
+    from collections import defaultdict
+
+    ns = defaultdict(list)
+
     with open(in_n_interval_file) as I:
-        # dealing with N region file
-
-        for r in I:
-            # N region
-            chromid, n_start, n_end = r.strip().split()[0:3]
-            n_start, n_end = map(int, (n_start, n_end))
-            n_region_size = n_end - n_start + 1
-
-            pre_pos[chromid] = n_end
-            if n_start == 1 and n_end == fa[chromid]:
-                # The whole chromosome is all N? Probably impossible
+        for line in I:
+            parts = line.strip().split()
+            if not parts:
+                continue
+            chromid = parts[0]
+            try:
+                n_start = int(parts[1])
+                n_end = int(parts[2])
+            except (IndexError, ValueError):
                 continue
 
-            if chromid not in reg:
+            # Normalize: treat starts <= 0 as 1 (allow 0-based input)
+            if n_start < 1:
+                n_start = 1
 
-                if len(pre_id) and pre_pos[pre_id] < fa[pre_id]:
-                    reg[pre_id][-1][1] = fa[pre_id]
+            if n_end < n_start:
+                # malformed line
+                continue
 
-                reg[chromid] = []
-                if n_start > 1:
-                    reg[chromid] = [[1, n_start - 1]]
-                elif n_end + 1 < fa[chromid]:
-                    reg[chromid] = [[n_end + 1, 0]]
+            n_region_size = n_end - n_start + 1
+            ns[chromid].append((n_start, n_end))
 
-                pre_id = chromid
-
-            if n_region_size < thd_n_size:
-                # It's a small N-region, keep it.
-                if reg[chromid][-1][1] != 0:
-                    reg[chromid][-1][1] = n_end
-
-            else:
-
-                if reg[chromid][-1][1] == 0:
-                    reg[chromid][-1][1] = n_start - 1
-
-                if n_end + 1 == reg[chromid][-1][0]:
-                    continue
-
-                if n_end + 1 < fa[chromid]:
-                    reg[chromid].append([n_end + 1, 0])
-
-    if pre_id in reg and pre_pos[pre_id] < fa[pre_id]:
-        reg[pre_id][-1][1] = fa[pre_id]
+    reg = {}
 
     for chrom, chrom_size in fa.items():
-        # loading all other non N regions
-        if chrom not in reg:
+        intervals = ns.get(chrom, [])
+        if not intervals:
             reg[chrom] = [[1, chrom_size]]
+            continue
+
+        intervals.sort()
+
+        # If there are N regions covering the chromosome start, advance cur
+        # past their end so that non-N starts after them (this preserves the
+        # original behavior where a leading N at the chromosome start shifts
+        # the first callable region).
+        cur = 1
+        i = 0
+        while i < len(intervals) and intervals[i][0] <= cur:
+            # intervals starting at or before current pointer
+            cur = max(cur, intervals[i][1] + 1)
+            i += 1
+
+        # Now collect "true" N intervals (size >= threshold) that occur at or
+        # after the current pointer; these will split callable regions.
+        true_ns = []
+        for s, e in intervals:
+            if e < cur:
+                continue
+            if e - s + 1 >= thd_n_size:
+                # trim start to be at least cur
+                s = max(s, cur)
+                true_ns.append((s, e))
+
+        # Merge true N intervals
+        merged = []
+        for s, e in sorted(true_ns):
+            if not merged:
+                merged.append([s, e])
+            else:
+                if s <= merged[-1][1] + 1:
+                    merged[-1][1] = max(merged[-1][1], e)
+                else:
+                    merged.append([s, e])
+
+        # Compute complement (non-N regions) starting from cur
+        nonn = []
+        if not merged:
+            if cur <= chrom_size:
+                nonn.append([cur, chrom_size])
+        else:
+            if cur <= merged[0][0] - 1:
+                nonn.append([cur, merged[0][0] - 1])
+
+            for j in range(len(merged) - 1):
+                a_end = merged[j][1]
+                b_start = merged[j + 1][0]
+                if a_end + 1 <= b_start - 1:
+                    nonn.append([a_end + 1, b_start - 1])
+
+            if merged[-1][1] < chrom_size:
+                nonn.append([merged[-1][1] + 1, chrom_size])
+
+        reg[chrom] = nonn
 
     return reg
 
