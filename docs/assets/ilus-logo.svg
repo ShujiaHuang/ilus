@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 100" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: transparent; }
+      /* 精确匹配图片中的颜色 */
+      .blue-fill { fill: #0074B3; }
+      .red-fill { fill: #D71A40; }
+      
+      /* 还原图片中的文本样式和字重 */
+      .logo-text { 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+        font-size: 135px; 
+        font-weight: 900; 
+        letter-spacing: -1.5px; 
+      }
+      
+      /* 还原粗六边形边框 */
+      .hex-border { 
+        fill: #FFFFFF; 
+        stroke: #E4EDF4; 
+        stroke-width: 18; 
+        stroke-linejoin: round; 
+      }
+    </style>
+  </defs>
+
+  <rect class="bg" width="460" height="100" />
+
+  <g transform="translate(10, 0)">
+    <path class="hex-border" d="M 100 25 L 165 62.5 L 165 137.5 L 100 175 L 35 137.5 L 35 62.5 Z" />
+    <rect x="62" y="70" width="76" height="15" class="blue-fill" />
+    <circle cx="71" cy="118" r="11" class="red-fill" />
+    <rect x="90" y="110.5" width="48" height="15" class="blue-fill" />
+  </g>
+
+  <g transform="translate(200, 142)">
+    <text x="0" y="0" class="logo-text blue-fill">ılus</text>
+    <circle cx="16.5" cy="-91" r="11" class="red-fill" />
+  </g>
+</svg>

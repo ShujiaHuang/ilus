@@ -1,6 +1,11 @@
+<div align="center">
+  <img src="./docs/assets/ilus-logo.svg" alt="ilus logo" width="300">
+</div>
+
 # Ilus
 
 [![DOI](https://zenodo.org/badge/254013599.svg)](https://zenodo.org/badge/latestdoi/254013599)
+
 
 **English** | [简体中文](./README_CN.md)
 
