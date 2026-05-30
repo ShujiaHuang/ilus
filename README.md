@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/ShujiaHuang/ilus">
-    <img height="150" src="docs/assets/ilus-logo.svg">
+    <img height="180" src="docs/assets/ilus-logo.svg">
   </a>
 </p>
 
